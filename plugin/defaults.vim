@@ -26,7 +26,7 @@ if !exists('g:formatdef_autopep8')
     " Autopep8 will not do indentation fixes when a range is specified, so we
     " only pass a range when there is a visual selection that is not the
     " entire file. See #125.
-    let g:formatdef_autopep8 = '"autopep8 -".(g:DoesRangeEqualBuffer(a:firstline, a:lastline) ? " --range ".a:firstline." ".a:lastline : "")." ".(&textwidth ? "--max-line-length=".&textwidth : "")'
+    let g:formatdef_autopep8 = '"autopep8 -".(g:DoesRangeEqualBuffer(a:firstline, a:lastline) ? " --range ".a:firstline." ".a:lastline : "")." ".(&textwidth ? "--max-line-length=".&textwidth : "")." < ##INPUTSRC##"'
 endif
 
 " There doesn't seem to be a reliable way to detect if are in some kind of visual mode,
@@ -42,7 +42,7 @@ if !exists('g:formatter_yapf_style')
     let g:formatter_yapf_style = 'pep8'
 endif
 if !exists('g:formatdef_yapf')
-    let g:formatdef_yapf = "'yapf --style=\"{based_on_style:'.g:formatter_yapf_style.',indent_width:'.&shiftwidth.',column_limit:'.&textwidth.'}\" -l '.a:firstline.'-'.a:lastline"
+    let g:formatdef_yapf = "'yapf --style=\"{based_on_style:'.g:formatter_yapf_style.',indent_width:'.&shiftwidth.',column_limit:'.&textwidth.'}\" -l '.a:firstline.'-'.a:lastline.' < ##INPUTSRC##'"
 endif
 
 if !exists('g:formatters_python')
@@ -53,11 +53,11 @@ endif
 " C#
 if !exists('g:formatdef_astyle_cs')
     if filereadable('.astylerc')
-        let g:formatdef_astyle_cs = '"astyle --mode=cs --options=.astylerc"'
+        let g:formatdef_astyle_cs = '"astyle --mode=cs --options=.astylerc < ##INPUTSRC##"'
     elseif filereadable(expand('~/.astylerc')) || exists('$ARTISTIC_STYLE_OPTIONS')
-        let g:formatdef_astyle_cs = '"astyle --mode=cs"'
+        let g:formatdef_astyle_cs = '"astyle --mode=cs < ##INPUTSRC##"'
     else
-        let g:formatdef_astyle_cs = '"astyle --mode=cs --style=ansi --indent-namespaces -pcH".(&expandtab ? "s".shiftwidth() : "t")'
+        let g:formatdef_astyle_cs = '"astyle --mode=cs --style=ansi --indent-namespaces -pcH".(&expandtab ? "s".shiftwidth() : "t")." < ##INPUTSRC##"'
     endif
 endif
 
@@ -68,8 +68,8 @@ endif
 
 " Generic C, C++, Objective-C
 if !exists('g:formatdef_clangformat')
-    let s:configfile_def = "'clang-format -lines='.a:firstline.':'.a:lastline.' --assume-filename=\"'.expand('%:p').'\" -style=file'"
-    let s:noconfigfile_def = "'clang-format -lines='.a:firstline.':'.a:lastline.' --assume-filename=\"'.expand('%:p').'\" -style=\"{BasedOnStyle: WebKit, AlignTrailingComments: true, '.(&textwidth ? 'ColumnLimit: '.&textwidth.', ' : '').(&expandtab ? 'UseTab: Never, IndentWidth: '.shiftwidth() : 'UseTab: Always').'}\"'"
+    let s:configfile_def = "'clang-format -lines='.a:firstline.':'.a:lastline.' --assume-filename=\"'.expand('%:.').'\" -style=file ##INPUTSRC##'"
+    let s:noconfigfile_def = "'clang-format -lines='.a:firstline.':'.a:lastline.' --assume-filename=\"'.expand('%:.').'-style=\"{BasedOnStyle: WebKit, AlignTrailingComments: true, '.(&textwidth ? 'ColumnLimit: '.&textwidth.', ' : '').(&expandtab ? 'UseTab: Never, IndentWidth: '.shiftwidth() : 'UseTab: Always').'}\" ##INPUTSRC##'"
     let g:formatdef_clangformat = "g:ClangFormatConfigFileExists() ? (" . s:configfile_def . ") : (" . s:noconfigfile_def . ")"
 endif
 
@@ -82,11 +82,11 @@ endfunction
 " C
 if !exists('g:formatdef_astyle_c')
     if filereadable('.astylerc')
-        let g:formatdef_astyle_c = '"astyle --mode=c --options=.astylerc"'
+        let g:formatdef_astyle_c = '"astyle --mode=c --options=.astylerc < ##INPUTSRC##"'
     elseif filereadable(expand('~/.astylerc')) || exists('$ARTISTIC_STYLE_OPTIONS')
-        let g:formatdef_astyle_c = '"astyle --mode=c"'
+        let g:formatdef_astyle_c = '"astyle --mode=c < ##INPUTSRC##"'
     else
-        let g:formatdef_astyle_c = '"astyle --mode=c --style=ansi -pcH".(&expandtab ? "s".shiftwidth() : "t")'
+        let g:formatdef_astyle_c = '"astyle --mode=c --style=ansi -pcH".(&expandtab ? "s".shiftwidth() : "t")." < ##INPUTSRC##"'
     endif
 endif
 
@@ -98,11 +98,11 @@ endif
 " C++
 if !exists('g:formatdef_astyle_cpp')
     if filereadable('.astylerc')
-        let g:formatdef_astyle_cpp = '"astyle --mode=c --options=.astylerc"'
+        let g:formatdef_astyle_cpp = '"astyle --mode=c --options=.astylerc < ##INPUTSRC##"'
     elseif filereadable(expand('~/.astylerc')) || exists('$ARTISTIC_STYLE_OPTIONS')
-        let g:formatdef_astyle_cpp = '"astyle --mode=c"'
+        let g:formatdef_astyle_cpp = '"astyle --mode=c < ##INPUTSRC##"'
     else
-        let g:formatdef_astyle_cpp = '"astyle --mode=c --style=ansi -pcH".(&expandtab ? "s".shiftwidth() : "t")'
+        let g:formatdef_astyle_cpp = '"astyle --mode=c --style=ansi -pcH".(&expandtab ? "s".shiftwidth() : "t")." < ##INPUTSRC##"'
     endif
 endif
 
@@ -120,11 +120,11 @@ endif
 " Java
 if !exists('g:formatdef_astyle_java')
     if filereadable('.astylerc')
-        let g:formatdef_astyle_java = '"astyle --mode=java --options=.astylerc"'
+        let g:formatdef_astyle_java = '"astyle --mode=java --options=.astylerc < ##INPUTSRC##"'
     elseif filereadable(expand('~/.astylerc')) || exists('$ARTISTIC_STYLE_OPTIONS')
-        let g:formatdef_astyle_java = '"astyle --mode=java"'
+        let g:formatdef_astyle_java = '"astyle --mode=java < ##INPUTSRC##"'
     else
-        let g:formatdef_astyle_java = '"astyle --mode=java --style=java -pcH".(&expandtab ? "s".shiftwidth() : "t")'
+        let g:formatdef_astyle_java = '"astyle --mode=java --style=java -pcH".(&expandtab ? "s".shiftwidth() : "t")." < ##INPUTSRC##"'
     endif
 endif
 
@@ -136,28 +136,28 @@ endif
 " Javascript
 if !exists('g:formatdef_jsbeautify_javascript')
     if filereadable('.jsbeautifyrc')
-        let g:formatdef_jsbeautify_javascript = '"js-beautify"'
+        let g:formatdef_jsbeautify_javascript = '"js-beautify -f ##INPUTSRC##"'
     elseif filereadable(expand('~/.jsbeautifyrc'))
-        let g:formatdef_jsbeautify_javascript = '"js-beautify"'
+        let g:formatdef_jsbeautify_javascript = '"js-beautify -f ##INPUTSRC##"'
     else
-        let g:formatdef_jsbeautify_javascript = '"js-beautify -X -f - -".(&expandtab ? "s ".shiftwidth() : "t").(&textwidth ? " -w ".&textwidth : "")'
+        let g:formatdef_jsbeautify_javascript = '"js-beautify -X -f ##INPUTSRC## -".(&expandtab ? "s ".shiftwidth() : "t").(&textwidth ? " -w ".&textwidth : "").""'
     endif
 endif
 
 if !exists('g:formatdef_pyjsbeautify_javascript')
-    let g:formatdef_pyjsbeautify_javascript = '"js-beautify -X -".(&expandtab ? "s ".shiftwidth() : "t").(&textwidth ? " -w ".&textwidth : "")." -"'
+    let g:formatdef_pyjsbeautify_javascript = '"js-beautify -X -".(&expandtab ? "s ".shiftwidth() : "t").(&textwidth ? " -w ".&textwidth : "")." -f ##INPUTSRC##"'
 endif
 
 if !exists('g:formatdef_jscs')
-    let g:formatdef_jscs = '"jscs -x"'
+    let g:formatdef_jscs = '"jscs -x -n < ##INPUTSRC##"'
 endif
 
 if !exists('g:formatdef_standard_javascript')
-    let g:formatdef_standard_javascript = '"standard --fix --stdin"'
+    let g:formatdef_standard_javascript = '"standard --fix ##INPUTSRC##"'
 endif
 
 if !exists('g:formatdef_xo_javascript')
-    let g:formatdef_xo_javascript = '"xo --fix --stdin"'
+    let g:formatdef_xo_javascript = '"xo --fix ##INPUTSRC## -o ##OUTPUTSRC##"'
 endif
 
 if !exists('g:formatters_javascript')
@@ -174,16 +174,16 @@ endif
 " JSON
 if !exists('g:formatdef_jsbeautify_json')
     if filereadable('.jsbeautifyrc')
-        let g:formatdef_jsbeautify_json = '"js-beautify"'
+        let g:formatdef_jsbeautify_json = '"js-beautify -f ##INPUTSRC##"'
     elseif filereadable(expand('~/.jsbeautifyrc'))
-        let g:formatdef_jsbeautify_json = '"js-beautify"'
+        let g:formatdef_jsbeautify_json = '"js-beautify -f ##INPUTSRC##"'
     else
-        let g:formatdef_jsbeautify_json = '"js-beautify -f - -".(&expandtab ? "s ".shiftwidth() : "t")'
+        let g:formatdef_jsbeautify_json = '"js-beautify -f ##INPUTSRC## -".(&expandtab ? "s ".shiftwidth() : "t")'
     endif
 endif
 
 if !exists('g:formatdef_pyjsbeautify_json')
-    let g:formatdef_pyjsbeautify_json = '"js-beautify -".(&expandtab ? "s ".shiftwidth() : "t")." -"'
+    let g:formatdef_pyjsbeautify_json = '"js-beautify -".(&expandtab ? "s ".shiftwidth() : "t")." ##INPUTSRC##"'
 endif
 
 if !exists('g:formatters_json')
@@ -196,11 +196,11 @@ endif
 
 " HTML
 if !exists('g:formatdef_htmlbeautify')
-    let g:formatdef_htmlbeautify = '"html-beautify -f - -".(&expandtab ? "s ".shiftwidth() : "t")'
+    let g:formatdef_htmlbeautify = '"html-beautify -f ##INPUTSRC## -".(&expandtab ? "s ".shiftwidth() : "t")'
 endif
 
 if !exists('g:formatdef_tidy_html')
-    let g:formatdef_tidy_html = '"tidy -q --show-errors 0 --show-warnings 0 --force-output --indent auto --indent-spaces ".shiftwidth()." --vertical-space yes --tidy-mark no -wrap ".&textwidth'
+    let g:formatdef_tidy_html = '"tidy -q --show-errors 0 --show-warnings 0 --force-output --indent auto --indent-spaces ".shiftwidth()." --vertical-space yes --tidy-mark no -wrap ".&textwidth." ##INPUTSRC## -o ##OUTPUTSRC##"'
 endif
 
 if !exists('g:formatters_html')
@@ -211,7 +211,7 @@ endif
 
 " XML
 if !exists('g:formatdef_tidy_xml')
-    let g:formatdef_tidy_xml = '"tidy -q -xml --show-errors 0 --show-warnings 0 --force-output --indent auto --indent-spaces ".shiftwidth()." --vertical-space yes --tidy-mark no -wrap ".&textwidth'
+    let g:formatdef_tidy_xml = '"tidy -q -xml --show-errors 0 --show-warnings 0 --force-output --indent auto --indent-spaces ".shiftwidth()." --vertical-space yes --tidy-mark no -wrap ".&textwidth'." ##INPUTSRC## -o ##OUTPUTSRC##"
 endif
 
 if !exists('g:formatters_xml')
@@ -221,7 +221,7 @@ endif
 
 " XHTML
 if !exists('g:formatdef_tidy_xhtml')
-    let g:formatdef_tidy_xhtml = '"tidy -q --show-errors 0 --show-warnings 0 --force-output --indent auto --indent-spaces ".shiftwidth()." --vertical-space yes --tidy-mark no -asxhtml -wrap ".&textwidth'
+    let g:formatdef_tidy_xhtml = '"tidy -q --show-errors 0 --show-warnings 0 --force-output --indent auto --indent-spaces ".shiftwidth()." --vertical-space yes --tidy-mark no -asxhtml -wrap ".&textwidth'." ##INPUTSRC## -o ##OUTPUTSRC##"
 endif
 
 if !exists('g:formatters_xhtml')
@@ -230,13 +230,13 @@ endif
 
 " Ruby
 if !exists('g:formatdef_rbeautify')
-    let g:formatdef_rbeautify = '"rbeautify ".(&expandtab ? "-s -c ".shiftwidth() : "-t")'
+    let g:formatdef_rbeautify = '"rbeautify ".(&expandtab ? "-s -c ".shiftwidth() : "-t")." ##INPUTSRC##"'
 endif
 
 if !exists('g:formatdef_rubocop')
     " The pipe to sed is required to remove some rubocop output that could not
     " be suppressed.
-    let g:formatdef_rubocop = "'rubocop --auto-correct -o /dev/null -s '.bufname('%').' \| sed -n 2,\\$p'"
+    let g:formatdef_rubocop = "'rubocop --auto-correct -o /dev/null -s '.bufname('%').' < ##INPUTSRC##'"
 endif
 
 if !exists('g:formatters_ruby')
@@ -246,7 +246,7 @@ endif
 
 " CSS
 if !exists('g:formatdef_cssbeautify')
-    let g:formatdef_cssbeautify = '"css-beautify -f - -s ".shiftwidth()'
+    let g:formatdef_cssbeautify = '"css-beautify -f - -s ".shiftwidth()." ##INPUTSRC##"'
 endif
 
 if !exists('g:formatters_css')
@@ -256,7 +256,7 @@ endif
 
 " SCSS
 if !exists('g:formatdef_sassconvert')
-    let g:formatdef_sassconvert = '"sass-convert -F scss -T scss --indent " . (&expandtab ? shiftwidth() : "t")'
+    let g:formatdef_sassconvert = '"sass-convert -F scss -T scss --indent " . (&expandtab ? shiftwidth() : "t")." ##INPUTSRC##"'
 endif
 
 if !exists('g:formatters_scss')
@@ -266,7 +266,7 @@ endif
 
 " Typescript
 if !exists('g:formatdef_tsfmt')
-    let g:formatdef_tsfmt = "'tsfmt --stdin '.bufname('%')"
+    let g:formatdef_tsfmt = "'tsfmt ##INPUTSRC## '.bufname('%')"
 endif
 
 if !exists('g:formatters_typescript')
@@ -278,15 +278,15 @@ endif
 " Two definitions are provided for two versions of gofmt.
 " See issue #59
 if !exists('g:formatdef_gofmt_1')
-    let g:formatdef_gofmt_1 = '"gofmt -tabs=".(&expandtab ? "false" : "true")." -tabwidth=".shiftwidth()'
+    let g:formatdef_gofmt_1 = '"gofmt -tabs=".(&expandtab ? "false" : "true")." -tabwidth=".shiftwidth() ##INPUTSRC##'
 endif
 
 if !exists('g:formatdef_gofmt_2')
-    let g:formatdef_gofmt_2 = '"gofmt"'
+    let g:formatdef_gofmt_2 = '"gofmt ##INPUTSRC##"'
 endif
 
 if !exists('g:formatdef_goimports')
-    let g:formatdef_goimports = '"goimports"'
+    let g:formatdef_goimports = '"goimports ##INPUTSRC##"'
 endif
 
 if !exists('g:formatters_go')
@@ -295,7 +295,7 @@ endif
 
 " Rust
 if !exists('g:formatdef_rustfmt')
-    let g:formatdef_rustfmt = '"rustfmt"'
+    let g:formatdef_rustfmt = '"rustfmt ##INPUTSRC##"'
 endif
 
 if !exists('g:formatters_rust')
@@ -304,7 +304,7 @@ endif
 
 " Dart
 if !exists('g:formatdef_dartfmt')
-    let g:formatdef_dartfmt = '"dartfmt"'
+    let g:formatdef_dartfmt = '"dartfmt ##INPUTSRC##"'
 endif
 
 if !exists('g:formatters_dart')
@@ -321,9 +321,9 @@ if !exists('g:formatdef_perltidy')
                 \ filereadable("~/.perltidyrc") ||
                 \ filereadable("/usr/local/etc/perltidyrc") ||
                 \ filereadable("/etc/perltidyrc")))
-        let g:formatdef_perltidy = '"perltidy -q -st"'
+        let g:formatdef_perltidy = '"perltidy -q -st ##INPUTSRC##"'
     else
-        let g:formatdef_perltidy = '"perltidy --perl-best-practices --format-skipping -q "'
+        let g:formatdef_perltidy = '"perltidy --perl-best-practices --format-skipping -q ##INPUTSRC## "'
     endif
 endif
 
@@ -333,7 +333,7 @@ endif
 
 " Haskell
 if !exists('g:formatdef_stylish_haskell')
-    let g:formatdef_stylish_haskell = '"stylish-haskell"'
+    let g:formatdef_stylish_haskell = '"stylish-haskell ##INPUTSRC##"'
 endif
 
 if !exists('g:formatters_haskell')
@@ -342,7 +342,7 @@ endif
 
 " Markdown
 if !exists('g:formatdef_remark_markdown')
-    let g:formatdef_remark_markdown = '"remark --silent --no-color"'
+    let g:formatdef_remark_markdown = '"remark --silent --no-color ##INPUTSRC##"'
 endif
 
 if !exists('g:formatters_markdown')
@@ -351,7 +351,7 @@ endif
 
 " Fortran
 if !exists('g:formatdef_fprettify')
-    let g:formatdef_fprettify = '"fprettify --no-report-errors --indent=".&shiftwidth'
+    let g:formatdef_fprettify = '"fprettify --no-report-errors --indent=".&shiftwidth ##INPUTSRC##'
 endif
 
 if !exists('g:formatters_fortran')
