@@ -324,9 +324,6 @@ endfunction
 
 function! s:TryFormatter()
     let verbose = &verbose || g:autoformat_verbosemode == 1
-    if exists("g:formatterpath") && g:formatterpath != ""
-        let $PATH = $PATH . ":" . g:formatterpath
-    endif
 
     if exists("b:autoformat_showdiff")
         let showdiff = b:autoformat_showdiff

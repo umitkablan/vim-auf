@@ -44,11 +44,7 @@ For using a custom formatprogram, read the text below *How can I change the beha
 If the formatprogram you want to use is installed in one of the following ways, vim automatically detects it:
 
 * It suffices to make the formatprogram globally available, which is the case if you install it via your package manager.
-* Alternatively you can point vim-autoformat to folders containing formatters, by putting the absolute paths to these folders in `g:formatterpath` in your .vimrc, like:
-
-```vim
-let g:formatterpath = ['/some/path/to/a/folder', '/home/superman/formatters']
-```
+* Alternatively you can append program location to $PATH environment variable before starting VIM
 
 Remember that when no formatprograms exists for a certain filetype,
 vim-autoformat falls back by default to indenting, retabbing and removing trailing whitespace.
