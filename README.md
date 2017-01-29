@@ -1,6 +1,6 @@
 # vim-autoformat
 
-Format code with one button press!
+Format code with one button press or only by saving!
 This plugin makes use of external formatprograms to achieve the best results.
 Check the list of formatprograms to see which languages are supported by default.
 You can easily customize or add your own formatprogram.
@@ -9,30 +9,30 @@ vim-autoformat falls back by default to indenting, (using vim's auto indent func
 
 ## How to install
 
-This plugin is supported by Vim 7.4+.
-It is required that your vim has builtin python support. You can check whether this is the case
-by running `vim --version` and check that `+python` or `+python3` is listed among features.
+This plugin is supported by Vim 7.4+ and is pure Vimscript i.e. has no python (or any other language dependency). Only feature that we need, currently, is +eval, you can check it with :version command within Vim.
+
+It is highly recommended to use a plugin manager such as *Vundle* *Plug* or Pathogen, since this makes it easy to update plugins or uninstall them. It also keeps your .vim directory clean.
 
 #### Vundle
-
 Put this in your .vimrc
 
 ```vim
-Plugin 'Chiel92/vim-autoformat'
+Plugin 'umitkablan/vim-autoformat'
 ```
 
-Then restart vim and run `:PluginInstall`.
-To update the plugin to the latest version, you can run `:PluginUpdate`.
+#### Plug
+Put this in your .vimrc
+
+```vim
+Plug 'umitkablan/vim-autoformat'
+```
+
+* Then restart vim and run `:PluginInstall`.
 
 #### Pathogen
-
 Download the source and extract in your bundle directory.
-Updating has to be done manually, as far as I'm aware.
 
 #### Other
-
-It is highly recommended to use a plugin manager such as Vundle, since this makes it easy to update plugins or uninstall them.
-It also keeps your .vim directory clean.
 Still you can decide to download this repository as a zip file or whatever and extract it to your .vim folder.
 
 ## How to use
