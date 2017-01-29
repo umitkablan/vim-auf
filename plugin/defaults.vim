@@ -236,7 +236,7 @@ endif
 if !exists('g:formatdef_rubocop')
     " The pipe to sed is required to remove some rubocop output that could not
     " be suppressed.
-    let g:formatdef_rubocop = "'rubocop --auto-correct -o /dev/null -s '.bufname('%').' < ##INPUTSRC##'"
+    let g:formatdef_rubocop = "'rubocop --auto-correct -o /dev/null -s '.bufname('%').' < ##INPUTSRC## \| sed /^===/d'"
 endif
 
 if !exists('g:formatters_ruby')
