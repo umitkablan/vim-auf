@@ -241,7 +241,7 @@ function! s:diffFiles(diffcmd, tmpf0path, tmpf1path) abort
         return [1, 0]
     elseif v:shell_error == 1 " files are different
     else " error occurred
-        echoerr("diff command failed(" . v:shell_error . "): " . a:diffcmd)
+        echoerr("diff failed(" . v:shell_error . "): " . a:diffcmd)
         call delete(a:tmpf0path)
         call delete(a:tmpf1path)
         return [0, 1]
@@ -374,11 +374,6 @@ function! s:TryFormatter()
 endfunction
 
 
-" Save and recall window state to prevent vim from jumping to line 1: Beware
-" that it should be done here due to <line1>,<line2> range.
-command! -nargs=? -range=% -complete=filetype -bar Autoformat let ww=winsaveview()|<line1>,<line2>call s:TryAllFormatters(<f-args>)|call winrestview(ww)
-
-
 " Functions for iterating through list of available formatters
 function! s:NextFormatter()
     call s:find_formatters()
@@ -407,11 +402,6 @@ function! s:CurrentFormatter()
     echomsg 'Selected formatter: '.b:formatters[b:current_formatter_index]
 endfunction
 
-" Create commands for iterating through formatter list
-command! NextFormatter call s:NextFormatter()
-command! PreviousFormatter call s:PreviousFormatter()
-command! CurrentFormatter call s:CurrentFormatter()
-
 function! s:ShowDiff() abort
     if exists("b:autoformat_difpath")
         exec "sp " . b:autoformat_difpath
@@ -430,6 +420,16 @@ function! s:BufDeleted(bufnr) abort
     endif
     call setbufvar(l:nr, "autoformat_difpath", "")
 endfunction
+
+" Save and recall window state to prevent vim from jumping to line 1: Beware
+" that it should be done here due to <line1>,<line2> range.
+command! -nargs=? -range=% -complete=filetype -bar Autoformat
+    \ let ww=winsaveview()|<line1>,<line2>call s:TryAllFormatters(<f-args>)|call winrestview(ww)
+
+" Create commands for iterating through formatter list
+command! NextFormatter call s:NextFormatter()
+command! PreviousFormatter call s:PreviousFormatter()
+command! CurrentFormatter call s:CurrentFormatter()
 
 command! AutoformatShowDiff call s:ShowDiff()
 augroup Autoformat
