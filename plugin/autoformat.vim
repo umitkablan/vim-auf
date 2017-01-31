@@ -302,11 +302,10 @@ function! s:renameFile(source, target)
 endfunction
 
 function! s:changeCurFile(tmpf1path) abort
-    let l:curw = {}
+    let ismk = 0
     try
       mkview!
-    catch
-      let l:curw = winsaveview()
+      let ismk = 1
     endtry
     let tmpundofile = tempname()
     exe 'wundo! ' . tmpundofile
@@ -315,10 +314,8 @@ function! s:changeCurFile(tmpf1path) abort
 
     silent! exe 'rundo ' . tmpundofile
     call delete(tmpundofile)
-    if empty(l:curw)
+    if ismk
       silent! loadview
-    else
-      call winrestview(l:curw)
     endif
 endfunction
 
@@ -377,9 +374,9 @@ function! s:TryFormatter()
 endfunction
 
 
-" Create a command for formatting the entire buffer
-" Save and recall window state to prevent vim from jumping to line 1
-command! -nargs=? -range=% -complete=filetype -bar Autoformat <line1>,<line2>call s:TryAllFormatters(<f-args>)
+" Save and recall window state to prevent vim from jumping to line 1: Beware
+" that it should be done here due to <line1>,<line2> range.
+command! -nargs=? -range=% -complete=filetype -bar Autoformat let ww=winsaveview()|<line1>,<line2>call s:TryAllFormatters(<f-args>)|call winrestview(ww)
 
 
 " Functions for iterating through list of available formatters
