@@ -90,6 +90,13 @@ function! s:TryAllFormatters(...) range
     " Try all formatters, starting with selected one
     let s:index = b:current_formatter_index
 
+    if !has("eval")
+        echohl WarningMsg |
+            \ echomsg "AutoFormat ERROR: vim has no support for eval (check :version output for +eval) - REQUIRED!" |
+            \ echohl None
+        return 1
+    endif
+
     while 1
         " Formatter definition must be existent
         let formatdef_var = 'b:formatdef_'.b:formatters[s:index]
@@ -105,13 +112,6 @@ function! s:TryAllFormatters(...) range
         " once for getting the final expression
         let b:formatprg = eval(eval(formatdef_var))
 
-        " Detect if +python or +python3 is available, and call the corresponding function
-        if !has("python") && !has("python3")
-            echohl WarningMsg |
-                \ echomsg "WARNING: vim has no support for python, but it is required to run the formatter!" |
-                \ echohl None
-            return 1
-        endif
         if s:TryFormatter()
             if verbose
                 echomsg "Definition in '".formatdef_var."' was successful."
