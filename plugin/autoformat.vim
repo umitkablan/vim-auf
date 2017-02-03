@@ -65,7 +65,7 @@ endfunction
 
 " Try all formatters, starting with the currently selected one, until one
 " works. If none works, autoindent the buffer.
-function! s:TryAllFormatters(...) range
+function! s:TryAllFormatters(bang, ...) range
     " Detect verbosity
     let verbose = &verbose || g:autoformat_verbosemode == 1
 
@@ -97,6 +97,25 @@ function! s:TryAllFormatters(...) range
         return 1
     endif
 
+    let showdiff = !a:bang
+    if showdiff
+        let showdiff = g:autoformat_showdiff
+        if exists("b:autoformat_showdiff")
+            let showdiff = b:autoformat_showdiff
+        endif
+    endif
+
+    let diffcmd = g:autoformat_diffcmd
+    if exists("b:autoformat_diffcmd")
+        let diffcmd = b:autoformat_diffcmd
+    endif
+    let diffcmd .= " -u "
+
+    let synmatch = g:autoformat_showdiff_synmatch
+    if exists("b:autoformat_showdiff_synmatch")
+        let synmatch = b:autoformat_showdiff_synmatch
+    endif
+
     while 1
         " Formatter definition must be existent
         let formatdef_var = 'b:formatdef_'.b:formatters[s:index]
@@ -112,7 +131,7 @@ function! s:TryAllFormatters(...) range
         " once for getting the final expression
         let b:formatprg = eval(eval(formatdef_var))
 
-        if s:TryFormatter()
+        if s:TryFormatter(b:formatprg, !showdiff, diffcmd, synmatch)
             if verbose
                 echomsg "Definition in '".formatdef_var."' was successful."
             endif
@@ -319,29 +338,12 @@ function! s:changeCurFile(tmpf1path) abort
     endif
 endfunction
 
-function! s:TryFormatter()
+function! s:TryFormatter(formatprg, overwrite, diffcmd, synmatch)
     let verbose = &verbose || g:autoformat_verbosemode == 1
 
-    if exists("b:autoformat_showdiff")
-        let showdiff = b:autoformat_showdiff
-    else
-        let showdiff = g:autoformat_showdiff
-    endif
-    let diffcmd = g:autoformat_diffcmd
-    let synmatch = g:autoformat_showdiff_synmatch
-    if showdiff
-        if exists("b:autoformat_diffcmd")
-            let diffcmd = b:autoformat_diffcmd
-        endif
-        if exists("b:autoformat_showdiff_synmatch")
-            let synmatch = b:autoformat_showdiff_synmatch
-        endif
-    endif
-    exec 'syn clear ' . synmatch
-    let diffcmd .= " -u "
-
+    exec 'syn clear ' . a:synmatch
     if verbose
-        echomsg("autoformat> " . b:formatprg)
+        echomsg("autoformat> ow:" . a:overwrite . " diffcmd:" . a:formatprg . " synm:" . a:synmatch)
     endif
 
     let tmpf0path = expand("%:.") . ".aftmp" "tempname()
@@ -354,8 +356,8 @@ function! s:TryFormatter()
         return 0
     endif
 
-    if showdiff
-        let [issame, err] = s:diffFiles(diffcmd, tmpf0path, tmpf1path)
+    if !a:overwrite
+        let [issame, err] = s:diffFiles(a:diffcmd, tmpf0path, tmpf1path)
         if issame
             return 1
         elseif err
@@ -363,7 +365,7 @@ function! s:TryFormatter()
         endif
         let hlines = s:parseChangedLines(b:autoformat_difpath)
         for hl in hlines
-            exec 'syn match '. synmatch . ' ".*\%' . hl . 'l.*" containedin=ALL'
+            exec 'syn match '. a:synmatch . ' ".*\%' . hl . 'l.*" containedin=ALL'
         endfor
     else
         call s:changeCurFile(tmpf1path)
@@ -423,8 +425,8 @@ endfunction
 
 " Save and recall window state to prevent vim from jumping to line 1: Beware
 " that it should be done here due to <line1>,<line2> range.
-command! -nargs=? -range=% -complete=filetype -bar Autoformat
-    \ let ww=winsaveview()|<line1>,<line2>call s:TryAllFormatters(<f-args>)|call winrestview(ww)
+command! -nargs=? -range=% -complete=filetype -bang -bar Autoformat
+    \ let ww=winsaveview()|<line1>,<line2>call s:TryAllFormatters(<bang>0, <f-args>)|call winrestview(ww)
 
 " Create commands for iterating through formatter list
 command! NextFormatter call s:NextFormatter()
