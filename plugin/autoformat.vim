@@ -62,7 +62,6 @@ function! s:find_formatters(...)
     return 1
 endfunction
 
-
 " Try all formatters, starting with the currently selected one, until one
 " works. If none works, autoindent the buffer.
 function! s:TryAllFormatters(bang, ...) range
@@ -230,47 +229,33 @@ function! s:parseChangedLines(diffpath) abort
     return hlines
 endfunction
 
-function! s:parseFormatPrg(formatprg, tmpf0path, tmpf1path) abort
+function! s:parseFormatPrg(formatprg, inputf, outputf) abort
     let cmd = a:formatprg
     if stridx(cmd, "##INPUTSRC##") != -1
-        let cmd = substitute(cmd, "##INPUTSRC##", a:tmpf0path, 'g')
+        let cmd = substitute(cmd, "##INPUTSRC##", a:inputf, 'g')
     endif
     let isoutf = 0
     if stridx(cmd, "##OUTPUTSRC##") != -1
         let isoutf = 1
-        let cmd = substitute(cmd, "##OUTPUTSRC##", a:tmpf1path, 'g')
+        let cmd = substitute(cmd, "##OUTPUTSRC##", a:outputf, 'g')
     endif
     return [isoutf, cmd]
 endfunction
 
-function! s:diffFiles(diffcmd, tmpf0path, tmpf1path) abort
-    let cmd = a:diffcmd . " " . a:tmpf0path . " " . a:tmpf1path
+function! s:diffFiles(diffcmd, origf, modiff, difpath) abort
+    let cmd = a:diffcmd . " " . a:origf . " " . a:modiff
     " if verbose
     "     echomsg("autoformat diff> " . cmd)
     " endif
     let out = s:execWithStdout(cmd)
     if v:shell_error == 0 " files are the same
-        echomsg("Format PASSED!")
-        call delete(a:tmpf0path)
-        call delete(a:tmpf1path)
-        if exists('b:autoformat_difpath')
-            call delete(b:autoformat_difpath)
-            unlet! b:autoformat_difpath
-        endif
-        return [1, 0]
+        return [1, 0, v:shell_error]
     elseif v:shell_error == 1 " files are different
     else " error occurred
-        echoerr("diff failed(" . v:shell_error . "): " . a:diffcmd)
-        call delete(a:tmpf0path)
-        call delete(a:tmpf1path)
-        return [0, 1]
+        return [0, 1, v:shell_error]
     endif
-
-    if !exists('b:autoformat_difpath')
-        let b:autoformat_difpath = tempname()
-    endif
-    call writefile(split(out, '\n'), b:autoformat_difpath)
-    return [0, 0]
+    call writefile(split(out, '\n'), a:difpath)
+    return [0, 0, v:shell_error]
 endfunction
 
 function! s:formatSrc(cmd, isoutf, tmpf0path, tmpf1path) abort
@@ -288,8 +273,6 @@ function! s:formatSrc(cmd, isoutf, tmpf0path, tmpf1path) abort
         endif
     endif
     if v:shell_error
-        call delete(a:tmpf0path)
-        call delete(a:tmpf1path)
         return 0
     endif
     return 1
@@ -338,6 +321,39 @@ function! s:changeCurFile(tmpf1path) abort
     endif
 endfunction
 
+function! s:evaluateFormattedToOrig(cmd, isoutf, diffcmd, curfile, formattedf, synmatch, overwrite)
+    if !s:formatSrc(a:cmd, a:isoutf, a:curfile, a:formattedf)
+        return 0
+    endif
+
+    if !exists('b:autoformat_difpath')
+        let b:autoformat_difpath = tempname()
+    endif
+    let [issame, err, sherr] = s:diffFiles(a:diffcmd, a:curfile, a:formattedf, b:autoformat_difpath)
+    if issame
+        echomsg "Format PASSED!"
+        if exists('b:autoformat_difpath')
+            call delete(b:autoformat_difpath)
+            unlet! b:autoformat_difpath
+        endif
+        return 1
+    elseif err
+        echoerr "diff failed(" . sherr . "): " . a:diffcmd
+        return 0
+    endif
+
+    let hlines = s:parseChangedLines(b:autoformat_difpath)
+    for hl in hlines
+        exec 'syn match '. a:synmatch . ' ".*\%' . hl . 'l.*" containedin=ALL'
+    endfor
+    let b:autoformat_hlines = hlines
+
+    if a:overwrite
+        call s:changeCurFile(a:formattedf)
+    endif
+    return 1
+endfunction
+
 function! s:TryFormatter(formatprg, overwrite, diffcmd, synmatch)
     let verbose = &verbose || g:autoformat_verbosemode == 1
 
@@ -352,27 +368,10 @@ function! s:TryFormatter(formatprg, overwrite, diffcmd, synmatch)
     if verbose
         echomsg("autoformat cmd> " . cmd)
     endif
-    if !s:formatSrc(cmd, isoutf, tmpf0path, tmpf1path)
-        return 0
-    endif
-
-    if !a:overwrite
-        let [issame, err] = s:diffFiles(a:diffcmd, tmpf0path, tmpf1path)
-        if issame
-            return 1
-        elseif err
-            return 0
-        endif
-        let hlines = s:parseChangedLines(b:autoformat_difpath)
-        for hl in hlines
-            exec 'syn match '. a:synmatch . ' ".*\%' . hl . 'l.*" containedin=ALL'
-        endfor
-    else
-        call s:changeCurFile(tmpf1path)
-    endif
+    let ret = s:evaluateFormattedToOrig(cmd, isoutf, a:diffcmd, tmpf0path, tmpf1path, a:synmatch, a:overwrite)
     call delete(tmpf0path)
     call delete(tmpf1path)
-    return 1
+    return ret
 endfunction
 
 
