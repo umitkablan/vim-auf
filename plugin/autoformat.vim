@@ -6,11 +6,15 @@ if !exists('g:autoformat_autoindent')
 endif
 
 let g:autoformat_diffcmd .= " -u "
+let s:verbose = &verbose || g:autoformat_verbosemode == 1
+
+function! s:logVerbose(line) abort
+    if s:verbose
+        echomsg a:line
+    endif
+endfunction
 
 function! s:find_formatters(...)
-    " Detect verbosity
-    let verbose = &verbose || g:autoformat_verbosemode == 1
-
     " Extract filetype to be used
     let ftype = a:0 ? a:1 : &filetype
     " Support composite filetypes by replacing dots with underscores
@@ -40,10 +44,7 @@ function! s:find_formatters(...)
             let formatters_var = "g:formatters_".supertype
         endif
         if !exists(formatters_var)
-            " No formatters defined
-            if verbose
-                echoerr "No formatters defined for supertype ".supertype
-            endif
+            echoerr "No formatters defined for SuperType:" . supertype
         else
             let formatters = eval(formatters_var)
             if type(formatters) != type([])
@@ -55,10 +56,7 @@ function! s:find_formatters(...)
     endfor
 
     if len(b:formatters) == 0
-        " No formatters defined
-        if verbose
-            echoerr "No formatters defined for filetype '".ftype."'."
-        endif
+        echoerr "No formatters defined for FileType:'" . ftype . "'."
         return 0
     endif
     return 1
@@ -67,15 +65,9 @@ endfunction
 " Try all formatters, starting with the currently selected one, until one
 " works. If none works, autoindent the buffer.
 function! s:TryAllFormatters(bang, ...) range
-    " Detect verbosity
-    let verbose = &verbose || g:autoformat_verbosemode == 1
-
     " Make sure formatters are defined and detected
     if !call('<SID>find_formatters', a:000)
-        " No formatters defined
-        if verbose
-            echomsg "No format definitions are defined for this filetype."
-        endif
+        call s:logVerbose("No format definitions are defined for this FileType.")
         call s:Fallback()
         return 0
     endif
@@ -127,21 +119,15 @@ function! s:TryAllFormatters(bang, ...) range
         let b:formatprg = eval(eval(formatdef_var))
 
         if s:TryFormatter(a:firstline, a:lastline, b:formatprg, !showdiff, synmatch)
-            if verbose
-                echomsg "Definition in '".formatdef_var."' was successful."
-            endif
+            call s:logVerbose("Definition in '" . formatdef_var . "' was successful.")
             return 1
         else
-            if verbose
-                echomsg "Definition in '".formatdef_var."' was unsuccessful."
-            endif
+            call s:logVerbose("Definition in '" . formatdef_var . "' was unsuccessful.")
             let s:index = (s:index + 1) % len(b:formatters)
         endif
 
         if s:index == b:current_formatter_index
-            if verbose
-                echomsg "No format definitions were successful."
-            endif
+            call s:logVerbose("No format definitions were successful.")
             " Tried all formatters, none worked
             call s:Fallback()
             return 0
@@ -150,27 +136,18 @@ function! s:TryAllFormatters(bang, ...) range
 endfunction
 
 function! s:Fallback()
-    " Detect verbosity
-    let verbose = &verbose || g:autoformat_verbosemode == 1
-
     if exists('b:autoformat_remove_trailing_spaces') ? b:autoformat_remove_trailing_spaces == 1 : g:autoformat_remove_trailing_spaces == 1
-        if verbose
-            echomsg "Removing trailing whitespace..."
-        endif
+        call s:logVerbose("Removing trailing whitespace...")
         call s:RemoveTrailingSpaces()
     endif
 
     if exists('b:autoformat_retab') ? b:autoformat_retab == 1 : g:autoformat_retab == 1
-        if verbose
-            echomsg "Retabbing..."
-        endif
+        call s:logVerbose("Retabbing...")
         retab
     endif
 
     if exists('b:autoformat_autoindent') ? b:autoformat_autoindent == 1 : g:autoformat_autoindent == 1
-        if verbose
-            echomsg "Autoindenting..."
-        endif
+        call s:logVerbose("Autoindenting...")
         " Autoindent code
         exe "normal gg=G"
     endif
@@ -249,9 +226,7 @@ endfunction
 
 function! s:diffFiles(diffcmd, origf, modiff, difpath) abort
     let cmd = a:diffcmd . " " . a:origf . " " . a:modiff
-    " if verbose
-    "     echomsg("autoformat diff> " . cmd)
-    " endif
+    call s:logVerbose("diffCommand> " . cmd)
     let out = s:execWithStdout(cmd)
     if v:shell_error == 0 " files are the same
         return [1, 0, v:shell_error]
@@ -265,22 +240,25 @@ endfunction
 
 function! s:applyHunkInPatch(filterdifcmd, patchcmd, origf, difpath, line1, line2) abort
     let cmd = a:filterdifcmd . " -i " . a:origf . " --lines=" . a:line1 . "-" . a:line2 . " " . a:difpath
+    call s:logVerbose("FilterDiff Command:" . cmd)
     let out = s:execWithStdout(cmd)
     call writefile(split(out, '\n'), a:difpath)
-    let out = s:execWithStdout(a:patchcmd . " < " . a:difpath)
-    return [0, v:shell_error, cmd . "\n" . out]
+    let cmd = a:patchcmd . " < " . a:difpath
+    call s:logVerbose("patch Command:" . cmd)
+    let out = s:execWithStdout(cmd)
+    return [0, v:shell_error]
 endfunction
 
 function! s:formatSource(line1, line2, formatprg, inpath, outpath) abort
     let [isoutf, cmd, isranged] = s:parseFormatPrg(a:formatprg, a:inpath, a:outpath, a:line1, a:line2)
+    call s:logVerbose("formatSource: isOutF:" . isoutf . " Command:" . cmd . " isRanged:" . isranged)
     if !isoutf
         let out = s:execWithStdout(cmd)
         call writefile(split(out, '\n'), a:outpath)
-        let out = "Written to " . a:outpath
     else
         let out = s:execWithStderr(cmd)
     endif
-    return [v:shell_error == 0, isranged, v:shell_error, cmd . " ~IsOutf~" . isoutf . "\n" . out]
+    return [v:shell_error == 0, isranged, v:shell_error]
 endfunction
 
 function! s:renameFile(source, target)
@@ -333,27 +311,25 @@ endfunction
 function! s:evaluateFormattedToOrig(line1, line2, formatprg, curfile, formattedf, difpath, synmatch, overwrite)
     exec 'syn clear ' . a:synmatch
     call writefile(getline(1, '$'), a:curfile)
-    let [res, isranged, sherr, out] = s:formatSource(a:line1, a:line2, a:formatprg, a:curfile, a:formattedf)
-    let out = "formatSource\r" . out
+    let [res, isranged, sherr] = s:formatSource(a:line1, a:line2, a:formatprg, a:curfile, a:formattedf)
+    call s:logVerbose("sourceFormetted shErr:" . sherr)
     if !res
-        return [2, sherr, out]
+        return [2, sherr]
     endif
 
     let isfull = s:isFullSelected(a:line1, a:line2)
-    let out .= "\nisFull: " . isfull
-
-    let out .= "\ndiffFiles"
+    call s:logVerbose("isFull:" . isfull)
     let [issame, err, sherr] = s:diffFiles(g:autoformat_diffcmd, a:curfile, a:formattedf, a:difpath)
     if issame && isfull
-        return [0, 0, out]
+        return [0, 0]
     elseif err
-        return [3, sherr, out]
+        return [3, sherr]
     endif
 
     if a:overwrite
         if isfull
             call s:changeCurFile(a:formattedf)
-            return [0, 0, out]
+            return [0, 0]
         endif
         if isranged
             call s:changeCurFile(a:formattedf)
@@ -363,23 +339,21 @@ function! s:evaluateFormattedToOrig(line1, line2, formatprg, curfile, formattedf
 
     if !isfull
         if isranged " formatter supports range
-            let out .= "\n*formatter supports range - format fully"
-            let [res, isranged, sherr, out1] = s:formatSource(1, line('$'), a:formatprg, a:formattedf, a:curfile)
-            let out = out . "\n" . out1
+            call s:logVerbose("*formatter supports range - format fully")
+            let [res, isranged, sherr] = s:formatSource(1, line('$'), a:formatprg, a:formattedf, a:curfile)
             if !res
-                return [2, sherr, out]
+                return [2, sherr]
             endif
-            let out .= "\ndiffFiles fully-formatted"
+            call s:logVerbose("diffFiles fully-formatted")
             let [issame, err, sherr] = s:diffFiles(g:autoformat_diffcmd, a:formattedf, a:curfile, a:difpath)
         else        " formatter has only full-file support
-            let out .= "\n*formatter doesn't support range - apply hunk"
-            let [res, sherr, pr] = s:applyHunkInPatch(g:autoformat_filterdiffcmd, g:autoformat_patchcmd, a:curfile, a:difpath, a:line1, a:line2)
-            let out .= "\n" . pr
-            let out .= "\napplyHunk res:" . res . " ShErr:" . sherr
+            call s:logVerbose("*formatter doesn't support range - apply hunk")
+            let [res, sherr] = s:applyHunkInPatch(g:autoformat_filterdiffcmd, g:autoformat_patchcmd, a:curfile, a:difpath, a:line1, a:line2)
+            call s:logVerbose("applyHunk res:" . res . " ShErr:" . sherr)
             let [issame, err, sherr] = s:diffFiles(g:autoformat_diffcmd, a:curfile, a:formattedf, a:difpath)
         endif
         if err
-            return [3, sherr, out]
+            return [3, sherr]
         endif
     endif
 
@@ -397,13 +371,11 @@ function! s:evaluateFormattedToOrig(line1, line2, formatprg, curfile, formattedf
         exec 'syn match '. a:synmatch . ' ".*\%' . hl . 'l.*" containedin=ALL'
     endfor
 
-    return [1, 0, out]
+    return [1, 0]
 endfunction
 
 function! s:TryFormatter(line1, line2, formatprg, overwrite, synmatch)
-    let verbose = &verbose || g:autoformat_verbosemode == 1
-
-    if verbose
+    if s:verbose
         let tmpf0path = expand("%:.") . ".aftmp"
         let tmpf1path = tmpf0path . ".txt"
         echomsg "autoformat> origTmp:" . tmpf0path . " formTmp:" . tmpf1path
@@ -416,11 +388,8 @@ function! s:TryFormatter(line1, line2, formatprg, overwrite, synmatch)
         let b:autoformat_difpath = tempname()
     endif
 
-    let [res, sherr, out] = s:evaluateFormattedToOrig(a:line1, a:line2, a:formatprg, tmpf0path, tmpf1path, b:autoformat_difpath, a:synmatch, a:overwrite)
-    if verbose
-        echomsg "autoformat > " . out
-        echomsg "autoformat > res:" . res . " ShErr:" . sherr
-    endif
+    let [res, sherr] = s:evaluateFormattedToOrig(a:line1, a:line2, a:formatprg, tmpf0path, tmpf1path, b:autoformat_difpath, a:synmatch, a:overwrite)
+    call s:logVerbose("autoformat > res:" . res . " ShErr:" . sherr)
     if res == 0 "No diff found
         echomsg "Format PASSED!"
         if exists('b:autoformat_difpath')
@@ -428,15 +397,14 @@ function! s:TryFormatter(line1, line2, formatprg, overwrite, synmatch)
             unlet! b:autoformat_difpath
         endif
     elseif res == 2 "Format program error
-        echomsg("Formatter " . b:formatters[s:index] . " failed(" . sherr . "): " . out)
+        echomsg "Formatter " . b:formatters[s:index] . " failed(" . sherr . ")"
     elseif res == 3 "Diff program error
-        echoerr "diff failed(" . sherr . "): " . g:autoformat_diffcmd
+        echomsg "diff failed(" . sherr . "): " . g:autoformat_diffcmd
     endif
 
-    if verbose
-        echomsg "autoformat> " . tmpf0path . " and " . tmpf1path
-        echomsg "autoformat> wasn't DELETED for analyse PLEASE MANUALLY DELETE!"
-    else
+    call s:logVerbose("autoformat> " . tmpf0path . " and " . tmpf1path)
+    call s:logVerbose("autoformat> wasn't DELETED for analyse PLEASE MANUALLY DELETE!")
+    if !s:verbose
         call delete(tmpf0path)
         call delete(tmpf1path)
     endif
