@@ -42,7 +42,7 @@ if !exists('g:formatter_yapf_style')
     let g:formatter_yapf_style = 'pep8'
 endif
 if !exists('g:formatdef_yapf')
-    let g:formatdef_yapf = "'yapf --style=\"{based_on_style:'.g:formatter_yapf_style.',indent_width:'.&shiftwidth.',column_limit:'.&textwidth.'}\" -l '.a:firstline.'-'.a:lastline.' < ##INPUTSRC##'"
+    let g:formatdef_yapf = "'yapf --style=\"{based_on_style:'.g:formatter_yapf_style.',indent_width:'.&shiftwidth.',column_limit:'.&textwidth.'}\" -l ##FIRSTLINE##-##LASTLINE##' < ##INPUTSRC##'"
 endif
 
 if !exists('g:formatters_python')
@@ -68,8 +68,8 @@ endif
 
 " Generic C, C++, Objective-C
 if !exists('g:formatdef_clangformat')
-    let s:configfile_def = "'clang-format -lines='.a:firstline.':'.a:lastline.' --assume-filename=\"'.expand('%:.').'\" -style=file ##INPUTSRC##'"
-    let s:noconfigfile_def = "'clang-format -lines='.a:firstline.':'.a:lastline.' --assume-filename=\"'.expand('%:.').'-style=\"{BasedOnStyle: WebKit, AlignTrailingComments: true, '.(&textwidth ? 'ColumnLimit: '.&textwidth.', ' : '').(&expandtab ? 'UseTab: Never, IndentWidth: '.shiftwidth() : 'UseTab: Always').'}\" ##INPUTSRC##'"
+    let s:configfile_def = "'clang-format -lines=##FIRSTLINE##:##LASTLINE## --assume-filename=\"'.expand('%:.').'\" -style=file ##INPUTSRC##'"
+    let s:noconfigfile_def = "'clang-format -lines=##FIRSTLINE##:##LASTLINE## --assume-filename=\"'.expand('%:.').'-style=\"{BasedOnStyle: WebKit, AlignTrailingComments: true, '.(&textwidth ? 'ColumnLimit: '.&textwidth.', ' : '').(&expandtab ? 'UseTab: Never, IndentWidth: '.shiftwidth() : 'UseTab: Always').'}\" ##INPUTSRC##'"
     let g:formatdef_clangformat = "g:ClangFormatConfigFileExists() ? (" . s:configfile_def . ") : (" . s:noconfigfile_def . ")"
 endif
 
@@ -370,3 +370,10 @@ if !exists('g:autoformat_diffcmd')
     let g:autoformat_diffcmd = "diff"
 endif
 
+if !exists('g:autoformat_filterdiffcmd')
+    let g:autoformat_filterdiffcmd = "filterdiff"
+endif
+
+if !exists('g:autoformat_patchcmd')
+    let g:autoformat_patchcmd = "patch"
+endif

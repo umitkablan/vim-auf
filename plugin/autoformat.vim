@@ -104,12 +104,6 @@ function! s:TryAllFormatters(bang, ...) range
         endif
     endif
 
-    let diffcmd = g:autoformat_diffcmd
-    if exists("b:autoformat_diffcmd")
-        let diffcmd = b:autoformat_diffcmd
-    endif
-    let diffcmd .= " -u "
-
     let synmatch = g:autoformat_showdiff_synmatch
     if exists("b:autoformat_showdiff_synmatch")
         let synmatch = b:autoformat_showdiff_synmatch
@@ -130,7 +124,7 @@ function! s:TryAllFormatters(bang, ...) range
         " once for getting the final expression
         let b:formatprg = eval(eval(formatdef_var))
 
-        if s:TryFormatter(b:formatprg, !showdiff, diffcmd, synmatch)
+        if s:TryFormatter(a:firstline, a:lastline, b:formatprg, !showdiff, synmatch)
             if verbose
                 echomsg "Definition in '".formatdef_var."' was successful."
             endif
@@ -183,7 +177,7 @@ endfunction
 
 function! s:execWithStdout(cmd) abort
     let sr = &shellredir
-    set shellredir=>%s\ 2>/Users/i328658/asdd.txt
+    set shellredir=>%s\ 2>/dev/null
     let out = system(a:cmd)
     let &shellredir=sr
     return out
@@ -229,7 +223,7 @@ function! s:parseChangedLines(diffpath) abort
     return hlines
 endfunction
 
-function! s:parseFormatPrg(formatprg, inputf, outputf) abort
+function! s:parseFormatPrg(formatprg, inputf, outputf, line1, line2) abort
     let cmd = a:formatprg
     if stridx(cmd, "##INPUTSRC##") != -1
         let cmd = substitute(cmd, "##INPUTSRC##", a:inputf, 'g')
@@ -239,7 +233,16 @@ function! s:parseFormatPrg(formatprg, inputf, outputf) abort
         let isoutf = 1
         let cmd = substitute(cmd, "##OUTPUTSRC##", a:outputf, 'g')
     endif
-    return [isoutf, cmd]
+    let isranged = 0
+    if stridx(cmd, "##FIRSTLINE##") != -1
+        let isranged += 1
+        let cmd = substitute(cmd, "##FIRSTLINE##", a:line1, 'g')
+    endif
+    if stridx(cmd, "##LASTLINE##") != -1
+        let isranged += 1
+        let cmd = substitute(cmd, "##LASTLINE##", a:line2, 'g')
+    endif
+    return [isoutf, cmd, isranged]
 endfunction
 
 function! s:diffFiles(diffcmd, origf, modiff, difpath) abort
@@ -258,24 +261,24 @@ function! s:diffFiles(diffcmd, origf, modiff, difpath) abort
     return [0, 0, v:shell_error]
 endfunction
 
-function! s:formatSrc(cmd, isoutf, tmpf0path, tmpf1path) abort
-    call writefile(getline(1, '$'), a:tmpf0path)
-    if !a:isoutf
-        let out = s:execWithStdout(a:cmd)
-        if v:shell_error
-            echomsg("Formatter " . b:formatters[s:index] . " failed(" . v:shell_error . ")")
-        endif
-        call writefile(split(out, '\n'), a:tmpf1path)
+function! s:applyHunkInPatch(filterdifcmd, patchcmd, origf, difpath, line1, line2) abort
+    let cmd = a:filterdifcmd . " -i " . a:origf . " --lines=" . a:line1 . "-" . a:line2 . " " . a:difpath
+    let out = s:execWithStdout(cmd)
+    call writefile(split(out, '\n'), a:difpath)
+    let out = s:execWithStdout(a:patchcmd . " < " . a:difpath)
+    return [0, v:shell_error, cmd . "\n" . out]
+endfunction
+
+function! s:formatSource(line1, line2, formatprg, inpath, outpath) abort
+    let [isoutf, cmd, isranged] = s:parseFormatPrg(a:formatprg, a:inpath, a:outpath, a:line1, a:line2)
+    if !isoutf
+        let out = s:execWithStdout(cmd)
+        call writefile(split(out, '\n'), a:outpath)
+        let out = "Written to " . a:outpath
     else
-        let out = s:execWithStderr(a:cmd)
-        if v:shell_error
-            echomsg("Formatter " . b:formatters[s:index] . " failed(" . v:shell_error . "): " . out)
-        endif
+        let out = s:execWithStderr(cmd)
     endif
-    if v:shell_error
-        return 0
-    endif
-    return 1
+    return [v:shell_error == 0, isranged, v:shell_error, cmd . " ~IsOutf~" . isoutf . "\n" . out]
 endfunction
 
 function! s:renameFile(source, target)
@@ -303,7 +306,7 @@ function! s:renameFile(source, target)
   let &syntax = &syntax
 endfunction
 
-function! s:changeCurFile(tmpf1path) abort
+function! s:changeCurFile(newpath) abort
     let ismk = 0
     try
       mkview!
@@ -312,7 +315,7 @@ function! s:changeCurFile(tmpf1path) abort
     let tmpundofile = tempname()
     exe 'wundo! ' . tmpundofile
 
-    call s:renameFile(a:tmpf1path, expand('%'))
+    call s:renameFile(a:newpath, expand('%'))
 
     silent! exe 'rundo ' . tmpundofile
     call delete(tmpundofile)
@@ -321,57 +324,121 @@ function! s:changeCurFile(tmpf1path) abort
     endif
 endfunction
 
-function! s:evaluateFormattedToOrig(cmd, isoutf, diffcmd, curfile, formattedf, synmatch, overwrite)
-    if !s:formatSrc(a:cmd, a:isoutf, a:curfile, a:formattedf)
-        return 0
+function! s:isFullSelected(line1, line2) abort
+    return a:line1 == 1 && a:line2 == line('$')
+endfunction
+
+function! s:evaluateFormattedToOrig(line1, line2, formatprg, curfile, formattedf, difpath, synmatch, overwrite)
+    exec 'syn clear ' . a:synmatch
+    call writefile(getline(1, '$'), a:curfile)
+    let [res, isranged, sherr, out] = s:formatSource(a:line1, a:line2, a:formatprg, a:curfile, a:formattedf)
+    let out = "formatSource\r" . out
+    if !res
+        return [2, sherr, out]
+    endif
+
+    let isfull = s:isFullSelected(a:line1, a:line2)
+    let out .= "\nisFull: " . isfull
+
+    let out .= "\ndiffFiles"
+    let [issame, err, sherr] = s:diffFiles(g:autoformat_diffcmd . " -u ", a:curfile, a:formattedf, a:difpath)
+    if issame && isfull
+        return [0, 0, out]
+    elseif err
+        return [3, sherr, out]
+    endif
+
+    if a:overwrite
+        if isfull
+            call s:changeCurFile(a:formattedf)
+            return [0, 0, out]
+        endif
+        if isranged
+            call s:changeCurFile(a:formattedf)
+            call writefile(getline(1, '$'), a:formattedf)
+        endif
+    endif
+
+    if !isfull
+        if isranged " formatter supports range
+            let out .= "\n*formatter supports range - format fully"
+            let [res, isranged, sherr, out1] = s:formatSource(1, line('$'), a:formatprg, a:formattedf, a:curfile)
+            let out = out . "\n" . out1
+            if !res
+                return [2, sherr, out]
+            endif
+            let out .= "\ndiffFiles fully-formatted"
+            let [issame, err, sherr] = s:diffFiles(g:autoformat_diffcmd . " -u ", a:formattedf, a:curfile, a:difpath)
+        else        " formatter has only full-file support
+            let out .= "\n*formatter doesn't support range - apply hunk"
+            let [res, sherr, pr] = s:applyHunkInPatch(g:autoformat_filterdiffcmd, g:autoformat_patchcmd, a:curfile, a:difpath, a:line1, a:line2)
+            let out .= "\n" . pr
+            let out .= "\napplyHunk res:" . res . " ShErr:" . sherr
+            let [issame, err, sherr] = s:diffFiles(g:autoformat_diffcmd . " -u ", a:curfile, a:formattedf, a:difpath)
+        endif
+        if err
+            return [3, sherr, out]
+        endif
+    endif
+
+    if a:overwrite
+        if isranged
+            call s:changeCurFile(a:formattedf)
+        else
+            call s:changeCurFile(a:curfile)
+        endif
+    endif
+
+
+    let hlines = s:parseChangedLines(a:difpath)
+    for hl in hlines
+        exec 'syn match '. a:synmatch . ' ".*\%' . hl . 'l.*" containedin=ALL'
+    endfor
+
+    return [1, 0, out]
+endfunction
+
+function! s:TryFormatter(line1, line2, formatprg, overwrite, synmatch)
+    let verbose = &verbose || g:autoformat_verbosemode == 1
+
+    if verbose
+        let tmpf0path = expand("%:.") . ".aftmp"
+        let tmpf1path = tmpf0path . ".txt"
+        echomsg "autoformat> origTmp:" . tmpf0path . " formTmp:" . tmpf1path
+    else
+        let tmpf0path = tempname()
+        let tmpf1path = tempname()
     endif
 
     if !exists('b:autoformat_difpath')
         let b:autoformat_difpath = tempname()
     endif
-    let [issame, err, sherr] = s:diffFiles(a:diffcmd, a:curfile, a:formattedf, b:autoformat_difpath)
-    if issame
+
+    let [res, sherr, out] = s:evaluateFormattedToOrig(a:line1, a:line2, a:formatprg, tmpf0path, tmpf1path, b:autoformat_difpath, a:synmatch, a:overwrite)
+    if verbose
+        echomsg "autoformat > " . out
+        echomsg "autoformat > res:" . res . " ShErr:" . sherr
+    endif
+    if res == 0 "No diff found
         echomsg "Format PASSED!"
         if exists('b:autoformat_difpath')
             call delete(b:autoformat_difpath)
             unlet! b:autoformat_difpath
         endif
-        return 1
-    elseif err
-        echoerr "diff failed(" . sherr . "): " . a:diffcmd
-        return 0
+    elseif res == 2 "Format program error
+        echomsg("Formatter " . b:formatters[s:index] . " failed(" . sherr . "): " . out)
+    elseif res == 3 "Diff program error
+        echoerr "diff failed(" . sherr . "): " . g:autoformat_diffcmd
     endif
 
-    let hlines = s:parseChangedLines(b:autoformat_difpath)
-    for hl in hlines
-        exec 'syn match '. a:synmatch . ' ".*\%' . hl . 'l.*" containedin=ALL'
-    endfor
-    let b:autoformat_hlines = hlines
-
-    if a:overwrite
-        call s:changeCurFile(a:formattedf)
-    endif
-    return 1
-endfunction
-
-function! s:TryFormatter(formatprg, overwrite, diffcmd, synmatch)
-    let verbose = &verbose || g:autoformat_verbosemode == 1
-
-    exec 'syn clear ' . a:synmatch
     if verbose
-        echomsg("autoformat> ow:" . a:overwrite . " diffcmd:" . a:formatprg . " synm:" . a:synmatch)
+        echomsg "autoformat> " . tmpf0path . " and " . tmpf1path
+        echomsg "autoformat> wasn't DELETED for analyse PLEASE MANUALLY DELETE!"
+    else
+        call delete(tmpf0path)
+        call delete(tmpf1path)
     endif
-
-    let tmpf0path = expand("%:.") . ".aftmp" "tempname()
-    let tmpf1path = tempname()
-    let [isoutf, cmd] = s:parseFormatPrg(b:formatprg, tmpf0path, tmpf1path)
-    if verbose
-        echomsg("autoformat cmd> " . cmd)
-    endif
-    let ret = s:evaluateFormattedToOrig(cmd, isoutf, a:diffcmd, tmpf0path, tmpf1path, a:synmatch, a:overwrite)
-    call delete(tmpf0path)
-    call delete(tmpf1path)
-    return ret
+    return res < 2
 endfunction
 
 
