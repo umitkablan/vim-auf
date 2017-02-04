@@ -5,6 +5,8 @@ if !exists('g:autoformat_autoindent')
     let g:autoformat_autoindent = 1
 endif
 
+let g:autoformat_diffcmd .= " -u "
+
 function! s:find_formatters(...)
     " Detect verbosity
     let verbose = &verbose || g:autoformat_verbosemode == 1
@@ -341,7 +343,7 @@ function! s:evaluateFormattedToOrig(line1, line2, formatprg, curfile, formattedf
     let out .= "\nisFull: " . isfull
 
     let out .= "\ndiffFiles"
-    let [issame, err, sherr] = s:diffFiles(g:autoformat_diffcmd . " -u ", a:curfile, a:formattedf, a:difpath)
+    let [issame, err, sherr] = s:diffFiles(g:autoformat_diffcmd, a:curfile, a:formattedf, a:difpath)
     if issame && isfull
         return [0, 0, out]
     elseif err
@@ -368,13 +370,13 @@ function! s:evaluateFormattedToOrig(line1, line2, formatprg, curfile, formattedf
                 return [2, sherr, out]
             endif
             let out .= "\ndiffFiles fully-formatted"
-            let [issame, err, sherr] = s:diffFiles(g:autoformat_diffcmd . " -u ", a:formattedf, a:curfile, a:difpath)
+            let [issame, err, sherr] = s:diffFiles(g:autoformat_diffcmd, a:formattedf, a:curfile, a:difpath)
         else        " formatter has only full-file support
             let out .= "\n*formatter doesn't support range - apply hunk"
             let [res, sherr, pr] = s:applyHunkInPatch(g:autoformat_filterdiffcmd, g:autoformat_patchcmd, a:curfile, a:difpath, a:line1, a:line2)
             let out .= "\n" . pr
             let out .= "\napplyHunk res:" . res . " ShErr:" . sherr
-            let [issame, err, sherr] = s:diffFiles(g:autoformat_diffcmd . " -u ", a:curfile, a:formattedf, a:difpath)
+            let [issame, err, sherr] = s:diffFiles(g:autoformat_diffcmd, a:curfile, a:formattedf, a:difpath)
         endif
         if err
             return [3, sherr, out]
