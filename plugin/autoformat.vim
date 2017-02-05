@@ -90,13 +90,7 @@ function! s:TryAllFormatters(bang, ...) range
         return 1
     endif
 
-    let showdiff = !a:bang
-    if showdiff
-        let showdiff = g:autoformat_showdiff
-        if exists("b:autoformat_showdiff")
-            let showdiff = b:autoformat_showdiff
-        endif
-    endif
+    let overwrite = a:bang
 
     let synmatch = g:autoformat_showdiff_synmatch
     if exists("b:autoformat_showdiff_synmatch")
@@ -118,7 +112,7 @@ function! s:TryAllFormatters(bang, ...) range
         " once for getting the final expression
         let b:formatprg = eval(eval(formatdef_var))
 
-        if s:TryFormatter(a:firstline, a:lastline, b:formatprg, !showdiff, synmatch)
+        if s:TryFormatter(a:firstline, a:lastline, b:formatprg, overwrite, synmatch)
             call s:logVerbose("Definition in '" . formatdef_var . "' was successful.")
             return 1
         else
@@ -326,45 +320,38 @@ function! s:evaluateFormattedToOrig(line1, line2, formatprg, curfile, formattedf
         return [3, sherr]
     endif
 
-    if a:overwrite
-        if isfull
-            call s:changeCurFile(a:formattedf)
-            return [0, 0]
-        endif
-        if isranged
-            call s:changeCurFile(a:formattedf)
-            call writefile(getline(1, '$'), a:formattedf)
-        endif
+    if a:overwrite && isfull
+        call s:changeCurFile(a:formattedf)
+        return [0, 0]
     endif
 
-    if !isfull
+    if a:overwrite
         if isranged " formatter supports range
             call s:logVerbose("*formatter supports range - format fully")
+            call s:changeCurFile(a:formattedf)
+            call writefile(getline(1, '$'), a:formattedf)
             let [res, isranged, sherr] = s:formatSource(1, line('$'), a:formatprg, a:formattedf, a:curfile)
             if !res
+                call s:logVerbose("Error " . sherr . " trying to full-format range-formatted file.")
                 return [2, sherr]
             endif
-            call s:logVerbose("diffFiles fully-formatted")
-            let [issame, err, sherr] = s:diffFiles(g:autoformat_diffcmd, a:formattedf, a:curfile, a:difpath)
+            let dif_curfile = a:formattedf
+            let dif_formatf = a:curfile
         else        " formatter has only full-file support
             call s:logVerbose("*formatter doesn't support range - apply hunk")
             let [res, sherr] = s:applyHunkInPatch(g:autoformat_filterdiffcmd, g:autoformat_patchcmd, a:curfile, a:difpath, a:line1, a:line2)
             call s:logVerbose("applyHunk res:" . res . " ShErr:" . sherr)
-            let [issame, err, sherr] = s:diffFiles(g:autoformat_diffcmd, a:curfile, a:formattedf, a:difpath)
+            let dif_curfile = a:curfile
+            let dif_formatf  = a:formattedf
+            call s:changeCurFile(dif_curfile)
         endif
+        let [issame, err, sherr] = s:diffFiles(g:autoformat_diffcmd, dif_curfile, dif_formatf, a:difpath)
         if err
+            call s:logVerbose("Error " . sherr . " trying to diff files at overwrite.")
             return [3, sherr]
         endif
+    else
     endif
-
-    if a:overwrite
-        if isranged
-            call s:changeCurFile(a:formattedf)
-        else
-            call s:changeCurFile(a:curfile)
-        endif
-    endif
-
 
     let hlines = s:parseChangedLines(a:difpath)
     for hl in hlines
