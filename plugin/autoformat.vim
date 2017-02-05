@@ -256,47 +256,29 @@ function! s:formatSource(line1, line2, formatprg, inpath, outpath) abort
     return [v:shell_error == 0, isranged, v:shell_error]
 endfunction
 
-function! s:renameFile(source, target)
-  " remove undo point caused via BufWritePre
-  try
-      silent undojoin
-  catch
-  endtry
-
-  let oldff = &fileformat
-  let origfperm = ''
-  if exists("*getfperm")
-    let origfperm = getfperm(a:target)
-  endif
-
-  call rename(a:source, a:target)
-
-  if exists("*setfperm") && origfperm != ''
-    call setfperm(a:target , origfperm)
-  endif
-
-  silent! edit!
-
-  let &fileformat = oldff
-  let &syntax = &syntax
-endfunction
-
-function! s:changeCurFile(newpath) abort
+function! s:rewriteCurBuffer(newpath) abort
     let ismk = 0
     try
-      mkview!
-      let ismk = 1
+        mkview!
+        let ismk = 1
     endtry
+    " let pos_save = getpos('.')
+    let sel_save = &l:selection
+    let &l:selection = 'inclusive'
+
     let tmpundofile = tempname()
-    exe 'wundo! ' . tmpundofile
-
-    call s:renameFile(a:newpath, expand('%'))
-
-    silent! exe 'rundo ' . tmpundofile
-    call delete(tmpundofile)
-    if ismk
-      silent! loadview
-    endif
+    execute 'wundo! ' . tmpundofile
+    try
+        silent keepjumps execute "1,$d|0read " . a:newpath
+    finally
+        silent! execute 'rundo ' . tmpundofile
+        call delete(tmpundofile)
+        let &l:selection = sel_save
+        " call setpos('.', pos_save)
+        if ismk
+            silent! loadview
+        endif
+    endtry
 endfunction
 
 function! s:isFullSelected(line1, line2) abort
@@ -322,14 +304,14 @@ function! s:evaluateFormattedToOrig(line1, line2, formatprg, curfile, formattedf
     endif
 
     if a:overwrite && isfull
-        call s:changeCurFile(a:formattedf)
+        call s:rewriteCurBuffer(a:formattedf)
         return [0, 0]
     endif
 
     if a:overwrite
         if isranged " formatter supports range
             call s:logVerbose("evaluateFormattedToOrig: *formatter supports range - format fully")
-            call s:changeCurFile(a:formattedf)
+            call s:rewriteCurBuffer(a:formattedf)
             call writefile(getline(1, '$'), a:formattedf)
             let [res, isranged, sherr] = s:formatSource(1, line('$'), a:formatprg, a:formattedf, a:curfile)
             if !res
@@ -344,7 +326,7 @@ function! s:evaluateFormattedToOrig(line1, line2, formatprg, curfile, formattedf
             call s:logVerbose("evaluateFormattedToOrig: applyHunk res:" . res . " ShErr:" . sherr)
             let dif_curfile = a:curfile
             let dif_formatf  = a:formattedf
-            call s:changeCurFile(dif_curfile)
+            call s:rewriteCurBuffer(dif_curfile)
         endif
         let [issame, err, sherr] = s:diffFiles(g:autoformat_diffcmd, dif_curfile, dif_formatf, a:difpath)
         if err
