@@ -6,7 +6,6 @@ if !exists('g:autoformat_autoindent')
 endif
 
 let g:autoformat_diffcmd .= " -u "
-let s:verbose = &verbose || g:autoformat_verbosemode == 1
 
 function! s:logVerbose(line) abort
     if s:verbose
@@ -65,6 +64,8 @@ endfunction
 " Try all formatters, starting with the currently selected one, until one
 " works. If none works, autoindent the buffer.
 function! s:TryAllFormatters(bang, ...) range
+    let s:verbose = &verbose || g:autoformat_verbosemode == 1
+
     " Make sure formatters are defined and detected
     if !call('<SID>find_formatters', a:000)
         call s:logVerbose("TryAllFormatters: No format definitions are defined for this FileType.")
