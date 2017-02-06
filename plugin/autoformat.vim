@@ -263,17 +263,14 @@ function! s:rewriteCurBuffer(newpath) abort
         let ismk = 1
     endtry
     " let pos_save = getpos('.')
-    let sel_save = &l:selection
-    let &l:selection = 'inclusive'
 
     let tmpundofile = tempname()
     execute 'wundo! ' . tmpundofile
     try
-        silent keepjumps execute "1,$d|0read " . a:newpath
+        silent keepjumps execute "1,$d|0read " . a:newpath . "|$d"
     finally
         silent! execute 'rundo ' . tmpundofile
         call delete(tmpundofile)
-        let &l:selection = sel_save
         " call setpos('.', pos_save)
         if ismk
             silent! loadview
