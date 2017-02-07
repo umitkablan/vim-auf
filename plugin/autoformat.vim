@@ -13,6 +13,15 @@ function! s:logVerbose(line) abort
     endif
 endfunction
 
+function! s:echoSuccessMsg(line) abort
+    echohl DiffAdd | echomsg a:line | echohl None
+endfunction
+
+function! s:echoErrorMsg(line) abort
+    echohl ErrorMsg | echomsg a:line | echohl None
+endfunction
+
+
 function! s:find_formatters(...)
     " Extract filetype to be used
     let ftype = a:0 ? a:1 : &filetype
@@ -30,9 +39,7 @@ function! s:find_formatters(...)
     let old_formatprg_args_var = "g:formatprg_args_".compoundtype
     let old_formatprg_args_expr_var = "g:formatprg_args_expr_".compoundtype
     if exists(old_formatprg_var) || exists(old_formatprg_args_var) || exists(old_formatprg_args_expr_var)
-        echohl WarningMsg |
-            \ echomsg "WARNING: the options g:formatprg_<filetype>, g:formatprg_args_<filetype> and g:formatprg_args_expr_<filetype> are no longer supported as of June 2015, due to major backward-incompatible improvements. Please check the README for help on how to configure your formatters." |
-            \ echohl None
+        call s:echoErrorMsg("WARNING: the options g:formatprg_<filetype>, g:formatprg_args_<filetype> and g:formatprg_args_expr_<filetype> are no longer supported as of June 2015, due to major backward-incompatible improvements. Please check the README for help on how to configure your formatters.")
     endif
 
     " Detect configuration for all possible ftypes
@@ -100,9 +107,7 @@ function! s:TryAllFormatters(bang, ...) range
     let s:index = b:current_formatter_index
 
     if !has("eval")
-        echohl WarningMsg |
-            \ echomsg "AutoFormat ERROR: vim has no support for eval (check :version output for +eval) - REQUIRED!" |
-            \ echohl None
+        call s:echoErrorMsg("AutoFormat ERROR: vim has no support for eval (check :version output for +eval) - REQUIRED!")
         return 1
     endif
 
@@ -368,7 +373,7 @@ function! s:TryFormatter(line1, line2, formatprg, overwrite, synmatch)
     let [res, sherr] = s:evaluateFormattedToOrig(a:line1, a:line2, a:formatprg, tmpf0path, tmpf1path, b:autoformat_difpath, a:synmatch, a:overwrite)
     call s:logVerbose("TryFormatter: res:" . res . " ShErr:" . sherr)
     if res == 0 "No diff found
-        echomsg "AutoFormat> Format PASSED!"
+        call s:echoSuccessMsg("AutoFormat> Format PASSED!")
     elseif res == 2 "Format program error
         echomsg "AutoFormat> Formatter " . b:formatters[s:index] . " failed(" . sherr . ")"
     elseif res == 3 "Diff program error
