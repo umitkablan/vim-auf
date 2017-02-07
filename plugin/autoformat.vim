@@ -61,6 +61,21 @@ function! s:find_formatters(...)
     return 1
 endfunction
 
+function! s:getFormatPrgWithIndex(index) abort
+    " Formatter definition must be existent
+    let formatdef_var = 'b:formatdef_'.b:formatters[a:index]
+    if !exists(formatdef_var)
+        let formatdef_var = 'g:formatdef_'.b:formatters[a:index]
+    endif
+    if !exists(formatdef_var)
+        return [formatdef_var, ""]
+    endif
+
+    " Eval twice, once for getting definition content,
+    " once for getting the final expression
+    return [formatdef_var, eval(eval(formatdef_var))]
+endfunction
+
 " Try all formatters, starting with the currently selected one, until one
 " works. If none works, autoindent the buffer.
 function! s:TryAllFormatters(bang, ...) range
@@ -99,20 +114,14 @@ function! s:TryAllFormatters(bang, ...) range
     endif
 
     while 1
-        " Formatter definition must be existent
-        let formatdef_var = 'b:formatdef_'.b:formatters[s:index]
-        if !exists(formatdef_var)
-            let formatdef_var = 'g:formatdef_'.b:formatters[s:index]
-        endif
-        if !exists(formatdef_var)
-            echoerr "No format definition found in '".formatdef_var."'."
+        let [formatdef_var, formatprg] = s:getFormatPrgWithIndex(s:index)
+        if formatprg == ""
+            echoerr "No format definition found in '" . formatdef_var . "'."
             return 0
         endif
+        let b:formatprg = formatprg
 
-        " Eval twice, once for getting definition content,
-        " once for getting the final expression
-        let b:formatprg = eval(eval(formatdef_var))
-
+        call s:logVerbose("TryAllFormatters: Trying definition in '" . formatdef_var)
         if s:TryFormatter(a:firstline, a:lastline, b:formatprg, overwrite, synmatch)
             call s:logVerbose("TryAllFormatters: Definition in '" . formatdef_var . "' was successful.")
             return 1
@@ -360,10 +369,6 @@ function! s:TryFormatter(line1, line2, formatprg, overwrite, synmatch)
     call s:logVerbose("TryFormatter: res:" . res . " ShErr:" . sherr)
     if res == 0 "No diff found
         echomsg "AutoFormat> Format PASSED!"
-        if exists('b:autoformat_difpath')
-            call delete(b:autoformat_difpath)
-            unlet! b:autoformat_difpath
-        endif
     elseif res == 2 "Format program error
         echomsg "AutoFormat> Formatter " . b:formatters[s:index] . " failed(" . sherr . ")"
     elseif res == 3 "Diff program error
@@ -378,7 +383,6 @@ function! s:TryFormatter(line1, line2, formatprg, overwrite, synmatch)
     endif
     return res < 2
 endfunction
-
 
 " Functions for iterating through list of available formatters
 function! s:NextFormatter()
