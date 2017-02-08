@@ -276,16 +276,20 @@ function! s:rewriteCurBuffer(newpath) abort
         mkview!
         let ismk = 1
     endtry
-    " let pos_save = getpos('.')
+    " let pos = getpos('.')
+    let [v_reg, v_type] = [getreg('v'), getregtype('v')]
 
     let tmpundofile = tempname()
     execute 'wundo! ' . tmpundofile
     try
-        silent keepjumps execute "1,$d|0read " . a:newpath . "|$d"
+        " silent keepjumps execute "1,$d|0read " . a:newpath . "|$d"
+        let @v = join(readfile(a:newpath), "\n")
+        silent keepjumps normal! ggVG"vp
     finally
         silent! execute 'rundo ' . tmpundofile
         call delete(tmpundofile)
-        " call setpos('.', pos_save)
+        call setreg('v', v_reg, v_type)
+        " call setpos('.', pos)
         if ismk
             silent! loadview
         endif
