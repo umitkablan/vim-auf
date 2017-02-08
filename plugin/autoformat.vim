@@ -296,8 +296,18 @@ function! s:isFullSelected(line1, line2) abort
     return a:line1 == 1 && a:line2 == line('$')
 endfunction
 
+function! s:clearHighlights(synmatch) abort
+    execute 'syn clear ' . a:synmatch
+endfunction
+
+function! s:highlightLines(hlines, synmatch) abort
+    for hl in a:hlines
+        exec 'syn match '. a:synmatch . ' ".*\%' . hl . 'l.*" containedin=ALL'
+    endfor
+endfunction
+
 function! s:evaluateFormattedToOrig(line1, line2, formatprg, curfile, formattedf, difpath, synmatch, overwrite)
-    exec 'syn clear ' . a:synmatch
+    call s:clearHighlights(a:synmatch)
     call writefile(getline(1, '$'), a:curfile)
     let [res, isranged, sherr] = s:formatSource(a:line1, a:line2, a:formatprg, a:curfile, a:formattedf)
     call s:logVerbose("evaluateFormattedToOrig: sourceFormetted shErr:" . sherr)
@@ -316,7 +326,7 @@ function! s:evaluateFormattedToOrig(line1, line2, formatprg, curfile, formattedf
 
     if a:overwrite && isfull
         call s:rewriteCurBuffer(a:formattedf)
-        return [0, 0]
+        return [1, 0]
     endif
 
     if a:overwrite
@@ -347,16 +357,12 @@ function! s:evaluateFormattedToOrig(line1, line2, formatprg, curfile, formattedf
     else
     endif
 
-    let hlines = s:parseChangedLines(a:difpath)
-    for hl in hlines
-        exec 'syn match '. a:synmatch . ' ".*\%' . hl . 'l.*" containedin=ALL'
-    endfor
-
+    call s:highlightLines(s:parseChangedLines(a:difpath), a:synmatch)
     return [1, 0]
 endfunction
 
 function! s:TryFormatter(line1, line2, formatprg, overwrite, synmatch)
-    call s:logVerbose("TryFormatter: " . a:line1 . "," . a:line2 . " FormPrg:" . a:formatprg . " ow:" . a:overwrite . " SynMatch:" . a:synmatch)
+    call s:logVerbose("TryFormatter: " . a:line1 . "," . a:line2 . " " . a:formatprg . " ow:" . a:overwrite . " SynMatch:" . a:synmatch)
     if s:verbose
         let tmpf0path = expand("%:.") . ".aftmp"
         let tmpf1path = tmpf0path . ".txt"
@@ -375,9 +381,9 @@ function! s:TryFormatter(line1, line2, formatprg, overwrite, synmatch)
     if res == 0 "No diff found
         call s:echoSuccessMsg("AutoFormat> Format PASSED!")
     elseif res == 2 "Format program error
-        echomsg "AutoFormat> Formatter " . b:formatters[s:index] . " failed(" . sherr . ")"
+        call s:echoErrorMsg("AutoFormat> Formatter " . b:formatters[s:index] . " failed(" . sherr . ")")
     elseif res == 3 "Diff program error
-        echomsg "AutoFormat> diff failed(" . sherr . "): " . g:autoformat_diffcmd
+        call s:echoErrorMsg("AutoFormat> diff failed(" . sherr . "): " . g:autoformat_diffcmd)
     endif
 
     call s:logVerbose("TryFormatter: " . tmpf0path . " and " . tmpf1path)
