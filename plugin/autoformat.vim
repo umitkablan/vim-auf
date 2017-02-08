@@ -211,6 +211,59 @@ function! s:parseChangedLines(diffpath) abort
     return hlines
 endfunction
 
+function! s:findAddedLines(diffcmd, curfile, oldfile, difpath) abort
+    let ret = []
+    let [issame, err, sherr] = s:diffFiles(a:diffcmd, a:oldfile, a:curfile, a:difpath)
+    if issame
+        return ret
+    elseif err
+        call s:logVerbose("findAddedLines: error " . err . "/". sherr . " diff current")
+        return ret
+    endif
+    call s:logVerbose("findAddedLines: diff done to " . a:difpath)
+
+    let flines = readfile(a:difpath)
+    let [lnfirst, ln0, ln1] = [0, 0, 0]
+    for line in flines
+        if line == ""
+            continue
+        elseif line[0] == "@"
+            let plusidx = stridx(line, '+')
+            let commaidx = stridx(line, ',', plusidx)
+            if plusidx < 0 || commaidx < 0
+                call s:logVerbose("findAddedLines: !!plus/comma is not found in the diff line!!")
+                let lnfirst = 0
+                continue
+            endif
+            let lnfirst = str2nr(line[plusidx+1:commaidx])
+            " let spaceidx = stridx(line, ' ', commaidx)
+            " if spaceidx < 0
+            "     call s:logVerbose("findAddedLines: !!Space is not found in the diff line!!")
+            "     let lnfirst = 0
+            "     continue
+            " endif
+            " let lnlast = str2nr(line[commaidx+1:spaceidx]) + lnfirst - 1
+            " let ret += [[lnfirst, lnlast]]
+        elseif lnfirst > 0
+            if line[0] != '+' && ln0 > 0
+                let ret += [[ln0, ln1]]
+                let [ln0, ln1] = [0, 0]
+            endif
+            if line[0] == '+'
+                if ln0 == 0
+                    let [ln0, ln1] = [lnfirst, lnfirst]
+                else
+                    let ln1 += 1
+                endif
+            endif
+            if line[0] != '-'
+                let lnfirst += 1
+            endif
+        endif
+    endfor
+    return ret
+endfunction
+
 function! s:parseFormatPrg(formatprg, inputf, outputf, line1, line2) abort
     let cmd = a:formatprg
     if stridx(cmd, "##INPUTSRC##") != -1
@@ -309,6 +362,20 @@ function! s:highlightLines(hlines, synmatch) abort
         exec 'syn match '. a:synmatch . ' ".*\%' . hl . 'l.*" containedin=ALL'
     endfor
 endfunction
+function! s:highlightLinesForJIT(hunks, synmatch) abort
+    for hunk in a:hunks
+        let ln = hunk[0]
+        while ln <= hunk[1]
+            exec 'syn match '. a:synmatch . ' ".*\%' . ln . 'l.*" containedin=ALL'
+            let ln += 1
+        endwhile
+    endfor
+endfunction
+function! s:animateHunksForJIT(hunks, synmatch) abort
+    call s:highlightLinesForJIT(a:hunks, a:synmatch)
+    " sleep 250m
+    " call s:clearHighlights(a:synmatch)
+endfunction
 
 function! s:evaluateFormattedToOrig(line1, line2, formatprg, curfile, formattedf, difpath, synmatch, overwrite)
     call s:clearHighlights(a:synmatch)
@@ -399,6 +466,43 @@ function! s:TryFormatter(line1, line2, formatprg, overwrite, synmatch)
     return res < 2
 endfunction
 
+function! s:justInTimeFormat(synmatch) abort
+    let s:verbose = &verbose || g:autoformat_verbosemode == 1
+    if !exists("b:formatprg")
+        call s:find_formatters()
+    endif
+    if !exists('b:autoformat_difpath')
+        let b:autoformat_difpath = tempname()
+    endif
+
+    let tmpcurfile = tempname()
+    let overwrite = 1
+
+    call s:logVerbose("justInTimeFormat: started")
+    try
+        call writefile(getline(1, '$'), tmpcurfile)
+        let hunks = s:findAddedLines(g:autoformat_diffcmd, tmpcurfile, expand('%:.'), b:autoformat_difpath)
+        " call s:highlightLinesForJIT(hunks, a:synmatch)
+        let linenr_diff = 0
+        for ln in hunks
+            if ln[0] < 1 || ln[1] < 1
+                echoerr "justInTimeFormat: invalid hunk-lines:" . ln[0] . "-" . ln[1]
+                continue
+            endif
+            let [ln0, ln1] = [ln[0] + linenr_diff, ln[1] + linenr_diff]
+            let linecnt_prev = line('$')
+            call s:logVerbose("justInTimeFormat: hunk-lines:" . ln0 . "-" . ln1)
+            " calculate how much we drifted from initials accumulatively
+            let linenr_diff = line('$') - linecnt_prev + linenr_diff
+            let res = s:TryFormatter(ln0, ln1, b:formatprg, overwrite, g:autoformat_showdiff_synmatch)
+            call s:logVerbose("justInTimeFormat: result:" . res . " drift:" . linenr_diff)
+        endfor
+    finally
+        call s:logVerbose("justInTimeFormat: deleting temporary-current-buffer")
+        call delete(tmpcurfile)
+    endtry
+endfunction
+
 " Functions for iterating through list of available formatters
 function! s:NextFormatter()
     call s:find_formatters()
@@ -446,10 +550,16 @@ function! s:BufDeleted(bufnr) abort
     call setbufvar(l:nr, "autoformat_difpath", "")
 endfunction
 
+function! AutoformatFormatRange(line1, line2) abort
+    let overwrite = 1
+    call s:TryFormatter(a:line1, a:line2, b:formatprg, overwrite, g:autoformat_showdiff_synmatch)
+endfunction
+
 " Save and recall window state to prevent vim from jumping to line 1: Beware
 " that it should be done here due to <line1>,<line2> range.
 command! -nargs=? -range=% -complete=filetype -bang -bar Autoformat
     \ let ww=winsaveview()|<line1>,<line2>call s:TryAllFormatters(<bang>0, <f-args>)|call winrestview(ww)
+command! -nargs=0 -bar AutoformatJIT call s:justInTimeFormat(g:autoformat_showdiff_synmatch)
 
 " Create commands for iterating through formatter list
 command! NextFormatter call s:NextFormatter()
