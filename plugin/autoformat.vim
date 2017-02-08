@@ -7,6 +7,8 @@ endif
 
 let g:autoformat_diffcmd .= " -u "
 
+execute "highlight def link AutoformatErrLine " . g:autoformat_showdiff_synmatch
+
 function! s:logVerbose(line) abort
     if s:verbose
         echomsg a:line
@@ -20,7 +22,6 @@ endfunction
 function! s:echoErrorMsg(line) abort
     echohl ErrorMsg | echomsg a:line | echohl None
 endfunction
-
 
 function! s:find_formatters(...)
     " Extract filetype to be used
@@ -113,10 +114,7 @@ function! s:TryAllFormatters(bang, ...) range
 
     let overwrite = a:bang
 
-    let synmatch = g:autoformat_showdiff_synmatch
-    if exists("b:autoformat_showdiff_synmatch")
-        let synmatch = b:autoformat_showdiff_synmatch
-    endif
+    let synmatch = "AutoformatErrLine"
 
     while 1
         let [formatdef_var, formatprg] = s:getFormatPrgWithIndex(s:index)
@@ -494,7 +492,7 @@ function! s:justInTimeFormat(synmatch) abort
             call s:logVerbose("justInTimeFormat: hunk-lines:" . ln0 . "-" . ln1)
             " calculate how much we drifted from initials accumulatively
             let linenr_diff = line('$') - linecnt_prev + linenr_diff
-            let res = s:TryFormatter(ln0, ln1, b:formatprg, overwrite, g:autoformat_showdiff_synmatch)
+            let res = s:TryFormatter(ln0, ln1, b:formatprg, overwrite, "AutoformatErrLine")
             call s:logVerbose("justInTimeFormat: result:" . res . " drift:" . linenr_diff)
         endfor
     finally
@@ -552,14 +550,14 @@ endfunction
 
 function! AutoformatFormatRange(line1, line2) abort
     let overwrite = 1
-    call s:TryFormatter(a:line1, a:line2, b:formatprg, overwrite, g:autoformat_showdiff_synmatch)
+    call s:TryFormatter(a:line1, a:line2, b:formatprg, overwrite, "AutoformatErrLine")
 endfunction
 
 " Save and recall window state to prevent vim from jumping to line 1: Beware
 " that it should be done here due to <line1>,<line2> range.
 command! -nargs=? -range=% -complete=filetype -bang -bar Autoformat
     \ let ww=winsaveview()|<line1>,<line2>call s:TryAllFormatters(<bang>0, <f-args>)|call winrestview(ww)
-command! -nargs=0 -bar AutoformatJIT call s:justInTimeFormat(g:autoformat_showdiff_synmatch)
+command! -nargs=0 -bar AutoformatJIT call s:justInTimeFormat("AutoformatErrLine")
 
 " Create commands for iterating through formatter list
 command! NextFormatter call s:NextFormatter()
