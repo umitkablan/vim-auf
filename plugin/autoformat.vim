@@ -234,14 +234,6 @@ function! s:findAddedLines(diffcmd, curfile, oldfile, difpath) abort
                 continue
             endif
             let lnfirst = str2nr(line[plusidx+1:commaidx])
-            " let spaceidx = stridx(line, ' ', commaidx)
-            " if spaceidx < 0
-            "     call s:logVerbose("findAddedLines: !!Space is not found in the diff line!!")
-            "     let lnfirst = 0
-            "     continue
-            " endif
-            " let lnlast = str2nr(line[commaidx+1:spaceidx]) + lnfirst - 1
-            " let ret += [[lnfirst, lnlast]]
         elseif lnfirst > 0
             if line[0] != '+' && ln0 > 0
                 let ret += [[ln0, ln1]]
@@ -259,6 +251,9 @@ function! s:findAddedLines(diffcmd, curfile, oldfile, difpath) abort
             endif
         endif
     endfor
+    if ln0 > 0
+        let ret += [[ln0, ln1]]
+    endif
     return ret
 endfunction
 
