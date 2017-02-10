@@ -384,6 +384,10 @@ if !exists('g:formatters_fortran')
     let g:formatters_fortran = ['fprettify']
 endif
 
+if !exists('g:autoformat_autoindent')
+    let g:autoformat_autoindent = 0
+endif
+
 if !exists('g:autoformat_showdiff_synmatch')
     let g:autoformat_showdiff_synmatch = "ErrorMsg"
 endif
@@ -399,3 +403,4 @@ endif
 if !exists('g:autoformat_patchcmd')
     let g:autoformat_patchcmd = "patch"
 endif
+
