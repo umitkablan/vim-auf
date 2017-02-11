@@ -17,14 +17,6 @@ function! auf#format#find_formatters(...)
         let ftypes = [compoundtype]
     endif
 
-    " Warn for backward incompatible configuration
-    let old_formatprg_var = "g:auffmt_".compoundtype
-    let old_formatprg_args_var = "g:auffmt_args_".compoundtype
-    let old_formatprg_args_expr_var = "g:auffmt_args_expr_".compoundtype
-    if exists(old_formatprg_var) || exists(old_formatprg_args_var) || exists(old_formatprg_args_expr_var)
-        call auf#util#echoErrorMsg("WARNING: the options g:auffmt_<filetype>, g:auffmt_args_<filetype> and g:auffmt_args_expr_<filetype> are no longer supported as of June 2015, due to major backward-incompatible improvements. Please check the README for help on how to configure your formatters.")
-    endif
-
     " Detect configuration for all possible ftypes
     let b:formatters = []
     for supertype in ftypes
@@ -33,11 +25,11 @@ function! auf#format#find_formatters(...)
             let formatters_var = "g:aufformatters_" . supertype
         endif
         if !exists(formatters_var)
-            echoerr "No formatters defined for SuperType:" . supertype
+            call auf#util#echoErrorMsg("Auf: No formatters defined for SuperType:" . supertype)
         else
             let formatters = eval(formatters_var)
             if type(formatters) != type([])
-                echoerr formatters_var." is not a list"
+                call auf#util#echoErrorMsg("Auf: " . formatters_var . " is not a list")
             else
                 let b:formatters = b:formatters + formatters
             endif
@@ -45,7 +37,7 @@ function! auf#format#find_formatters(...)
     endfor
 
     if len(b:formatters) == 0
-        echoerr "No formatters defined for FileType:'" . ftype . "'."
+        call auf#util#echoErrorMsg("Auf: No formatters defined for FileType:'" . ftype . "'")
         return 0
     endif
     return 1
@@ -53,12 +45,12 @@ endfunction
 
 function! auf#format#getCurrentProgram() abort
     if !exists("b:formatprg")
-        let [auffmt_var, formatprg] = auf#util#getFormatterAtIndex(auf#format#index)
-        if formatprg == ""
-            echoerr "No format definition found in '" . auffmt_var . "'."
-        else
-            let b:formatprg = formatprg
+        let [fmt_var, fmt_prg] = auf#util#getFormatterAtIndex(auf#format#index)
+        if fmt_prg == ""
+            call auf#util#echoErrorMsg("No format definition found in '" . fmt_var . "'")
+            return ""
         endif
+        let b:formatprg = fmt_prg
     endif
     return b:formatprg
 endfunction
@@ -68,7 +60,7 @@ endfunction
 function! auf#format#TryAllFormatters(bang, ...) range
     " Make sure formatters are defined and detected
     if !call('auf#format#find_formatters', a:000)
-        call auf#util#logVerbose("TryAllFormatters: No format definitions are defined for this FileType.")
+        call auf#util#logVerbose("TryAllFormatters: No format definitions are defined for this FileType")
         call auf#format#Fallback()
         return 0
     endif
@@ -96,7 +88,7 @@ function! auf#format#TryAllFormatters(bang, ...) range
     while 1
         let [auffmt_var, formatprg] = auf#util#getFormatterAtIndex(auf#format#index)
         if formatprg == ""
-            echoerr "No format definition found in '" . auffmt_var . "'."
+            call auf#util#echoErrorMsg("No format definition found in '" . auffmt_var . "'")
             return 0
         endif
         let b:formatprg = formatprg
@@ -244,6 +236,10 @@ function! auf#format#justInTimeFormat(synmatch) abort
     if !exists("b:formatprg")
         call auf#format#find_formatters()
     endif
+    if !exists("b:formatprg")
+        call auf#util#logVerbose("justInTimeFormat: formatter program could not be found")
+        return 1
+    endif
     if !exists('b:auf_difpath')
         let b:auf_difpath = tempname()
     endif
@@ -251,7 +247,7 @@ function! auf#format#justInTimeFormat(synmatch) abort
     let tmpcurfile = tempname()
     let overwrite = 1
 
-    call auf#util#logVerbose("justInTimeFormat: started")
+    call auf#util#logVerbose("justInTimeFormat: trying..")
     try
         call writefile(getline(1, '$'), tmpcurfile)
         let hunks = auf#diff#findAddedLines(g:auf_diffcmd, tmpcurfile, expand('%:.'), b:auf_difpath)
