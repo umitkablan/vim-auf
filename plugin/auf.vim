@@ -44,3 +44,23 @@ command! AufCurrFormatter call auf#format#CurrentFormatter()
 
 command! AufShowDiff call auf#format#ShowDiff()
 
+augroup Auf_Auto
+    autocmd!
+    autocmd BufRead *
+        \ if g:auf_highlight_errs |
+        \   Auf |
+        \ endif
+    autocmd BufWritePre *
+        \ if g:auf_jitformat |
+        \   AufJIT |
+        \ endif
+    autocmd BufWritePost *
+        \ if g:auf_highlight_errs |
+        \   Auf |
+        \ endif
+augroup END
+
+if g:auf_hijack_gq
+    set formatexpr=AufFormatRange(v:lnum,v:lnum+v:count-1)
+endif
+

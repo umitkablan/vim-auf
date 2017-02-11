@@ -402,3 +402,14 @@ if !exists('g:auf_patchcmd')
     let g:auf_patchcmd = "patch"
 endif
 
+if !exists("g:auf_highlight_errs")
+    let g:auf_highlight_errs = 1
+endif
+
+if !exists("g:auf_jitformat")
+    let g:auf_jitformat = 1
+endif
+
+if !exists("g:auf_hijack_gq")
+    let g:auf_hijack_gq = 1
+endif
