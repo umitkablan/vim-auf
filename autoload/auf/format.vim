@@ -18,19 +18,19 @@ function! auf#format#find_formatters(...)
     endif
 
     " Warn for backward incompatible configuration
-    let old_formatprg_var = "g:formatprg_".compoundtype
-    let old_formatprg_args_var = "g:formatprg_args_".compoundtype
-    let old_formatprg_args_expr_var = "g:formatprg_args_expr_".compoundtype
+    let old_formatprg_var = "g:auffmt_".compoundtype
+    let old_formatprg_args_var = "g:auffmt_args_".compoundtype
+    let old_formatprg_args_expr_var = "g:auffmt_args_expr_".compoundtype
     if exists(old_formatprg_var) || exists(old_formatprg_args_var) || exists(old_formatprg_args_expr_var)
-        call auf#util#echoErrorMsg("WARNING: the options g:formatprg_<filetype>, g:formatprg_args_<filetype> and g:formatprg_args_expr_<filetype> are no longer supported as of June 2015, due to major backward-incompatible improvements. Please check the README for help on how to configure your formatters.")
+        call auf#util#echoErrorMsg("WARNING: the options g:auffmt_<filetype>, g:auffmt_args_<filetype> and g:auffmt_args_expr_<filetype> are no longer supported as of June 2015, due to major backward-incompatible improvements. Please check the README for help on how to configure your formatters.")
     endif
 
     " Detect configuration for all possible ftypes
     let b:formatters = []
     for supertype in ftypes
-        let formatters_var = "b:formatters_".supertype
+        let formatters_var = "b:aufformatters_" . supertype
         if !exists(formatters_var)
-            let formatters_var = "g:formatters_".supertype
+            let formatters_var = "g:aufformatters_" . supertype
         endif
         if !exists(formatters_var)
             echoerr "No formatters defined for SuperType:" . supertype
