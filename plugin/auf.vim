@@ -43,6 +43,7 @@ command! AufPrevFormatter call auf#format#PreviousFormatter()
 command! AufCurrFormatter call auf#format#CurrentFormatter()
 
 command! AufShowDiff call auf#format#ShowDiff()
+command! AufClearHi call auf#util#clearHighlights("AufErrLine")
 
 augroup Auf_Auto
     autocmd!
