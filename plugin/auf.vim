@@ -48,20 +48,24 @@ command! AufClearHi call auf#util#clearHighlights("AufErrLine")
 augroup Auf_Auto
     autocmd!
     autocmd BufRead *
-        \ if g:auf_highlight_errs |
+        \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 &&
+        \    g:auf_highlight_errs |
         \   Auf |
         \ endif
+    autocmd BufRead *
+        \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 &&
+        \    g:auf_hijack_gq |
+        \   setl formatexpr=AufFormatRange(v:lnum,v:lnum+v:count-1) |
+        \ endif
     autocmd BufWritePre *
-        \ if g:auf_jitformat |
+        \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 &&
+        \    g:auf_jitformat |
         \   AufJIT |
         \ endif
     autocmd BufWritePost *
-        \ if g:auf_highlight_errs |
+        \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 &&
+        \    g:auf_highlight_errs |
         \   Auf |
         \ endif
 augroup END
-
-if g:auf_hijack_gq
-    set formatexpr=AufFormatRange(v:lnum,v:lnum+v:count-1)
-endif
 

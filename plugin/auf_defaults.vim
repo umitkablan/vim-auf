@@ -307,7 +307,9 @@ if !exists('g:aufformatters_go')
     let g:aufformatters_go = ['gofmt_1', 'goimports', 'gofmt_2']
 endif
 
+" ****************
 " Rust
+" ****************
 if !exists('g:auffmt_rustfmt')
     let g:auffmt_rustfmt = '"rustfmt ##INPUTSRC##"'
 endif
@@ -380,6 +382,10 @@ endif
 
 if !exists('g:aufformatters_fortran')
     let g:aufformatters_fortran = ['fprettify']
+endif
+
+if !exists("g:auf_filetypes")
+    let g:auf_filetypes = ",c,cpp,cs,css,dart,fortran,go,haskell,html,java,javascript,json,markdown,objc,perl,python,ruby,rust,scss,typescript,xhtml,xml,"
 endif
 
 if !exists('g:auf_autoindent')
