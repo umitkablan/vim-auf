@@ -174,14 +174,12 @@ function! auf#format#evaluateFormattedToOrig(line1, line2, formatprg, curfile, f
                 call auf#util#logVerbose("evaluateFormattedToOrig: error " . sherr . " trying to full-format range-formatted file.")
                 return [2, sherr]
             endif
-            let dif_curfile = a:formattedf
-            let dif_formatf = a:curfile
+            let [dif_curfile, dif_formatf] = [a:formattedf, a:curfile]
         else        " formatter has only full-file support
             call auf#util#logVerbose("evaluateFormattedToOrig: *formatter doesn't support range - apply hunk")
             let [res, sherr] = auf#diff#applyHunkInPatch(g:auf_filterdiffcmd, g:auf_patchcmd, a:curfile, a:difpath, a:line1, a:line2)
             call auf#util#logVerbose("evaluateFormattedToOrig: applyHunk res:" . res . " ShErr:" . sherr)
-            let dif_curfile = a:curfile
-            let dif_formatf  = a:formattedf
+            let [dif_curfile, dif_formatf] = [a:curfile, a:formattedf]
             call auf#util#rewriteCurBuffer(dif_curfile)
         endif
         let [issame, err, sherr] = auf#diff#diffFiles(g:auf_diffcmd, dif_curfile, dif_formatf, a:difpath)
@@ -197,15 +195,12 @@ function! auf#format#evaluateFormattedToOrig(line1, line2, formatprg, curfile, f
 endfunction
 
 function! auf#format#TryFormatter(line1, line2, formatprg, overwrite, synmatch)
-    let verb = auf#util#get_verbose()
     call auf#util#logVerbose("TryFormatter: " . a:line1 . "," . a:line2 . " " . a:formatprg . " ow:" . a:overwrite . " SynMatch:" . a:synmatch)
-    if verb
-        let tmpf0path = expand("%:.") . ".aftmp"
-        let tmpf1path = tmpf0path . ".txt"
+    if auf#util#get_verbose()
+        let [tmpf0path, tmpf1path] = [expand("%:.").".aftmp", expand("%:.").".aftmp.txt"]
         call auf#util#logVerbose("TryFormatter: origTmp:" . tmpf0path . " formTmp:" . tmpf1path)
     else
-        let tmpf0path = tempname()
-        let tmpf1path = tempname()
+        let [tmpf0path, tmpf1path] = [tempname(), tempname()]
     endif
 
     if !exists('b:auf_difpath')
@@ -224,7 +219,7 @@ function! auf#format#TryFormatter(line1, line2, formatprg, overwrite, synmatch)
 
     call auf#util#logVerbose("TryFormatter: " . tmpf0path . " and " . tmpf1path)
     call auf#util#logVerbose("TryFormatter: wasn't DELETED for analyse PLEASE MANUALLY DELETE!")
-    if !verb
+    if !auf#util#get_verbose()
         call delete(tmpf0path)
         call delete(tmpf1path)
     endif
@@ -244,22 +239,18 @@ function! auf#format#justInTimeFormat(synmatch) abort
         let b:auf_difpath = tempname()
     endif
 
-    let tmpcurfile = tempname()
-    let overwrite = 1
-
+    let [tmpcurfile, overwrite, linenr_diff] = [tempname(), 1, 0]
     call auf#util#logVerbose("justInTimeFormat: trying..")
     try
         call writefile(getline(1, '$'), tmpcurfile)
         let hunks = auf#diff#findAddedLines(g:auf_diffcmd, tmpcurfile, expand('%:.'), b:auf_difpath)
         " call autoformat#highlightLinesForJIT(hunks, a:synmatch)
-        let linenr_diff = 0
         for ln in hunks
             if ln[0] < 1 || ln[1] < 1
                 echoerr "justInTimeFormat: invalid hunk-lines:" . ln[0] . "-" . ln[1]
                 continue
             endif
-            let [ln0, ln1] = [ln[0] + linenr_diff, ln[1] + linenr_diff]
-            let linecnt_prev = line('$')
+            let [ln0, ln1, linecnt_prev] = [ln[0] + linenr_diff, ln[1] + linenr_diff, line('$')]
             call auf#util#logVerbose("justInTimeFormat: hunk-lines:" . ln0 . "-" . ln1)
             " calculate how much we drifted from initials accumulatively
             let linenr_diff = line('$') - linecnt_prev + linenr_diff
