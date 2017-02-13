@@ -78,28 +78,24 @@ function! auf#util#getFormatterAtIndex(index) abort
 endfunction
 
 function! auf#util#rewriteCurBuffer(newpath) abort
-    let ismk = 0
-    try
-        mkview!
-        let ismk = 1
-    endtry
-    " let pos = getpos('.')
-    let [v_reg, v_type] = [getreg('v'), getregtype('v')]
+    let pos = getpos('.')
+    let linecnt0 = line('$')
+    let linecnt1 = linecnt0
 
     let tmpundofile = tempname()
     execute 'wundo! ' . tmpundofile
     try
-        " silent keepjumps execute "1,$d|0read " . a:newpath . "|$d"
-        let @v = join(readfile(a:newpath), "\n")
-        silent keepjumps normal! ggVG"vp
+        silent keepjumps execute "1,$d|0read " . a:newpath . "|$d"
+        let linecnt1 = line('$')
     finally
+        call setpos('.', pos)
+        if linecnt1 > linecnt0
+            execute "normal " . (linecnt1 - linecnt0) . "j$"
+        elseif linecnt1 < linecnt0
+            execute "normal " . (linecnt0 - linecnt1) . "k$"
+        endif
         silent! execute 'rundo ' . tmpundofile
         call delete(tmpundofile)
-        call setreg('v', v_reg, v_type)
-        " call setpos('.', pos)
-        if ismk
-            silent! loadview
-        endif
     endtry
 endfunction
 
