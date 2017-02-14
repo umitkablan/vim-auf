@@ -334,13 +334,13 @@ endif
 " ****************
 if !exists('g:auffmt_perltidy')
     " use perltidyrc file if readable
-    if (has("win32") && (filereadable("perltidy.ini") ||
-                \ filereadable($HOMEPATH."/perltidy.ini"))) ||
-                \ ((has("unix") ||
-                \ has("mac")) && (filereadable(".perltidyrc") ||
-                \ filereadable("~/.perltidyrc") ||
-                \ filereadable("/usr/local/etc/perltidyrc") ||
-                \ filereadable("/etc/perltidyrc")))
+    if (has('win32') && (filereadable('perltidy.ini') ||
+                \ filereadable($HOMEPATH.'/perltidy.ini'))) ||
+                \ ((has('unix') ||
+                \ has('mac')) && (filereadable('.perltidyrc') ||
+                \ filereadable('~/.perltidyrc') ||
+                \ filereadable('/usr/local/etc/perltidyrc') ||
+                \ filereadable('/etc/perltidyrc')))
         let g:auffmt_perltidy = '"perltidy -q -st ##INPUTSRC##"'
     else
         let g:auffmt_perltidy = '"perltidy --perl-best-practices --format-skipping -q ##INPUTSRC## "'
@@ -384,8 +384,8 @@ if !exists('g:aufformatters_fortran')
     let g:aufformatters_fortran = ['fprettify']
 endif
 
-if !exists("g:auf_filetypes")
-    let g:auf_filetypes = ",c,cpp,cs,css,dart,fortran,go,haskell,html,java,javascript,json,markdown,objc,perl,python,ruby,rust,scss,typescript,xhtml,xml,"
+if !exists('g:auf_filetypes')
+    let g:auf_filetypes = ',c,cpp,cs,css,dart,fortran,go,haskell,html,java,javascript,json,markdown,objc,perl,python,ruby,rust,scss,typescript,xhtml,xml,'
 endif
 
 if !exists('g:auf_autoindent')
@@ -393,29 +393,29 @@ if !exists('g:auf_autoindent')
 endif
 
 if !exists('g:auf_showdiff_synmatch')
-    let g:auf_showdiff_synmatch = "ErrorMsg"
+    let g:auf_showdiff_synmatch = 'ErrorMsg'
 endif
 
 if !exists('g:auf_diffcmd')
-    let g:auf_diffcmd = "diff"
+    let g:auf_diffcmd = 'diff'
 endif
 
 if !exists('g:auf_filterdiffcmd')
-    let g:auf_filterdiffcmd = "filterdiff"
+    let g:auf_filterdiffcmd = 'filterdiff'
 endif
 
 if !exists('g:auf_patchcmd')
-    let g:auf_patchcmd = "patch"
+    let g:auf_patchcmd = 'patch'
 endif
 
-if !exists("g:auf_highlight_errs")
+if !exists('g:auf_highlight_errs')
     let g:auf_highlight_errs = 1
 endif
 
-if !exists("g:auf_jitformat")
+if !exists('g:auf_jitformat')
     let g:auf_jitformat = 1
 endif
 
-if !exists("g:auf_hijack_gq")
+if !exists('g:auf_hijack_gq')
     let g:auf_hijack_gq = 1
 endif
