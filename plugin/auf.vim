@@ -9,7 +9,7 @@ if g:auf_diffcmd ==# '' || !executable(g:auf_diffcmd)
     augroup Auf_Error
         autocmd!
         autocmd VimEnter *
-            \ call s:echoErrorMsg("Auf: Can't start! \
+            \ call auf#util#echoErrorMsg("Auf: Can't start! \
                 \Couldn't locate 'diff' program (defined in g:auf_diffcmd as '"
                 \ . g:auf_diffcmd . "').")
     augroup END
@@ -19,7 +19,7 @@ if g:auf_filterdiffcmd ==# '' || !executable(g:auf_filterdiffcmd)
     augroup Auf_Error
         autocmd!
         autocmd VimEnter *
-            \ call s:echoErrorMsg("Auf: Can't start! \
+            \ call auf#util#echoErrorMsg("Auf: Can't start! \
                 \Couldn't locate 'filterdiff' program (defined in g:auf_filterdiffcmd as '"
                 \ . g:auf_filterdiffcmd . "').")
     augroup END
