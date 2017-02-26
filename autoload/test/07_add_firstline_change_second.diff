@@ -1,0 +1,9 @@
+--- hello.cpp	2017-02-24 21:16:37.000000000 +0300
++++ hello.cpp.new	2017-02-24 21:15:53.000000000 +0300
+@@ -1,5 +1,4 @@
+-#include <stdexcept>
+-#include <cstdlib>
++#include <sstream>
+ 
+ #include <iostream>
+ 

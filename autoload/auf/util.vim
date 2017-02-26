@@ -77,6 +77,24 @@ function! auf#util#getFormatterAtIndex(index) abort
     return [auffmt_var, eval(eval(auffmt_var))]
 endfunction
 
+function! auf#util#replaceLines(linenr, linecnt, lines) abort
+    let execmd = '' . a:linenr . ',' . (a:linenr + a:linecnt - 1) . 'delete _'
+    "keepjumps ?
+    silent execute execmd
+    let execmd = '' . (a:linenr - 1) . 'put=a:lines'
+    silent execute execmd
+endfunction
+
+function! auf#util#addLines(linenr, lines) abort
+    let execmd = '' . a:linenr . 'put=a:lines'
+    silent execute execmd
+endfunction
+
+function! auf#util#removeLines(linenr, linecnt) abort
+    let execmd = '' . a:linenr . ',' . (a:linenr + a:linecnt - 1) . 'delete _'
+    silent execute execmd
+endfunction
+
 function! auf#util#rewriteCurBuffer(newpath) abort
     let pos = getpos('.')
     let linecnt0 = line('$')
@@ -85,36 +103,119 @@ function! auf#util#rewriteCurBuffer(newpath) abort
     let tmpundofile = tempname()
     execute 'wundo! ' . tmpundofile
     try
-        silent keepjumps execute '1,$d|0read ' . a:newpath . '|$d'
+        "keepjumps ?
+        silent execute '%delete _|0read ' . a:newpath . '|$delete _'
         let linecnt1 = line('$')
     finally
         call setpos('.', pos)
         if linecnt1 > linecnt0
-            execute 'normal ' . (linecnt1 - linecnt0) . 'j$'
+            execute 'normal! ' . (linecnt1 - linecnt0) . 'j$'
         elseif linecnt1 < linecnt0
-            execute 'normal ' . (linecnt0 - linecnt1) . 'k$'
+            execute 'normal! ' . (linecnt0 - linecnt1) . 'k$'
         endif
         silent! execute 'rundo ' . tmpundofile
         call delete(tmpundofile)
     endtry
 endfunction
 
-function! auf#util#clearHighlights(synmatch) abort
-    execute 'syn clear ' . a:synmatch
+function! s:hlLine(synmatch, linenum) abort
+    if a:synmatch ==# ''
+        return 0
+    endif
+    if exists('*matchadd')
+        let ret = matchaddpos(a:synmatch, [a:linenum])
+    else
+        let linepat = '".*\%' . a:linenum . 'l.*"'
+        execute '2match ' . a:synmatch . ' /' . linepat . '/'
+        let ret = 2
+    endif
+    return ret
+endfunction
+
+function! s:hlClear(hlid) abort
+    if !a:hlid
+        return 0
+    endif
+    if exists('*matchadd')
+        silent! call matchdelete(a:hlid)
+    else
+        2match none
+    endif
+    return 0
+endfunction
+
+function! auf#util#clearAllHighlights(hlids) abort
+    " execute 'syn clear ' . a:synmatch
+    let i = 0
+    while i < len(a:hlids)
+        let hlid = a:hlids[i][1]
+        let a:hlids[i][1] = s:hlClear(hlid)
+        if hlid == 2
+            break
+        endif
+        let i += 1
+    endwhile
+endfunction
+
+function! auf#util#clearHighlightsInRange(synmatch, hlids, line1, line2) abort
+    let ret = []
+    if len(a:hlids) < 1
+        return ret
+    endif
+    if a:hlids[0][1] == 2
+        call s:hlClear(2)
+        for ll in a:hlids
+            let hl = ll[0]
+            if hl < a:line1 || hl > a:line2
+                let hlid = s:hlLine(a:synmatch, hl)
+                let ret += [[hl, hlid]]
+            endif
+        endfor
+    else
+        for ll in a:hlids
+            let [hl, hlid] = [ll[0], ll[1]]
+            if hl < a:line1 || hl > a:line2
+                let ret += [[hl, hlid]]
+                continue
+            endif
+            call s:hlClear(hlid)
+        endfor
+    endif
+    return ret
+endfunction
+
+function! auf#util#driftHighlightsAfterLine_nolight(hlids, linenr, drift) abort
+    let i = 0
+    while i < len(a:hlids)
+        let [hline, hlid] = [a:hlids[i][0], a:hlids[i][1]]
+        if hline >= a:linenr
+            let a:hlids[i][0] = hline + a:drift
+            let a:hlids[i][1] = s:hlClear(hlid)
+        endif
+        let i += 1
+    endwhile
+endfunction
+
+function! auf#util#highlights_On(hlids, synmatch) abort
+    if a:synmatch ==# ''
+        return
+    endif
+    let i = 0
+    while i < len(a:hlids)
+        let [hline, hlid] = [a:hlids[i][0], a:hlids[i][1]]
+        if !hlid
+            let a:hlids[i][1] = s:hlLine(a:synmatch, hline)
+        endif
+        let i += 1
+    endwhile
 endfunction
 
 function! auf#util#highlightLines(hlines, synmatch) abort
+    let ret = []
     for hl in a:hlines
-        exec 'syn match '. a:synmatch . ' ".*\%' . hl . 'l.*" containedin=ALL'
+        let hlid = s:hlLine(a:synmatch, hl)
+        let ret += [[hl, hlid]]
     endfor
+    return ret
 endfunction
 
-function! auf#util#highlightLinesForJIT(hunks, synmatch) abort
-    for hunk in a:hunks
-        let ln = hunk[0]
-        while ln <= hunk[1]
-            exec 'syn match '. a:synmatch . ' ".*\%' . ln . 'l.*" containedin=ALL'
-            let ln += 1
-        endwhile
-    endfor
-endfunction

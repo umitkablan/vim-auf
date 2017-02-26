@@ -39,7 +39,7 @@ endfunction
 " that it should be done here due to <line1>,<line2> range.
 command! -nargs=? -range=% -complete=filetype -bang -bar Auf
     \ let ww=winsaveview()|
-    \ <line1>,<line2>call auf#format#TryAllFormatters(<bang>0, <f-args>)|
+    \ <line1>,<line2>call auf#format#TryAllFormatters(<bang>0, 'AufErrLine', <f-args>)|
     \ call winrestview(ww)
 command! -nargs=0 -bar AufJIT call auf#format#justInTimeFormat('AufErrLine')
 
@@ -49,14 +49,13 @@ command! AufPrevFormatter call auf#format#PreviousFormatter()
 command! AufCurrFormatter call auf#format#CurrentFormatter()
 
 command! AufShowDiff call auf#format#ShowDiff()
-command! AufClearHi call auf#util#clearHighlights("AufErrLine")
+command! AufClearHi call auf#util#clearHighlights('AufErrLine')
 
 augroup Auf_Auto
     autocmd!
     autocmd BufRead *
-        \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 &&
-        \    g:auf_highlight_errs |
-        \   Auf |
+        \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 |
+        \   call auf#format#TryAllFormatters(0, '') |
         \ endif
     autocmd BufRead *
         \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 &&

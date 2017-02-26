@@ -1,0 +1,10 @@
+--- hello.cpp	2017-02-24 18:33:37.000000000 +0300
++++ hello.cpp.new	2017-02-24 18:33:29.000000000 +0300
+@@ -1,6 +1,6 @@
++#include <ctype.h>
+ #include <sstream>
+ 
+-#include <ctype.h>
+ #include <iostream>
+ 
+ #include <string>

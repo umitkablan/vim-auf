@@ -3,6 +3,56 @@ if exists('g:loaded_auf_diff_autoload') || !exists('g:loaded_auf_plugin')
 endif
 let g:loaded_auf_diff_autoload = 1
 
+function! auf#diff#findHunks(diffcmd, curfile, oldfile, difpath) abort
+    let [issame, err, sherr] = auf#diff#diffFiles(a:diffcmd, a:oldfile, a:curfile, a:difpath)
+    if issame
+        return []
+    elseif err
+        call auf#util#logVerbose('findAddedLines: error ' . err . '/'. sherr . ' diff current')
+        return []
+    endif
+    call auf#util#logVerbose('findHunks: diff done to ' . a:difpath)
+    return auf#diff#parseChangedLines(a:difpath)
+endfunction
+
+function! auf#diff#parseHunks(difpath) abort
+    let ret = []
+    let flines = readfile(a:difpath)
+    let [prevnr, curnr, prevcnt, curcnt, addedlines] = [0, 0, 0, 0, []]
+    for line in flines
+        if line ==# ''
+            continue
+        elseif line[0] ==# '@'
+            let prevnr = str2nr(line[4:stridx(line, ',')])
+            let plusidx = stridx(line, '+')
+            let commaidx = stridx(line, ',', plusidx)
+            if plusidx < 0 || commaidx < 0
+                call auf#util#logVerbose('findHunks: !!plus/comma is not found in the diff line!!')
+                let [prevnr, curnr, addedlines] = [0, 0, []]
+                continue
+            endif
+            let curnr = str2nr(line[plusidx+1:commaidx])
+        elseif prevnr > 0
+            if line[0] ==# '-'
+                let [prevnr, prevcnt] = [prevnr+1, prevcnt+1]
+            elseif line[0] ==# '+'
+                let [curnr, curcnt] = [curnr+1, curcnt+1]
+                let addedlines += [line[1:]]
+            elseif line[0] ==# ' '
+                if prevcnt > 0 || curcnt > 0
+                    let ret += [[prevnr-prevcnt, prevcnt, curcnt, addedlines]]
+                    let [prevcnt, curcnt, addedlines] = [0, 0, []]
+                endif
+                let [prevnr, curnr] = [prevnr+1, curnr+1]
+            endif
+        endif
+    endfor
+    if prevcnt > 0 || curcnt > 0
+        let ret += [[prevnr-prevcnt, prevcnt, curcnt, addedlines]]
+    endif
+    return ret
+endfunction
+
 function! auf#diff#parseChangedLines(diffpath) abort
     let hlines  = []
     let lnfirst = -1
@@ -35,54 +85,6 @@ function! auf#diff#parseChangedLines(diffpath) abort
     return hlines
 endfunction
 
-function! auf#diff#findAddedLines(diffcmd, curfile, oldfile, difpath) abort
-    let ret = []
-    let [issame, err, sherr] = auf#diff#diffFiles(a:diffcmd, a:oldfile, a:curfile, a:difpath)
-    if issame
-        return ret
-    elseif err
-        call auf#util#logVerbose('findAddedLines: error ' . err . '/'. sherr . ' diff current')
-        return ret
-    endif
-    call auf#util#logVerbose('findAddedLines: diff done to ' . a:difpath)
-
-    let flines = readfile(a:difpath)
-    let [lnfirst, ln0, ln1] = [0, 0, 0]
-    for line in flines
-        if line ==# ''
-            continue
-        elseif line[0] ==# '@'
-            let plusidx = stridx(line, '+')
-            let commaidx = stridx(line, ',', plusidx)
-            if plusidx < 0 || commaidx < 0
-                call auf#util#logVerbose('findAddedLines: !!plus/comma is not found in the diff line!!')
-                let lnfirst = 0
-                continue
-            endif
-            let lnfirst = str2nr(line[plusidx+1:commaidx])
-        elseif lnfirst > 0
-            if line[0] !=# '+' && ln0 > 0
-                let ret += [[ln0, ln1]]
-                let [ln0, ln1] = [0, 0]
-            endif
-            if line[0] ==# '+'
-                if ln0 == 0
-                    let [ln0, ln1] = [lnfirst, lnfirst]
-                else
-                    let ln1 += 1
-                endif
-            endif
-            if line[0] !=# '-'
-                let lnfirst += 1
-            endif
-        endif
-    endfor
-    if ln0 > 0
-        let ret += [[ln0, ln1]]
-    endif
-    return ret
-endfunction
-
 function! auf#diff#diffFiles(diffcmd, origf, modiff, difpath) abort
     let cmd = a:diffcmd . ' ' . a:origf . ' ' . a:modiff
     call auf#util#logVerbose('diffFiles: command> ' . cmd)
@@ -97,11 +99,15 @@ function! auf#diff#diffFiles(diffcmd, origf, modiff, difpath) abort
     return [0, 0, v:shell_error]
 endfunction
 
-function! auf#diff#applyHunkInPatch(filterdifcmd, patchcmd, origf, difpath, line1, line2) abort
+function! auf#diff#filterPatchLinesRanged(filterdifcmd, line1, line2, origf, difpath) abort
     let cmd = a:filterdifcmd . ' -i ' . a:origf . ' --lines=' . a:line1 . '-' . a:line2 . ' ' . a:difpath
-    call auf#util#logVerbose('applyHunkInPatch: filter-diff Command:' . cmd)
+    call auf#util#logVerbose('filterPatchLinesRanged: filter-diff Command:' . cmd)
     let out = auf#util#execWithStdout(cmd)
     call writefile(split(out, '\n'), a:difpath)
+endfunction
+
+function! auf#diff#applyHunkInPatch(filterdifcmd, patchcmd, origf, difpath, line1, line2) abort
+    call auf#diff#filterPatchLinesRanged(a:filterdifcmd, a:line1, a:line2, a:origf, a:difpath)
     let cmd = a:patchcmd . ' < ' . a:difpath
     call auf#util#logVerbose('applyHunkInPatch: patch Command:' . cmd)
     let out = auf#util#execWithStdout(cmd)

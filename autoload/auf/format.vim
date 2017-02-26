@@ -57,7 +57,7 @@ endfunction
 
 " Try all formatters, starting with the currently selected one, until one
 " works. If none works, autoindent the buffer.
-function! auf#format#TryAllFormatters(bang, ...) range
+function! auf#format#TryAllFormatters(bang, synmatch, ...) range
     " Make sure formatters are defined and detected
     if !call('auf#format#find_formatters', a:000)
         call auf#util#logVerbose('TryAllFormatters: No format definitions are defined for this FileType')
@@ -83,8 +83,6 @@ function! auf#format#TryAllFormatters(bang, ...) range
 
     let overwrite = a:bang
 
-    let synmatch = 'AufErrLine'
-
     while 1
         let [auffmt_var, formatprg] = auf#util#getFormatterAtIndex(auf#format#index)
         if formatprg ==# ''
@@ -94,7 +92,7 @@ function! auf#format#TryAllFormatters(bang, ...) range
         let b:formatprg = formatprg
 
         call auf#util#logVerbose("TryAllFormatters: Trying definition in '" . auffmt_var)
-        if auf#format#TryFormatter(a:firstline, a:lastline, b:formatprg, overwrite, synmatch)
+        if auf#format#TryFormatter(a:firstline, a:lastline, b:formatprg, overwrite, a:synmatch)
             call auf#util#logVerbose("TryAllFormatters: Definition in '" . auffmt_var . "' was successful.")
             return 1
         else
@@ -141,57 +139,71 @@ function! auf#format#formatSource(line1, line2, formatprg, inpath, outpath) abor
     return [v:shell_error == 0, isranged, v:shell_error]
 endfunction
 
+function! auf#format#evaluateOverwriteFormatted(line1, line2, curfile, difpath, is_formatter_ranged) abort
+    if a:is_formatter_ranged " formatter supports range
+        call auf#util#logVerbose('evaluateOverwriteFormatted: *formatter* supports range - format fully')
+    else                     " formatter has only full-file support
+        call auf#util#logVerbose('evaluateOverwriteFormatted: *formatter* does not support range - apply filter on range')
+        call auf#diff#filterPatchLinesRanged(g:auf_filterdiffcmd, a:line1, a:line2, a:curfile, a:difpath)
+    endif
+    for [linenr, prevcnt, curcnt, addlines] in auf#diff#parseHunks(a:difpath)
+        if prevcnt > 0 && curcnt > 0
+            call auf#util#logVerbose('evaluateOverwriteFormatted: *replace* ' . linenr . ',' . prevcnt . ',' . curcnt)
+            call auf#util#replaceLines(linenr, prevcnt, addlines)
+        elseif prevcnt > 0
+            call auf#util#logVerbose('evaluateOverwriteFormatted: *remove* ' . linenr . ',' . prevcnt . ',' . curcnt)
+            call auf#util#removeLines(linenr, prevcnt)
+        else
+            call auf#util#logVerbose('evaluateOverwriteFormatted: *addline* ' . linenr . ',' . prevcnt . ',' . curcnt)
+            call auf#util#addLines(linenr, addlines)
+        endif
+    endfor
+endfunction
+
+function! s:clearHighlights() abort
+    if exists('w:auf_highlight_lines_hlids')
+        call auf#util#clearAllHighlights(w:auf_highlight_lines_hlids)
+    endif
+    let w:auf_highlight_lines_hlids = []
+endfunction
+
 function! auf#format#evaluateFormattedToOrig(line1, line2, formatprg, curfile, formattedf, difpath, synmatch, overwrite)
-    call auf#util#clearHighlights(a:synmatch)
+    let [drift, lines_prev] = [0, line('$')]
     call writefile(getline(1, '$'), a:curfile)
-    let [res, isranged, sherr] = auf#format#formatSource(a:line1, a:line2, a:formatprg, a:curfile, a:formattedf)
+    let [res, is_formatter_ranged, sherr] = auf#format#formatSource(a:line1, a:line2, a:formatprg, a:curfile, a:formattedf)
     call auf#util#logVerbose('evaluateFormattedToOrig: sourceFormetted shErr:' . sherr)
     if !res
-        return [2, sherr]
+        return [2, sherr, drift]
     endif
 
     let isfull = auf#util#isFullSelected(a:line1, a:line2)
     call auf#util#logVerbose('evaluateFormattedToOrig: isFull:' . isfull)
     let [issame, err, sherr] = auf#diff#diffFiles(g:auf_diffcmd, a:curfile, a:formattedf, a:difpath)
-    if issame && isfull
-        return [0, 0]
+    if issame
+        call s:clearHighlights()
+        return [0, 0, drift]
     elseif err
-        return [3, sherr]
-    endif
-
-    if a:overwrite && isfull
-        call auf#util#rewriteCurBuffer(a:formattedf)
-        return [1, 0]
+        return [3, sherr, drift]
     endif
 
     if a:overwrite
-        if isranged " formatter supports range
-            call auf#util#logVerbose('evaluateFormattedToOrig: *formatter supports range - format fully')
+        if exists('w:auf_highlight_lines_hlids')
+            let w:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(a:synmatch, w:auf_highlight_lines_hlids, a:line1, a:line2)
+        endif
+        if isfull
+            call s:clearHighlights()
             call auf#util#rewriteCurBuffer(a:formattedf)
-            call writefile(getline(1, '$'), a:formattedf)
-            let [res, isranged, sherr] = auf#format#formatSource(1, line('$'), a:formatprg, a:formattedf, a:curfile)
-            if !res
-                call auf#util#logVerbose('evaluateFormattedToOrig: error ' . sherr . ' trying to full-format range-formatted file.')
-                return [2, sherr]
-            endif
-            let [dif_curfile, dif_formatf] = [a:formattedf, a:curfile]
-        else        " formatter has only full-file support
-            call auf#util#logVerbose('evaluateFormattedToOrig: *formatter* does not support range - apply hunk')
-            let [res, sherr] = auf#diff#applyHunkInPatch(g:auf_filterdiffcmd, g:auf_patchcmd, a:curfile, a:difpath, a:line1, a:line2)
-            call auf#util#logVerbose('evaluateFormattedToOrig: applyHunk res:' . res . ' ShErr:' . sherr)
-            let [dif_curfile, dif_formatf] = [a:curfile, a:formattedf]
-            call auf#util#rewriteCurBuffer(dif_curfile)
+            return [1, 0, line('$')-lines_prev]
         endif
-        let [issame, err, sherr] = auf#diff#diffFiles(g:auf_diffcmd, dif_curfile, dif_formatf, a:difpath)
-        if err
-            call auf#util#logVerbose('evaluateFormattedToOrig: error ' . sherr . ' trying to diff files at overwrite.')
-            return [3, sherr]
-        endif
+        call auf#format#evaluateOverwriteFormatted(a:line1, a:line2, a:curfile, a:difpath, is_formatter_ranged)
+        let drift = line('$')-lines_prev
     else
+        if exists('w:auf_highlight_lines_hlids')
+            call auf#util#clearAllHighlights(w:auf_highlight_lines_hlids)
+        endif
+        let w:auf_highlight_lines_hlids = auf#util#highlightLines(auf#diff#parseChangedLines(a:difpath), a:synmatch)
     endif
-
-    call auf#util#highlightLines(auf#diff#parseChangedLines(a:difpath), a:synmatch)
-    return [1, 0]
+    return [1, 0, drift]
 endfunction
 
 function! auf#format#TryFormatter(line1, line2, formatprg, overwrite, synmatch)
@@ -207,8 +219,8 @@ function! auf#format#TryFormatter(line1, line2, formatprg, overwrite, synmatch)
         let b:auf_difpath = tempname()
     endif
 
-    let [res, sherr] = auf#format#evaluateFormattedToOrig(a:line1, a:line2, a:formatprg, tmpf0path, tmpf1path, b:auf_difpath, a:synmatch, a:overwrite)
-    call auf#util#logVerbose('TryFormatter: res:' . res . ' ShErr:' . sherr)
+    let [res, sherr, drift] = auf#format#evaluateFormattedToOrig(a:line1, a:line2, a:formatprg, tmpf0path, tmpf1path, b:auf_difpath, a:synmatch, a:overwrite)
+    call auf#util#logVerbose('TryFormatter: res:' . res . ' ShErr:' . sherr . ' drift: ' . drift)
     if res == 0 "No diff found
         call auf#util#echoSuccessMsg('AutoFormat> Format PASSED!')
     elseif res == 2 "Format program error
@@ -239,28 +251,43 @@ function! auf#format#justInTimeFormat(synmatch) abort
         let b:auf_difpath = tempname()
     endif
 
-    let [tmpcurfile, overwrite, linenr_diff] = [tempname(), 1, 0]
+    let [tmpcurfile, overwrite] = [tempname(), 1]
     call auf#util#logVerbose('justInTimeFormat: trying..')
     try
         call writefile(getline(1, '$'), tmpcurfile)
-        let hunks = auf#diff#findAddedLines(g:auf_diffcmd, tmpcurfile, expand('%:.'), b:auf_difpath)
-        " call autoformat#highlightLinesForJIT(hunks, a:synmatch)
-        for ln in hunks
-            if ln[0] < 1 || ln[1] < 1
-                call auf#util#echoErrorMsg('justInTimeFormat: invalid hunk-lines:' . ln[0] . '-' . ln[1])
+        let [issame, err, sherr] = auf#diff#diffFiles(g:auf_diffcmd, tmpcurfile, expand('%:.'), b:auf_difpath)
+        if issame
+            call auf#util#logVerbose('justInTimeFormat: no edit has detected - no diff')
+            return 0
+        elseif err
+            call auf#util#logVerbose('justInTimeFormat: diff error ' . err . '/'. sherr . ' diff current')
+            return 2
+        endif
+        call auf#util#logVerbose('justInTimeFormat: diff done file:' . b:auf_difpath)
+        for [linenr, prevcnt, curcnt, _] in auf#diff#parseHunks(b:auf_difpath)
+            for i in _
+                let @_ = i
+            endfor
+            if prevcnt == 0 && curcnt == 0
+                call auf#util#echoErrorMsg('justInTimeFormat: invalid hunk-lines:' . linenr . '-' . prevcnt . ',' . curcnt)
                 continue
             endif
-            let [ln0, ln1, linecnt_prev] = [ln[0] + linenr_diff, ln[1] + linenr_diff, line('$')]
-            call auf#util#logVerbose('justInTimeFormat: hunk-lines:' . ln0 . '-' . ln1)
-            " calculate how much we drifted from initials accumulatively
-            let linenr_diff = line('$') - linecnt_prev + linenr_diff
-            let res = auf#format#TryFormatter(ln0, ln1, b:formatprg, overwrite, 'AufErrLine')
-            call auf#util#logVerbose('justInTimeFormat: result:' . res . ' drift:' . linenr_diff)
+            let [ln0, ln1, drift] = [linenr, linenr+curcnt-1, curcnt-prevcnt]
+            if drift != 0
+                call auf#util#driftHighlightsAfterLine_nolight(w:auf_highlight_lines_hlids, ln0, drift)
+            endif
+            if curcnt > 0
+                call auf#util#logVerbose('justInTimeFormat: hunk-lines:' . ln0 . '-' . ln1)
+                let res = auf#format#TryFormatter(ln0, ln1, b:formatprg, overwrite, a:synmatch)
+                call auf#util#logVerbose('justInTimeFormat: result:' . res . ' drift:' . drift)
+            endif
         endfor
+        call auf#util#highlights_On(w:auf_highlight_lines_hlids, a:synmatch)
     finally
         call auf#util#logVerbose('justInTimeFormat: deleting temporary-current-buffer')
         call delete(tmpcurfile)
     endtry
+    return 0
 endfunction
 
 " Functions for iterating through list of available formatters
