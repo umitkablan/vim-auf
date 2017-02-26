@@ -28,7 +28,12 @@ endif
 
 let g:auf_diffcmd .= ' -u '
 
-execute 'highlight def link AufErrLine ' . g:auf_showdiff_synmatch
+let s:AufErrLineSynCmd = 'highlight def link AufErrLine ' . g:auf_showdiff_synmatch
+augroup Auf_Auto_Syntax
+    autocmd!
+    autocmd Syntax execute s:AufErrLineSynCmd
+augroup END
+execute s:AufErrLineSynCmd
 
 function! AufFormatRange(line1, line2) abort
     let overwrite = 1
@@ -52,7 +57,7 @@ command! AufCurrFormatter call auf#format#CurrentFormatter()
 command! AufShowDiff call auf#format#ShowDiff()
 command! AufClearHi call auf#util#clearHighlights('AufErrLine')
 
-augroup Auf_Auto
+augroup Auf_Auto_BufEvents
     autocmd!
     autocmd BufRead *
         \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 |
