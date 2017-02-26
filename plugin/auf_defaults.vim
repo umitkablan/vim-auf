@@ -71,11 +71,11 @@ endif
 if !exists('g:auffmt_clangformat')
     let s:configfile_def = "'clang-format -lines=##FIRSTLINE##:##LASTLINE## --assume-filename=\"'.expand('%:.').'\" -style=file ##INPUTSRC##'"
     let s:noconfigfile_def = "'clang-format -lines=##FIRSTLINE##:##LASTLINE## --assume-filename=\"'.expand('%:.').'-style=\"{BasedOnStyle: WebKit, AlignTrailingComments: true, '.(&textwidth ? 'ColumnLimit: '.&textwidth.', ' : '').(&expandtab ? 'UseTab: Never, IndentWidth: '.shiftwidth() : 'UseTab: Always').'}\" ##INPUTSRC##'"
-    let g:auffmt_clangformat = "g:ClangFormatConfigFileExists() ? (" . s:configfile_def . ") : (" . s:noconfigfile_def . ")"
+    let g:auffmt_clangformat = 'g:ClangFormatConfigFileExists() ? (' . s:configfile_def . ') : (' . s:noconfigfile_def . ')'
 endif
 
 function! g:ClangFormatConfigFileExists()
-    return len(findfile(".clang-format", expand("%:p:h").";")) || len(findfile("_clang-format", expand("%:p:h").";"))
+    return len(findfile('.clang-format', expand('%:p:h').';')) || len(findfile('_clang-format', expand('%:p:h').';'))
 endfunction
 
 " ****************
@@ -218,7 +218,7 @@ endif
 " XML
 " ****************
 if !exists('g:auffmt_tidy_xml')
-    let g:auffmt_tidy_xml = '"tidy -q -xml --show-errors 0 --show-warnings 0 --force-output --indent auto --indent-spaces ".shiftwidth()." --vertical-space yes --tidy-mark no -wrap ".&textwidth'." ##INPUTSRC## -o ##OUTPUTSRC##"
+    let g:auffmt_tidy_xml = '"tidy -q -xml --show-errors 0 --show-warnings 0 --force-output --indent auto --indent-spaces ".shiftwidth()." --vertical-space yes --tidy-mark no -wrap ".&textwidth'.' ##INPUTSRC## -o ##OUTPUTSRC##'
 endif
 
 if !exists('g:aufformatters_xml')
@@ -229,7 +229,7 @@ endif
 " XHTML
 " ****************
 if !exists('g:auffmt_tidy_xhtml')
-    let g:auffmt_tidy_xhtml = '"tidy -q --show-errors 0 --show-warnings 0 --force-output --indent auto --indent-spaces ".shiftwidth()." --vertical-space yes --tidy-mark no -asxhtml -wrap ".&textwidth'." ##INPUTSRC## -o ##OUTPUTSRC##"
+    let g:auffmt_tidy_xhtml = '"tidy -q --show-errors 0 --show-warnings 0 --force-output --indent auto --indent-spaces ".shiftwidth()." --vertical-space yes --tidy-mark no -asxhtml -wrap ".&textwidth'.' ##INPUTSRC## -o ##OUTPUTSRC##'
 endif
 
 if !exists('g:aufformatters_xhtml')
