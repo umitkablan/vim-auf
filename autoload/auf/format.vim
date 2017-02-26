@@ -124,7 +124,7 @@ function! auf#format#Fallback()
     if exists('b:auf_autoindent') ? b:auf_autoindent == 1 : g:auf_autoindent == 1
         call auf#util#logVerbose('Fallback: Autoindenting...')
         " Autoindent code
-        exe 'normal gg=G'
+        keepjumps execute 'normal gg=G'
     endif
 endfunction
 
