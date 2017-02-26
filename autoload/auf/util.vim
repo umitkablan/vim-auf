@@ -13,6 +13,17 @@ function! auf#util#logVerbose(line) abort
     endif
 endfunction
 
+function! auf#util#logVerbose_fileContent(pretext, filepath, posttext) abort
+    if auf#util#get_verbose()
+        echomsg a:pretext
+        let flines = readfile(a:filepath)
+        for fl in flines
+            echomsg fl
+        endfor
+        echomsg a:posttext
+    endif
+endfunction
+
 function! auf#util#echoSuccessMsg(line) abort
     echohl DiffAdd | echomsg a:line | echohl None
 endfunction

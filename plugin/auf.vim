@@ -41,7 +41,8 @@ command! -nargs=? -range=% -complete=filetype -bang -bar Auf
     \ let ww=winsaveview()|
     \ <line1>,<line2>call auf#format#TryAllFormatters(<bang>0, 'AufErrLine', <f-args>)|
     \ call winrestview(ww)
-command! -nargs=0 -bar AufJIT call auf#format#justInTimeFormat('AufErrLine')
+command! -nargs=0 -bar AufJIT
+    \ call auf#format#justInTimeFormat('AufErrLine')
 
 " Create commands for iterating through formatter list
 command! AufNextFormatter call auf#format#NextFormatter()

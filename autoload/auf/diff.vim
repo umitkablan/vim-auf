@@ -11,7 +11,8 @@ function! auf#diff#findHunks(diffcmd, curfile, oldfile, difpath) abort
         call auf#util#logVerbose('findAddedLines: error ' . err . '/'. sherr . ' diff current')
         return []
     endif
-    call auf#util#logVerbose('findHunks: diff done to ' . a:difpath)
+    call auf#util#logVerbose()
+    call auf#util#logVerbose_fileContent('findHunks: diff done to ' . a:difpath, a:difpath, 'findHunks: ========')
     return auf#diff#parseChangedLines(a:difpath)
 endfunction
 
