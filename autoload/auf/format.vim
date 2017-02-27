@@ -164,7 +164,6 @@ function! auf#format#evalApplyDif(line1, difpath, coward) abort
 endfunction
 
 function! auf#format#evaluateFormattedToOrig(line1, line2, formatprg, curfile, formattedf, difpath, synmatch, overwrite, coward)
-    let lines_prev = line('$')
     call writefile(getline(1, '$'), a:curfile)
     let [res, is_formatter_ranged, sherr] = auf#format#formatSource(a:line1, a:line2, a:formatprg, a:curfile, a:formattedf)
     call auf#util#logVerbose('evaluateFormattedToOrig: sourceFormetted shErr:' . sherr)
@@ -173,8 +172,9 @@ function! auf#format#evaluateFormattedToOrig(line1, line2, formatprg, curfile, f
     endif
 
     let isfull = auf#util#isFullSelected(a:line1, a:line2)
-    call auf#util#logVerbose('evaluateFormattedToOrig: isFull:' . isfull)
     let [issame, err, sherr] = auf#diff#diffFiles(g:auf_diffcmd, a:curfile, a:formattedf, a:difpath)
+    call auf#util#logVerbose('evaluateFormattedToOrig: isFull:' . isfull . ' isSame:' . issame
+                \ . ' isRangedFormat:' . is_formatter_ranged . ' shErr:' . sherr)
     if issame
         call auf#util#clearAllHighlights(w:auf_highlight_lines_hlids)
         let w:auf_highlight_lines_hlids = []
@@ -184,21 +184,25 @@ function! auf#format#evaluateFormattedToOrig(line1, line2, formatprg, curfile, f
     endif
     call auf#util#logVerbose_fileContent('evaluateFormattedToOrig: difference detected:' . a:difpath,
                 \ a:difpath, 'evaluateFormattedToOrig: ========')
-    if a:overwrite
-        let w:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(a:synmatch, w:auf_highlight_lines_hlids, a:line1, a:line2)
-        call auf#util#clearAllHighlights(w:auf_highlight_lines_hlids)
-        if isfull
-            call auf#util#clearAllHighlights(w:auf_highlight_lines_hlids)
-            let w:auf_highlight_lines_hlids = []
-            call auf#util#rewriteCurBuffer(a:formattedf)
-            return [1, 0]
-        endif
-        if is_formatter_ranged " formatter supports range
-            call auf#util#logVerbose('evaluateFormattedToOrig: formatter supports range')
-        else                   " formatter has only full-file support
-            call auf#util#logVerbose('evaluateFormattedToOrig: formatter does not support range')
-            call auf#diff#filterPatchLinesRanged(g:auf_filterdiffcmd, a:line1, a:line2, a:curfile, a:difpath)
-        endif
+    if !is_formatter_ranged && !isfull
+        call auf#diff#filterPatchLinesRanged(g:auf_filterdiffcmd, a:line1, a:line2, a:curfile, a:difpath)
+        call auf#util#logVerbose_fileContent('evaluateFormattedToOrig: difference after filter:' . a:difpath,
+                    \ a:difpath, 'evaluateFormattedToOrig: ========')
+    endif
+
+    call auf#util#clearAllHighlights(w:auf_highlight_lines_hlids)
+    if !a:overwrite
+        let w:auf_highlight_lines_hlids = auf#util#highlightLines(auf#diff#parseChangedLines(a:difpath), a:synmatch)
+        return [1, 0]
+    endif
+
+    if isfull
+        let w:auf_highlight_lines_hlids = []
+        call auf#util#rewriteCurBuffer(a:formattedf)
+    else
+        let lines_prev = line('$')
+        let w:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(a:synmatch, w:auf_highlight_lines_hlids,
+                        \ a:line1, a:line2)
         let res = auf#format#evalApplyDif(a:line1, a:difpath, a:coward)
         if res == 4
             return [4, 0]
@@ -207,11 +211,9 @@ function! auf#format#evaluateFormattedToOrig(line1, line2, formatprg, curfile, f
         if drift != 0
             call auf#util#driftHighlightsAfterLine_nolight(w:auf_highlight_lines_hlids, a:line1, drift)
         endif
-        call auf#util#highlights_On(w:auf_highlight_lines_hlids, a:synmatch)
-    else
-        call auf#util#clearAllHighlights(w:auf_highlight_lines_hlids)
-        let w:auf_highlight_lines_hlids = auf#util#highlightLines(auf#diff#parseChangedLines(a:difpath), a:synmatch)
     endif
+
+    call auf#util#highlights_On(w:auf_highlight_lines_hlids, a:synmatch)
     return [1, 0]
 endfunction
 
