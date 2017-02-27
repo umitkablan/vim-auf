@@ -55,13 +55,31 @@ command! AufPrevFormatter call auf#format#PreviousFormatter()
 command! AufCurrFormatter call auf#format#CurrentFormatter()
 
 command! AufShowDiff call auf#format#ShowDiff()
-command! AufClearHi call auf#util#clearHighlights('AufErrLine')
+command! AufClearHi call auf#util#clearAllHighlights(w:auf_highlight_lines_hlids)
+
+augroup Auf_Auto_Inserts
+    autocmd!
+    autocmd InsertEnter *
+        \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 |
+        \   call auf#format#InsertModeOn() |
+        \ endif
+    autocmd InsertLeave *
+        \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 |
+        \   call auf#format#InsertModeOff('AufErrLine') |
+        \ endif
+    autocmd CursorHold *
+        \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 |
+        \   call auf#format#CursorHoldInNormalMode('AufErrLine') |
+        \ endif
+augroup END
 
 augroup Auf_Auto_BufEvents
     autocmd!
-    autocmd BufRead *
+    autocmd BufReadPost *
         \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 |
-        \   call auf#format#TryAllFormatters(0, '') |
+        \   let w:auf_highlight_lines_hlids = [] |
+        \   if g:auf_highlight_on_bufenter | Auf |
+        \   else | %call auf#format#TryAllFormatters(0, '') | endif |
         \ endif
     autocmd BufRead *
         \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 &&

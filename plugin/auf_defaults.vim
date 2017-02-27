@@ -412,6 +412,10 @@ if !exists('g:auf_highlight_errs')
     let g:auf_highlight_errs = 1
 endif
 
+if !exists('g:auf_highlight_on_bufenter')
+    let g:auf_highlight_on_bufenter = 0
+endif
+
 if !exists('g:auf_jitformat')
     let g:auf_jitformat = 1
 endif

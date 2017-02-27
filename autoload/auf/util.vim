@@ -161,9 +161,6 @@ function! auf#util#clearAllHighlights(hlids) abort
     while i < len(a:hlids)
         let hlid = a:hlids[i][1]
         let a:hlids[i][1] = s:hlClear(hlid)
-        if hlid == 2
-            break
-        endif
         let i += 1
     endwhile
 endfunction
