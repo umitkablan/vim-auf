@@ -412,6 +412,17 @@ if !exists('g:auf_highlight_errs')
     let g:auf_highlight_errs = 1
 endif
 
+if !exists('g:auf_highlight_pattern')
+    " Don't highlight
+    let g:auf_highlight_pattern = ''
+    " Full line highlight
+    let g:auf_highlight_pattern = '\(\%##LINENUM##l\)'
+    " Highlight leading white-space
+    let g:auf_highlight_pattern = '^\(\%##LINENUM##l\)\s\+'
+    " Highlight all white-space within
+    let g:auf_highlight_pattern = '\(\%##LINENUM##l\)\s'
+endif
+
 if !exists('g:auf_highlight_on_bufenter')
     let g:auf_highlight_on_bufenter = 0
 endif

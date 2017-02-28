@@ -137,13 +137,19 @@ function! auf#util#rewriteCurBuffer(newpath) abort
 endfunction
 
 function! s:hlLine(synmatch, linenum) abort
-    if a:synmatch ==# ''
+    if a:synmatch ==# '' || g:auf_highlight_pattern ==# ''
         return 0
     endif
     if exists('*matchadd')
-        let ret = matchaddpos(a:synmatch, [a:linenum])
+        "   1) match line with user defined pattern
+        let linepat = substitute(g:auf_highlight_pattern, '##LINENUM##', a:linenum, 'g')
+        let ret = matchadd(a:synmatch, linepat)
+        "   2) match whole line (should be *fast*)
+        " let ret = matchaddpos(a:synmatch, [a:linenum])
+        "   3) match line with count characters from beginning (fast)
+        " let ret = matchaddpos(a:synmatch, [[a:linenum, 1, a:count]])
     else
-        let linepat = '".*\%' . a:linenum . 'l.*"'
+        let linepat = '.*\%' . a:linenum . 'l.*'
         execute '2match ' . a:synmatch . ' /' . linepat . '/'
         let ret = 2
     endif
