@@ -1,11 +1,47 @@
 # vim-auf
 
-Format code with one button press or only by saving!
-This plugin makes use of external formatter programs to achieve the best results.
+## JIT format code with AUF on the fly and *only your changes*
+
+While working in the professional domain you'll encounter coding guidelines and many code that is
+not aligned with this guideline; especially if that guideline is forced manually by people or there
+are 1+ conflicting tastes / modules - we all have different tastes anyways. (Correct way to do such
+a thing is to give enough tooling to the programmers - a formatter that will automatically format
+code no matter how s/he types). There is also a sad news that some formatters will uglify some
+expressions, especially when the language you are using has many concepts ranging from macros to
+templates and user-defined operators (people could combine such features in crazily intelligent
+ways and resulting usage would be hard to reason) - we should live in such an environment where we
+have human-styles as well as an automated hand intermixed.
+
+If you are using an automated tool to reformat *all* code - you'll, many times, touch other people's
+lines and it will make you the blame for that line IF they don't complain about your change and
+make you revert.
+
+Reformatting only your edits on-the-fly will make you forget about any formatting rule and take
+the burden off your shoulders as well as making you lazier and not type any whitespacing between
+your expressions - AUF will take care anyways!
+
+This plugin makes use of external formatter programs which are designed in UNIX philosophy and
+running in command line. Those programs are already well known/supported and already are actively
+used in other editors/IDEs. AUF will let you get those configurations directly from those
+environments and adopt very quickly - no need to re-define them in another form. In order to
+utilize them by AUF, formatters at least should accept input path as argument and output to stdout.
+Yet it is always better to have those formatters get input and output paths as well as line range
+to format. The algorithm implemented here won't complain if the formatter is only-full-file
+and doesn't support line range - it will filter-out unnecessary formatted lines and still work
+on the code you touched.
+
+While AUF introduces JIT formatting which will format only your edits, you still can reformat *all*
+file easily (not preferred for our case). In order to still warn you about those wrong-format
+lines it uses line highlighting which is also configurable and slides as you edit. Those wrong-
+format lines will be shown once you start editing - get out of the insert mode. It won't distract
+you during insert mode.
+
 Check the list of formatter programs to see which languages are supported by default.
 You can easily customize or add your own formatter.
-When no formatter exists (or none is installed) for a certain filetype,
-vim-auf falls back by default to indenting, (using vim's auto indent functionality), retabbing and removing trailing whitespace.
+
+When no formatter exists (or none is installed) for a certain filetype, vim-auf falls back by
+default to indenting, (using vim's auto indent functionality), retabbing and removing trailing
+whitespace.
 
 ## How to install
 
@@ -37,7 +73,7 @@ Still you can decide to download this repository as a zip file or whatever and e
 
 First you should install an external program that can format code of the programming language you are using.
 This can either be one of the programs that are listed below as default programs, or a custom program.
-For default programs, vim-auf knows for which filetypes it can be used.
+For default programs, AUF knows for which filetypes it can be used.
 For using a custom formatter program, read the text below *How can I change the behaviour of formatters, or add one myself?*
 If the formatter program you want to use is installed in one of the following ways, vim automatically detects it:
 
@@ -45,10 +81,10 @@ If the formatter program you want to use is installed in one of the following wa
 * Alternatively you can append program location to $PATH environment variable before starting VIM
 
 Remember that when no formatter programs exists for a certain filetype,
-vim-auf falls back by default to indenting, retabbing and removing trailing whitespace.
+AUF falls back by default to indenting, retabbing and removing trailing whitespace.
 This will fix at least the most basic things, according to vim's indentfile for that filetype.
 
-When you have installed the formatter you need, you can format the entire buffer with the command `:Auf!`.
+When you have installed the formatter you need, you can format the *entire* buffer with the command `:Auf!`.
 You can provide the command with a file type such as `:Auf json`, otherwise the buffer's filetype will be used.
 
 Some formatters allow you to format only a part of the file, for instance `clang-format` and
