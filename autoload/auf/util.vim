@@ -2,6 +2,7 @@ if exists('g:loaded_auf_util_autoload') || !exists('g:loaded_auf_plugin')
     finish
 endif
 let g:loaded_auf_util_autoload = 1
+let s:is_win = has('win32') || has('win64')
 
 function! auf#util#get_verbose() abort
     return &verbose || g:auf_verbosemode == 1
@@ -38,7 +39,10 @@ endfunction
 
 function! auf#util#execWithStdout(cmd) abort
     let sr = &shellredir
-    set shellredir=>%s\ 2>/dev/null
+    if !s:is_win
+        set shellredir=>%s\ 2>/dev/null
+    endif
+    call auf#util#logVerbose('execWithStdout: CMD:' . a:cmd)
     let out = system(a:cmd)
     let &shellredir=sr
     return out
@@ -46,7 +50,10 @@ endfunction
 
 function! auf#util#execWithStderr(cmd) abort
     let sr = &shellredir
-    set shellredir=>%s\ 1>/dev/tty
+    if !s:is_win
+      set shellredir=>%s\ 1>/dev/tty
+    endif
+    call auf#util#logVerbose('execWithStderr: CMD:' . a:cmd)
     let err = system(a:cmd)
     let &shellredir=sr
     return err
