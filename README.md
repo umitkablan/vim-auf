@@ -201,8 +201,8 @@ Here is a list of formatter programs that are supported by default, and thus wil
 
 ## Debugging
 
-If you're struggling with getting a formatter to work, it may help to set vim-auf in
-verbose-mode. Vim-auf will then output errors on formatters that failed.
+If you're struggling with getting a formatter to work, it may help to set AUF in
+verbose-mode. AUF will then output errors on formatters that failed.
 ```vim
 let g:auf_verbosemode=1
 " OR:
@@ -211,12 +211,13 @@ let verbose=1
 
 ## How can I change the behaviour of formatters, or add one myself?
 
-If you need a formatter that is not among the defaults, or if you are not satisfied with the default formatting behaviour that is provided by vim-auf, you can define it yourself.
-*The formatter program must read the unformatted code from the standard input, and write the formatted code to the standard output.*
+If you need a formatter that is not among the defaults, or if you are not satisfied with the default formatting behaviour that is provided by AUF, you can define it yourself.
+*The formatter program, at least should be able to receive file input argument and output to standard output. It is better to also have file output argument as well as line range to specify which lines to format.*
 
 #### Basic definitions
 
 The formatter programs that available for a certain `<filetype>` are defined in `g:aufformatters_<filetype>`. This is a list containing string identifiers, which point to corresponding formatter definitions. The formatter definitions themselves are defined in `g:auffmt_<identifier>` as a string expression. Defining any of these variable manually in your .vimrc, will override the default value, if existing.
+
 For example, a complete definition in your .vimrc for C# files could look like this:
 ```vim
 let g:auffmt_my_custom_cs = '"astyle --mode=cs --style=ansi -pcHs4 < ##INPUTSRC##"'
@@ -231,23 +232,13 @@ let g:aufformatters_cs = ['my_custom_cs']
 ```
 Please notice that `g:auffmt_my_custom_cs` contains an expression that can be evaluated (`+eval`), as required. As you see, this allows us to dynamically define some parameters. In this example, the indent width that astyle will use, depends on the buffer local value of `&shiftwidth`, instead of being fixed at 4. So if you're editing a csharp file and change the `shiftwidth` (even at runtime), the `g:auffmt_my_custom_cs` will change correspondingly.
 
-For the default formatter program definitions, the options `expandtab`, `shiftwidth` and `textwidth` are taken into account whenever possible.
-This means that the formatting style will match your current vim settings as much as possible.
-You can have look look at the exact default definitions for more examples.
-They are defined in `vim-auf/plugin/auf_defaults.vim`.
-As a small side note, in the actual defaults the function `shiftwidth()` is used instead of the
-property. This is because it falls back to the value of `tabstop` if `shiftwidth` is 0.
+For the default formatter program definitions, the options `expandtab`, `shiftwidth` and `textwidth` are taken into account whenever possible. This means that the formatting style will match your current vim settings as much as possible. You can have look look at the exact default definitions for more examples. They are defined in `vim-auf/plugin/auf_defaults.vim`. As a small side note, in the actual defaults the function `shiftwidth()` is used instead of the property. This is because it falls back to the value of `tabstop` if `shiftwidth` is 0.
 
-If you have a composite filetype with dots (like `django.python` or `php.wordpress`),
-vim-auf internally replaces the dots with underscores so you can specify formatters
-through `g:auf_django_python` and so on.
+If you have a composite filetype with dots (like `django.python` or `php.wordpress`), AUF internally replaces the dots with underscores so you can specify formatters through `g:auf_django_python` and so on.
 
-To override these options for a local buffer, use the buffer local variants:
-`b:auf_<filetype>` and `b:auffmt_<identifier>`. This can be useful, for example, when
-working with different projects with conflicting formatting rules, with each project having settings
-in its own vimrc or exrc file:
+To override these options for a local buffer, use the buffer local variants: `b:auf_<filetype>` and `b:auffmt_<identifier>`. This can be useful, for example, when working with different projects with conflicting formatting rules, with each project having settings in its own vimrc or exrc file:
 ```vim
-let b:auffmt_custom_c='"astyle --mode=c --suffix=none --options=/home/user/special_project/astylerc"'
+let b:auffmt_custom_c='"astyle --mode=c --suffix=none --options=/home/user/special_project/astylerc < ##INPUTSRC##"'
 let b:aufformatters_c = ['custom_c']
 ```
 #### Ranged definitions
