@@ -45,8 +45,17 @@ While AUF doesn't show erronous lines after opening a file, `g:auf_highlight_on_
 
 `g:auf_hijack_gq = 1` will enable `gq` a 'motion' - it would be easy and Vim-way to format a piece of code with `gq<motion>`, so it is enabled by default.
 
-`g:auf_showdiff_synmatch = 'ErrorMsg'` is the error Syntax to use for wrongly-formatted lines and `g:auf_highlight_pattern = '\(\%##LINENUM##l\)\s'` is the coloring pattern to apply on that line. For example, one could set `g:auf_highlight_pattern = ''` to completely disable highlighting (mechanism will work as always without highlight) or `g:auf_highlight_pattern = '^\(\%##LINENUM##l\)\s\+'` to highlight only preliminary whitespace at format-error lines.
-
+`g:auf_showdiff_synmatch = 'ErrorMsg'` is the error Syntax to use for wrongly-formatted lines and `g:auf_highlight_pattern = '\(\%##LINENUM##l\)\s'` is the coloring pattern to apply on that line.
+```vim
+    " Don't highlight
+    let g:auf_highlight_pattern = ''
+    " Full line highlight
+    let g:auf_highlight_pattern = '\(\%##LINENUM##l\)'
+    " Highlight leading white-space
+    let g:auf_highlight_pattern = '^\(\%##LINENUM##l\)\s\+'
+    " Highlight all white-space within
+    let g:auf_highlight_pattern = '\(\%##LINENUM##l\)\s'
+```
 `g:auf_diffcmd = 'diff'`, `g:auf_filterdiffcmd = 'filterdiff'`, and `let g:auf_patchcmd = 'patch'` are helpful when your diff-utils have different program names or path.
 
 Remember that when no formatter programs exists for a certain filetype, AUF falls back by default to indenting, retabbing and removing trailing whitespace. This will fix at least the most basic things, according to Vim's indentfile for that filetype. To disable the fallback to Vim's indent file, retabbing and removing trailing whitespace, set the following variables to 0:
