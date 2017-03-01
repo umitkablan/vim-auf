@@ -18,7 +18,7 @@ When no formatter exists (or none is installed) for a certain filetype, vim-auf 
 
 This plugin is supported by Vim 7.4+ and is pure Vimscript i.e. has no python (or any other language dependency). Only Vim feature that we need, currently, is +eval, you can check it with :version command within Vim.
 
-As the main logic of finding unsaved lines or filtering is built on diff-file processing, you need to install diff(.exe) and filterdiff(.exe) utilities (some call it diff-utils). Windows users might need to install Cygwin with those diff-utils inside.
+As the main logic of finding unsaved lines or filtering is built on diff-file processing, you need to install diff(.exe), filterdiff(.exe), and patch(.exe) utilities (some call it diff-utils). Windows users might need to install Cygwin with those diff-utils inside.
 
 It is highly recommended to use a plugin manager such as [Vundle](https://github.com/VundleVim/Vundle.vim), [vim-plug](https://github.com/junegunn/vim-plug), or [pathogen.vim](https://github.com/tpope/vim-pathogen), since this makes it easy to update plugins or uninstall them. It also keeps your .vim directory clean.
 
@@ -47,7 +47,7 @@ While AUF doesn't show erronous lines after opening a file, `g:auf_highlight_on_
 
 `g:auf_showdiff_synmatch = 'ErrorMsg'` is the error Syntax to use for wrongly-formatted lines and `g:auf_highlight_pattern = '\(\%##LINENUM##l\)\s'` is the coloring pattern to apply on that line. For example, one could set `g:auf_highlight_pattern = ''` to completely disable highlighting (mechanism will work as always without highlight) or `g:auf_highlight_pattern = '^\(\%##LINENUM##l\)\s\+'` to highlight only preliminary whitespace at format-error lines.
 
-`g:auf_diffcmd = 'diff'` and `g:auf_filterdiffcmd = 'filterdiff'` are helpful when your diff-utils have different program names or path.
+`g:auf_diffcmd = 'diff'`, `g:auf_filterdiffcmd = 'filterdiff'`, and `let g:auf_patchcmd = 'patch'` are helpful when your diff-utils have different program names or path.
 
 Remember that when no formatter programs exists for a certain filetype, AUF falls back by default to indenting, retabbing and removing trailing whitespace. This will fix at least the most basic things, according to Vim's indentfile for that filetype. To disable the fallback to Vim's indent file, retabbing and removing trailing whitespace, set the following variables to 0:
 ```vim
