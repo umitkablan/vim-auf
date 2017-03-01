@@ -62,12 +62,14 @@ endfunction
 function! auf#util#parseFormatPrg(formatprg, inputf, outputf, line1, line2) abort
     let cmd = a:formatprg
     if stridx(cmd, '##INPUTSRC##') != -1
-        let cmd = substitute(cmd, '##INPUTSRC##', a:inputf, 'g')
+        let inputf = substitute(a:inputf, '\\', '\\\\', 'g')
+        let cmd = substitute(cmd, '##INPUTSRC##', inputf, 'g')
     endif
     let isoutf = 0
     if stridx(cmd, '##OUTPUTSRC##') != -1
         let isoutf = 1
-        let cmd = substitute(cmd, '##OUTPUTSRC##', a:outputf, 'g')
+        let outputf = substitute(a:outputf, '\\', '\\\\', 'g')
+        let cmd = substitute(cmd, '##OUTPUTSRC##', outputf, 'g')
     endif
     let isranged = 0
     if stridx(cmd, '##FIRSTLINE##') != -1
