@@ -85,19 +85,19 @@ function! auf#format#TryAllFormatters(bang, synmatch, ...) range
     let coward = 0
 
     while 1
-        let [auffmt_var, formatprg] = auf#util#getFormatterAtIndex(formatter_index)
-        if formatprg ==# ''
-            call auf#util#echoErrorMsg("No format definition found in '" . auffmt_var . "'")
+        let [fmt_var, fmt_prg] = auf#util#getFormatterAtIndex(formatter_index)
+        if fmt_prg ==# ''
+            call auf#util#echoErrorMsg("No format definition found in '" . fmt_var . "'")
             return 0
         endif
-        let b:formatprg = formatprg
+        let b:formatprg = fmt_prg
 
-        call auf#util#logVerbose("TryAllFormatters: Trying definition in '" . auffmt_var)
-        if auf#format#TryFormatter(a:firstline, a:lastline, b:formatprg, overwrite, coward, a:synmatch)
-            call auf#util#logVerbose("TryAllFormatters: Definition in '" . auffmt_var . "' was successful.")
+        call auf#util#logVerbose("TryAllFormatters: Trying definition in '" . fmt_var)
+        if auf#format#TryFormatter(a:firstline, a:lastline, fmt_var, fmt_prg, overwrite, coward, a:synmatch)
+            call auf#util#logVerbose("TryAllFormatters: Definition in '" . fmt_var . "' was successful.")
             return 1
         else
-            call auf#util#logVerbose("TryAllFormatters: Definition in '" . auffmt_var . "' was unsuccessful.")
+            call auf#util#logVerbose("TryAllFormatters: Definition in '" . fmt_var . "' was unsuccessful.")
             let formatter_index = (formatter_index + 1) % len(b:formatters)
         endif
 
@@ -217,8 +217,8 @@ function! auf#format#evaluateFormattedToOrig(line1, line2, formatprg, curfile, f
     return [1, 0]
 endfunction
 
-function! auf#format#TryFormatter(line1, line2, formatprg, overwrite, coward, synmatch)
-    call auf#util#logVerbose('TryFormatter: ' . a:line1 . ',' . a:line2 . ' ' . a:formatprg . ' ow:' . a:overwrite . ' SynMatch:' . a:synmatch)
+function! auf#format#TryFormatter(line1, line2, formatvar, formatprg, overwrite, coward, synmatch)
+    call auf#util#logVerbose('TryFormatter: ' . a:line1 . ',' . a:line2 . ' ' . a:formatvar . '=' . a:formatprg . ' ow:' . a:overwrite . ' SynMatch:' . a:synmatch)
     if auf#util#get_verbose()
         let [tmpf0path, tmpf1path] = [expand('%:.').'.aftmp', expand('%:.').'.aftmp.txt']
         call auf#util#logVerbose('TryFormatter: origTmp:' . tmpf0path . ' formTmp:' . tmpf1path)
@@ -234,13 +234,13 @@ function! auf#format#TryFormatter(line1, line2, formatprg, overwrite, coward, sy
                 \ b:auf_difpath, a:synmatch, a:overwrite, a:coward)
     call auf#util#logVerbose('TryFormatter: res:' . res . ' ShErr:' . sherr)
     if res == 0 "No diff found
-        call auf#util#echoSuccessMsg('Auf> Format PASSED!')
+        call auf#util#echoSuccessMsg('Auf> ' . a:formatvar . ' Format PASSED!')
     elseif res == 2 "Format program error
-        call auf#util#echoErrorMsg('Auf> Formatter ' . b:formatters[b:current_formatter_index] . ' failed(' . sherr . ')')
+        call auf#util#echoErrorMsg('Auf> Formatter ' . a:formatvar . ' failed(' . sherr . ')')
     elseif res == 3 "Diff program error
-        call auf#util#echoErrorMsg('Auf> diff failed(' . sherr . '): ' . g:auf_diffcmd)
+        call auf#util#echoErrorMsg('Auf> ' . a:formatvar . ' diff failed(' . sherr . '): ' . g:auf_diffcmd)
     elseif res == 4 "Refuse to format - coward mode on
-        call auf#util#echoErrorMsg('Auf> Cowardly refuse - it touches more lines than edited')
+        call auf#util#echoErrorMsg('Auf> ' . a:formatvar . ' Cowardly refuse - it touches more lines than edited')
         res = 1
     else
         if a:overwrite && exists('b:auf_shadowpath')
