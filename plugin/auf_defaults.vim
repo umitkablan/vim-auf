@@ -41,11 +41,11 @@ if !exists('g:auffmt_yapf_style')
     let g:auffmt_yapf_style = 'pep8'
 endif
 if !exists('g:auffmt_yapf')
-    let g:auffmt_yapf = "'yapf --style=\"{based_on_style:'.g:auffmt_yapf_style.',indent_width:'.&shiftwidth.',column_limit:'.&textwidth.'}\" -l ##FIRSTLINE##-##LASTLINE##' < ##INPUTSRC##'"
+    let g:auffmt_yapf = "'yapf --style=\"{based_on_style:'.g:auffmt_yapf_style.',indent_width:'.&shiftwidth.',column_limit:'.&textwidth.'}\" -l ##FIRSTLINE##-##LASTLINE## < ##INPUTSRC##'"
 endif
 
 if !exists('g:aufformatters_python')
-    let g:aufformatters_python = ['autopep8','yapf']
+    let g:aufformatters_python = ['autopep8', 'yapf']
 endif
 
 " ****************
