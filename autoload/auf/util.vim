@@ -51,7 +51,7 @@ endfunction
 function! auf#util#execWithStderr(cmd) abort
     let sr = &shellredir
     if !s:is_win
-      set shellredir=>%s\ 1>/dev/tty
+        set shellredir=>%s\ 1>/dev/tty
     endif
     call auf#util#logVerbose('execWithStderr: CMD:' . a:cmd)
     let err = system(a:cmd)
@@ -92,6 +92,7 @@ function! auf#util#getFormatterAtIndex(index) abort
     if !exists(auffmt_var)
         return [auffmt_var, '']
     endif
+    call auf#util#logVerbose('getFormatterAtIndex: evaluating "' . auffmt_var . '"')
     " Eval twice, once for getting definition content,
     " once for getting the final expression
     return [auffmt_var, eval(eval(auffmt_var))]
