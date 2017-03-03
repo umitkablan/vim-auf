@@ -292,7 +292,7 @@ function! auf#format#justInTimeFormat(synmatch) abort
             if curcnt > 0
                 let [ln0, ln1] = [linenr, linenr+curcnt-1]
                 call auf#util#logVerbose('justInTimeFormat: hunk-lines:' . ln0 . '-' . ln1)
-                let res = auf#format#TryFormatter(ln0, ln1, b:formatprg, overwrite, coward, a:synmatch)
+                let res = auf#format#TryFormatter(ln0, ln1, b:formatters[b:current_formatter_index], b:formatprg, overwrite, coward, a:synmatch)
                 call auf#util#logVerbose('justInTimeFormat: result:' . res)
                 if res == 4
                     break

@@ -37,7 +37,7 @@ execute s:AufErrLineSynCmd
 
 function! AufFormatRange(line1, line2) abort
     let overwrite = 1
-    call auf#format#TryFormatter(a:line1, a:line2, auf#format#getCurrentProgram(), overwrite, 'AufErrLine')
+    call auf#format#TryFormatter(a:line1, a:line2, b:formatters[b:current_formatter_index], auf#format#getCurrentProgram(), overwrite, 'AufErrLine')
 endfunction
 
 " Save and recall window state to prevent vim from jumping to line 1: Beware
