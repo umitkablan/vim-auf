@@ -223,12 +223,8 @@ endfunction
 
 function! auf#format#TryFormatter(line1, line2, formatvar, formatprg, overwrite, coward, synmatch)
     call auf#util#logVerbose('TryFormatter: ' . a:line1 . ',' . a:line2 . ' ' . a:formatvar . '=' . a:formatprg . ' ow:' . a:overwrite . ' SynMatch:' . a:synmatch)
-    if auf#util#get_verbose()
-        let [tmpf0path, tmpf1path] = [expand('%:.').'.aftmp', expand('%:.').'.aftmp.txt']
-        call auf#util#logVerbose('TryFormatter: origTmp:' . tmpf0path . ' formTmp:' . tmpf1path)
-    else
-        let [tmpf0path, tmpf1path] = [tempname(), tempname()]
-    endif
+    let [tmpf0path, tmpf1path] = [tempname(), tempname()]
+    call auf#util#logVerbose('TryFormatter: origTmp:' . tmpf0path . ' formTmp:' . tmpf1path)
 
     if !exists('b:auf_difpath')
         let b:auf_difpath = tempname()
@@ -252,12 +248,8 @@ function! auf#format#TryFormatter(line1, line2, formatvar, formatprg, overwrite,
         endif
     endif
 
-    call auf#util#logVerbose('TryFormatter: ' . tmpf0path . ' and ' . tmpf1path)
-    call auf#util#logVerbose('TryFormatter: not DELETED for analyse PLEASE MANUALLY DELETE!')
-    if !auf#util#get_verbose()
-        call delete(tmpf0path)
-        call delete(tmpf1path)
-    endif
+    call delete(tmpf0path)
+    call delete(tmpf1path)
     return res < 2
 endfunction
 
