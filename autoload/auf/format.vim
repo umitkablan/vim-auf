@@ -141,24 +141,28 @@ function! auf#format#formatSource(line1, line2, formatprg, inpath, outpath) abor
 endfunction
 
 function! auf#format#evalApplyDif(line1, difpath, coward) abort
-    for [linenr, prevcnt, curcnt, addlines] in auf#diff#parseHunks(a:difpath)
+    let tot_drift = 0
+    for [linenr, addlines, rmlines] in auf#diff#parseHunks(a:difpath)
+        let [prevcnt, curcnt] = [len(rmlines), len(addlines)]
         if prevcnt == 0 && curcnt == 0
             call auf#util#echoErrorMsg('evalApplyDif: diff line:' . linenr . ' has zero change!')
             continue
         endif
-        if linenr < a:line1 && a:coward
+        if linenr < a:line1 && a:coward && (prevcnt > 0 && len(rmlines[0]) > 0)
+            call auf#util#logVerbose('evalApplyDif: COWARD ' . linenr . ' - ' . a:line1 . '-' . len(rmlines[0]))
             return 4
         endif
         if prevcnt > 0 && curcnt > 0
-            call auf#util#logVerbose('evalApplyDif: *replace* ' . linenr . ',' . prevcnt . ',' . curcnt)
-            call auf#util#replaceLines(linenr, prevcnt, addlines)
+            call auf#util#logVerbose('evalApplyDif: *replace* ' . (linenr + tot_drift) . ',' . prevcnt . ',' . curcnt)
+            call auf#util#replaceLines(linenr + tot_drift, prevcnt, addlines)
         elseif prevcnt > 0
-            call auf#util#logVerbose('evalApplyDif: *remove* ' . linenr . ',' . prevcnt . ',' . curcnt)
-            call auf#util#removeLines(linenr, prevcnt)
+            call auf#util#logVerbose('evalApplyDif: *remove* ' . (linenr + tot_drift) . ',' . prevcnt . ',' . curcnt)
+            call auf#util#removeLines(linenr + tot_drift, prevcnt)
         else
-            call auf#util#logVerbose('evalApplyDif: *addline* ' . linenr . ',' . prevcnt . ',' . curcnt)
-            call auf#util#addLines(linenr, addlines)
+            call auf#util#logVerbose('evalApplyDif: *addline* ' . (linenr + tot_drift) . ',' . prevcnt . ',' . curcnt)
+            call auf#util#addLines(linenr + tot_drift, addlines)
         endif
+        let tot_drift += (curcnt - prevcnt)
     endfor
     return 0
 endfunction
@@ -283,14 +287,15 @@ function! auf#format#justInTimeFormat(synmatch) abort
             return 2
         endif
         call auf#util#logVerbose_fileContent('justInTimeFormat: diff done file:' . b:auf_difpath, b:auf_difpath, 'justInTimeFormat: ========')
-        let coward = 1 "cowardly refuse line edits more than we touch
-        for [linenr, prevcnt, curcnt, _] in auf#diff#parseHunks(b:auf_difpath)
+        let [coward, tot_drift] = [1, 0] "cowardly refuse line edits more than we touch
+        for [linenr, addlines, rmlines] in auf#diff#parseHunks(b:auf_difpath)
+            let [prevcnt, curcnt] = [len(rmlines), len(addlines)]
             if prevcnt == 0 && curcnt == 0
                 call auf#util#echoErrorMsg('justInTimeFormat: invalid hunk-lines:' . linenr . '-' . prevcnt . ',' . curcnt)
                 continue
             endif
             if curcnt > 0
-                let [ln0, ln1] = [linenr, linenr+curcnt-1]
+                let [ln0, ln1] = [linenr+tot_drift, linenr+curcnt-1+tot_drift]
                 call auf#util#logVerbose('justInTimeFormat: hunk-lines:' . ln0 . '-' . ln1)
                 let res = auf#format#TryFormatter(ln0, ln1, b:formatters[b:current_formatter_index], b:formatprg, overwrite, coward, a:synmatch)
                 call auf#util#logVerbose('justInTimeFormat: result:' . res)
@@ -298,6 +303,7 @@ function! auf#format#justInTimeFormat(synmatch) abort
                     break
                 endif
             endif
+            let tot_drift += (curcnt - prevcnt)
         endfor
         call auf#util#highlights_On(w:auf_highlight_lines_hlids, a:synmatch)
     finally
@@ -331,9 +337,8 @@ function! s:driftHighlights(synmatch, hlids, oldf, newf, difpath) abort
     endif
     call auf#util#logVerbose_fileContent('s:driftHighlights: diff done file:' . b:auf_difpath,
                 \ b:auf_difpath, 's:driftHighlights: ========')
-    " vint: -ProhibitUnusedVariable
-    for [linenr, prevcnt, curcnt, _] in auf#diff#parseHunks(a:difpath)
-        " vint: +ProhibitUnusedVariable
+    for [linenr, addlines, rmlines] in auf#diff#parseHunks(a:difpath)
+        let [prevcnt, curcnt] = [len(rmlines), len(addlines)]
         if prevcnt == 0 && curcnt == 0
             call auf#util#echoErrorMsg('s:driftHighlights: invalid hunk-lines:' .
                     \ linenr . '-' . prevcnt . ',' . curcnt)

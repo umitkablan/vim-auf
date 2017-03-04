@@ -17,9 +17,8 @@ function! auf#diff#findHunks(diffcmd, curfile, oldfile, difpath) abort
 endfunction
 
 function! auf#diff#parseHunks(difpath) abort
-    let ret = []
     let flines = readfile(a:difpath)
-    let [prevnr, curnr, prevcnt, curcnt, addedlines] = [0, 0, 0, 0, []]
+    let [prevnr, curnr, ret, addedlines, rmlines] = [0, 0, [], [], []]
     for line in flines
         if line ==# ''
             continue
@@ -29,27 +28,28 @@ function! auf#diff#parseHunks(difpath) abort
             let commaidx = stridx(line, ',', plusidx)
             if plusidx < 0 || commaidx < 0
                 call auf#util#logVerbose('findHunks: !!plus/comma is not found in the diff line!!')
-                let [prevnr, curnr, addedlines] = [0, 0, []]
+                let [prevnr, curnr, addedlines, rmlines] = [0, 0, [], []]
                 continue
             endif
             let curnr = str2nr(line[plusidx+1:commaidx])
         elseif prevnr > 0
             if line[0] ==# '-'
-                let [prevnr, prevcnt] = [prevnr+1, prevcnt+1]
+                let prevnr += 1
+                let rmlines += [line[1:]]
             elseif line[0] ==# '+'
-                let [curnr, curcnt] = [curnr+1, curcnt+1]
+                let curnr += 1
                 let addedlines += [line[1:]]
             elseif line[0] ==# ' '
-                if prevcnt > 0 || curcnt > 0
-                    let ret += [[prevnr-prevcnt, prevcnt, curcnt, addedlines]]
-                    let [prevcnt, curcnt, addedlines] = [0, 0, []]
+                if len(rmlines) > 0 || len(addedlines) > 0
+                    let ret += [[(prevnr-len(rmlines)), addedlines, rmlines]]
+                    let [addedlines, rmlines] = [[], []]
                 endif
                 let [prevnr, curnr] = [prevnr+1, curnr+1]
             endif
         endif
     endfor
-    if prevcnt > 0 || curcnt > 0
-        let ret += [[prevnr-prevcnt, prevcnt, curcnt, addedlines]]
+    if len(rmlines) > 0 || len(addedlines) > 0
+        let ret += [[(prevnr-len(rmlines)), addedlines, rmlines]]
     endif
     return ret
 endfunction
