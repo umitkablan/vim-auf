@@ -37,9 +37,10 @@ execute s:AufErrLineSynCmd
 
 function! AufFormatRange(line1, line2) abort
     let [overwrite, coward] = [1, 0]
-    let [res, resstr] = auf#format#TryFormatter(a:line1, a:line2, auf#format#getCurrentProgram(), overwrite, coward, 'AufErrLine')
+    let [res, drift, resstr] = auf#format#TryFormatter(a:line1, a:line2, auf#format#getCurrentProgram(),
+                \ overwrite, coward, 'AufErrLine')
     if !res
-        call auf#util#echoErrorMsg('Auf-gq error: ' . resstr)
+        call auf#util#echoErrorMsg('Auf-gq error: ' . resstr . ' ~' . drift)
     endif
 endfunction
 
