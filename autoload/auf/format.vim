@@ -93,11 +93,12 @@ function! auf#format#TryAllFormatters(bang, synmatch, ...) range
         let b:formatprg = fmt_prg
 
         call auf#util#logVerbose("TryAllFormatters: Trying definition in '" . fmt_var)
-        if auf#format#TryFormatter(a:firstline, a:lastline, fmt_var, fmt_prg, overwrite, coward, a:synmatch)
-            call auf#util#logVerbose("TryAllFormatters: Definition in '" . fmt_var . "' was successful.")
+        let [res, resstr] = auf#format#TryFormatter(a:firstline, a:lastline, fmt_prg, overwrite, coward, a:synmatch)
+        if res
+            call auf#util#echoSuccessMsg('Auf> ' . fmt_var . ' Format PASSED!')
             return 1
         else
-            call auf#util#logVerbose("TryAllFormatters: Definition in '" . fmt_var . "' was unsuccessful.")
+            call auf#util#echoErrorMsg('Auf> Formatter ' . fmt_var . ' ' . resstr)
             let formatter_index = (formatter_index + 1) % len(b:formatters)
         endif
 
@@ -221,8 +222,8 @@ function! auf#format#evaluateFormattedToOrig(line1, line2, formatprg, curfile, f
     return [1, 0]
 endfunction
 
-function! auf#format#TryFormatter(line1, line2, formatvar, formatprg, overwrite, coward, synmatch)
-    call auf#util#logVerbose('TryFormatter: ' . a:line1 . ',' . a:line2 . ' ' . a:formatvar . '=' . a:formatprg . ' ow:' . a:overwrite . ' SynMatch:' . a:synmatch)
+function! auf#format#TryFormatter(line1, line2, formatprg, overwrite, coward, synmatch)
+    call auf#util#logVerbose('TryFormatter: ' . a:line1 . ',' . a:line2 . ' ' . a:formatprg . ' ow:' . a:overwrite . ' SynMatch:' . a:synmatch)
     let [tmpf0path, tmpf1path] = [tempname(), tempname()]
     call auf#util#logVerbose('TryFormatter: origTmp:' . tmpf0path . ' formTmp:' . tmpf1path)
 
@@ -230,18 +231,17 @@ function! auf#format#TryFormatter(line1, line2, formatvar, formatprg, overwrite,
         let b:auf_difpath = tempname()
     endif
 
+    let resstr = ''
     let [res, sherr] = auf#format#evaluateFormattedToOrig(a:line1, a:line2, a:formatprg, tmpf0path, tmpf1path,
                 \ b:auf_difpath, a:synmatch, a:overwrite, a:coward)
     call auf#util#logVerbose('TryFormatter: res:' . res . ' ShErr:' . sherr)
     if res == 0 "No diff found
-        call auf#util#echoSuccessMsg('Auf> ' . a:formatvar . ' Format PASSED!')
     elseif res == 2 "Format program error
-        call auf#util#echoErrorMsg('Auf> Formatter ' . a:formatvar . ' failed(' . sherr . ')')
+        let resstr = 'formatter failed(' . sherr . ')'
     elseif res == 3 "Diff program error
-        call auf#util#echoErrorMsg('Auf> ' . a:formatvar . ' diff failed(' . sherr . '): ' . g:auf_diffcmd)
+        let resstr = 'diff failed(' . sherr . ')'
     elseif res == 4 "Refuse to format - coward mode on
-        call auf#util#echoErrorMsg('Auf> ' . a:formatvar . ' Cowardly refuse - it touches more lines than edited')
-        res = 1
+        let [resstr, res] = ['cowardly refusing - it touches more lines than edited', 1]
     else
         if a:overwrite && exists('b:auf_shadowpath')
             call writefile(getline(1, '$'), b:auf_shadowpath)
@@ -250,7 +250,7 @@ function! auf#format#TryFormatter(line1, line2, formatvar, formatprg, overwrite,
 
     call delete(tmpf0path)
     call delete(tmpf1path)
-    return res < 2
+    return [res < 2, resstr]
 endfunction
 
 function! auf#format#justInTimeFormat(synmatch) abort
@@ -279,7 +279,7 @@ function! auf#format#justInTimeFormat(synmatch) abort
             return 2
         endif
         call auf#util#logVerbose_fileContent('justInTimeFormat: diff done file:' . b:auf_difpath, b:auf_difpath, 'justInTimeFormat: ========')
-        let [coward, tot_drift] = [1, 0] "cowardly refuse line edits more than we touch
+        let [coward, tot_drift, res] = [1, 0, 1]
         for [linenr, addlines, rmlines] in auf#diff#parseHunks(b:auf_difpath)
             let [prevcnt, curcnt] = [len(rmlines), len(addlines)]
             if prevcnt == 0 && curcnt == 0
@@ -289,14 +289,18 @@ function! auf#format#justInTimeFormat(synmatch) abort
             if curcnt > 0
                 let [ln0, ln1] = [linenr+tot_drift, linenr+curcnt-1+tot_drift]
                 call auf#util#logVerbose('justInTimeFormat: hunk-lines:' . ln0 . '-' . ln1)
-                let res = auf#format#TryFormatter(ln0, ln1, b:formatters[b:current_formatter_index], b:formatprg, overwrite, coward, a:synmatch)
+                let [res, resstr] = auf#format#TryFormatter(ln0, ln1, b:formatprg, overwrite, coward, a:synmatch)
                 call auf#util#logVerbose('justInTimeFormat: result:' . res)
-                if res == 4
+                if !res
+                    call auf#util#echoErrorMsg('AufJIT> ' . b:formatters[b:current_formatter_index] . ' fail:' . res . ' ' . resstr)
                     break
                 endif
             endif
             let tot_drift += (curcnt - prevcnt)
         endfor
+        if res
+            call auf#util#echoSuccessMsg('AufJIT> ' . b:formatters[b:current_formatter_index] . ' SUCCESS!')
+        endif
         call auf#util#highlights_On(w:auf_highlight_lines_hlids, a:synmatch)
     finally
         call auf#util#logVerbose('justInTimeFormat: deleting temporary-current-buffer')
