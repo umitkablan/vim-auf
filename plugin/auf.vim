@@ -39,8 +39,10 @@ function! AufFormatRange(line1, line2) abort
     let [overwrite, coward] = [1, 0]
     let [res, drift, resstr] = auf#format#TryFormatter(a:line1, a:line2, auf#format#getCurrentProgram(),
                 \ overwrite, coward, 'AufErrLine')
-    if !res
-        call auf#util#echoErrorMsg('Auf-gq error: ' . resstr . ' ~' . drift)
+    if res > 1
+        call auf#util#echoErrorMsg('Auf-gq error: ' . resstr)
+    else
+        call auf#util#echoSuccessMsg('Auf-gq fine:' . resstr . ' ~' . drift)
     endif
 endfunction
 
@@ -59,7 +61,7 @@ command! AufPrevFormatter call auf#format#PreviousFormatter()
 command! AufCurrFormatter call auf#format#CurrentFormatter()
 
 command! AufShowDiff call auf#format#ShowDiff()
-command! AufClearHi call auf#util#clearAllHighlights(w:auf_highlight_lines_hlids)
+command! AufClearHi call auf#util#clearAllHighlights(b:auf_highlight_lines_hlids)
 
 augroup Auf_Auto_Inserts
     autocmd!
@@ -81,7 +83,7 @@ augroup Auf_Auto_BufEvents
     autocmd!
     autocmd BufReadPost *
         \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 |
-        \   let w:auf_highlight_lines_hlids = [] |
+        \   let b:auf_highlight_lines_hlids = [] |
         \   if g:auf_highlight_on_bufenter | Auf |
         \   else | %call auf#format#TryAllFormatters(0, '') | endif |
         \ endif
@@ -99,6 +101,14 @@ augroup Auf_Auto_BufEvents
         \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 &&
         \    g:auf_highlight_errs |
         \   Auf |
+        \ endif
+    autocmd BufLeave *
+        \ if exists('b:auf_highlight_lines_hlids') |
+        \   call auf#util#clearAllHighlights(b:auf_highlight_lines_hlids) |
+        \ endif
+    autocmd BufEnter *
+        \ if exists('b:auf_highlight_lines_hlids') |
+        \   call auf#util#highlights_On(b:auf_highlight_lines_hlids, 'AufErrLine') |
         \ endif
 augroup END
 
