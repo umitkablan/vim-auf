@@ -46,14 +46,27 @@ function! AufFormatRange(line1, line2) abort
     endif
 endfunction
 
+function! AufJit() abort
+    try
+        if !g:auf_jitformat
+            call auf#util#echoErrorMsg('AufJit: JITing is disabled GLOBALLY')
+        elseif exists('b:auf_jitformat') && !b:auf_jitformat
+            call auf#util#echoErrorMsg('AufJit: JITing is disabled locally')
+        else
+            call auf#format#justInTimeFormat('AufErrLine')
+        endif
+    catch /.*/
+        call auf#util#echoErrorMsg('AufJit: Exception: ' . v:exception)
+    endtry
+endfunction
+
 " Save and recall window state to prevent vim from jumping to line 1: Beware
 " that it should be done here due to <line1>,<line2> range.
 command! -nargs=? -range=% -complete=filetype -bang -bar Auf
     \ let ww=winsaveview()|
     \ <line1>,<line2>call auf#format#TryAllFormatters(<bang>0, 'AufErrLine', <f-args>)|
     \ call winrestview(ww)
-command! -nargs=0 -bar AufJIT
-    \ call auf#format#justInTimeFormat('AufErrLine')
+command! -nargs=0 -bar AufJIT call AufJit()
 
 " Create commands for iterating through formatter list
 command! AufNextFormatter call auf#format#NextFormatter()
@@ -93,9 +106,8 @@ augroup Auf_Auto_BufEvents
         \   setl formatexpr=AufFormatRange(v:lnum,v:lnum+v:count-1) |
         \ endif
     autocmd BufWritePre *
-        \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 &&
-        \    g:auf_jitformat |
-        \   AufJIT |
+        \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 |
+        \   call AufJit() |
         \ endif
     autocmd BufWritePost *
         \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 &&
