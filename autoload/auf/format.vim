@@ -344,12 +344,16 @@ function! s:driftHighlights(synmatch, hlids, oldf, newf, difpath) abort
         let drift = curcnt - prevcnt
         call auf#util#logVerbose('s:driftHighlights: line:' . linenr . ' cur:' . curcnt . ' prevcnt:'
                     \ . prevcnt . ' drift:' . drift)
-        if drift < 0 " lines deleted
+        if prevcnt > 0
             let b:auf_highlight_lines_hlids =
-                    \ auf#util#clearHighlightsInRange(a:synmatch, a:hlids, linenr, (linenr - drift) - 1)
+                    \ auf#util#clearHighlightsInRange(a:synmatch, a:hlids, linenr, linenr + prevcnt - 1)
         endif
         if drift != 0
             call auf#util#driftHighlightsAfterLine_nolight(b:auf_highlight_lines_hlids, linenr, drift)
+        endif
+        if curcnt > 0
+            let b:auf_highlight_lines_hlids =
+                    \ auf#util#addHighlightNewLines(a:synmatch, a:hlids, linenr, linenr + curcnt - 1)
         endif
     endfor
 endfunction
