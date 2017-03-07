@@ -222,7 +222,8 @@ function! auf#format#evaluateFormattedToOrig(line1, line2, formatprg, curfile, f
 endfunction
 
 function! auf#format#TryFormatter(line1, line2, formatprg, overwrite, coward, synmatch)
-    call auf#util#logVerbose('TryFormatter: ' . a:line1 . ',' . a:line2 . ' ' . a:formatprg . ' ow:' . a:overwrite . ' SynMatch:' . a:synmatch)
+    call auf#util#logVerbose('TryFormatter: ' . a:line1 . ',' . a:line2 . ' ' . a:formatprg .
+                \ ' ow:' . a:overwrite . ' SynMatch:' . a:synmatch)
     let [tmpf0path, tmpf1path] = [tempname(), tempname()]
     call auf#util#logVerbose('TryFormatter: origTmp:' . tmpf0path . ' formTmp:' . tmpf1path)
 
@@ -231,8 +232,8 @@ function! auf#format#TryFormatter(line1, line2, formatprg, overwrite, coward, sy
     endif
 
     let resstr = ''
-    let [res, sherr, drift] = auf#format#evaluateFormattedToOrig(a:line1, a:line2, a:formatprg, tmpf0path, tmpf1path,
-                \ b:auf_difpath, a:synmatch, a:overwrite, a:coward)
+    let [res, sherr, drift] = auf#format#evaluateFormattedToOrig(a:line1, a:line2, a:formatprg, tmpf0path,
+                \ tmpf1path, b:auf_difpath, a:synmatch, a:overwrite, a:coward)
     call auf#util#logVerbose('TryFormatter: res:' . res . ' ShErr:' . sherr)
     if res == 0 "No diff found
     elseif res == 2 "Format program error
@@ -277,7 +278,8 @@ function! auf#format#justInTimeFormat(synmatch) abort
             call auf#util#logVerbose('justInTimeFormat: diff error ' . err . '/'. sherr . ' diff current')
             return 2
         endif
-        call auf#util#logVerbose_fileContent('justInTimeFormat: diff done file:' . b:auf_difpath, b:auf_difpath, 'justInTimeFormat: ========')
+        call auf#util#logVerbose_fileContent('justInTimeFormat: diff done file:' . b:auf_difpath, b:auf_difpath,
+                    \ 'justInTimeFormat: ========')
         let [coward, overwrite, tot_drift, res] = [1, 1, 0, 1]
         for [linenr, addlines, rmlines] in auf#diff#parseHunks(b:auf_difpath)
             let [prevcnt, curcnt, drift] = [len(rmlines), len(addlines), 0]
