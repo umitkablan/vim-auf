@@ -52,6 +52,8 @@ function! AufJit() abort
             call auf#util#echoErrorMsg('AufJit: JITing is disabled GLOBALLY')
         elseif exists('b:auf_jitformat') && !b:auf_jitformat
             call auf#util#echoErrorMsg('AufJit: JITing is disabled locally')
+        elseif v:cmdbang
+            call auf#util#echoErrorMsg('AufJit: JITing is disabled due to w! bang')
         else
             call auf#format#justInTimeFormat('AufErrLine')
         endif
