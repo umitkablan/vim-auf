@@ -60,6 +60,20 @@ function! AufJit() abort
     endtry
 endfunction
 
+function! AufBufReadPost() abort
+    if !exists('b:auf_highlight_lines_hlids')
+        let b:auf_highlight_lines_hlids = []
+    endif
+    if len(b:auf_highlight_lines_hlids)
+        return
+    endif
+    if g:auf_highlight_on_bufenter
+        Auf
+    else
+        %call auf#format#TryAllFormatters(0, '')
+    endif
+endfunction
+
 " Save and recall window state to prevent vim from jumping to line 1: Beware
 " that it should be done here due to <line1>,<line2> range.
 command! -nargs=? -range=% -complete=filetype -bang -bar Auf
@@ -96,9 +110,7 @@ augroup Auf_Auto_BufEvents
     autocmd!
     autocmd BufReadPost *
         \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 |
-        \   let b:auf_highlight_lines_hlids = [] |
-        \   if g:auf_highlight_on_bufenter | Auf |
-        \   else | %call auf#format#TryAllFormatters(0, '') | endif |
+        \   call AufBufReadPost() |
         \ endif
     autocmd BufRead *
         \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 &&

@@ -145,7 +145,7 @@ function! auf#format#formatSource(line1, line2, formatprg, inpath, outpath) abor
 endfunction
 
 function! auf#format#evalApplyDif(line1, difpath, coward) abort
-    let tot_drift = 0
+    let [hunks, tot_drift] = [0, 0]
     for [linenr, addlines, rmlines] in auf#diff#parseHunks(a:difpath)
         let [prevcnt, curcnt] = [len(rmlines), len(addlines)]
         if prevcnt == 0 && curcnt == 0
@@ -154,7 +154,7 @@ function! auf#format#evalApplyDif(line1, difpath, coward) abort
         endif
         if linenr < a:line1 && a:coward && (prevcnt > 0 && len(rmlines[0]) > 0)
             call auf#util#logVerbose('evalApplyDif: COWARD ' . linenr . ' - ' . a:line1 . '-' . len(rmlines[0]))
-            return -2
+            return [-1, 0]
         endif
         if prevcnt > 0 && curcnt > 0
             call auf#util#logVerbose('evalApplyDif: *replace* ' . (linenr + tot_drift) . ',' . prevcnt . ',' . curcnt)
@@ -167,8 +167,9 @@ function! auf#format#evalApplyDif(line1, difpath, coward) abort
             call auf#util#addLines(linenr + tot_drift, addlines)
         endif
         let tot_drift += (curcnt - prevcnt)
+        let hunks += 1
     endfor
-    return tot_drift
+    return [hunks, tot_drift]
 endfunction
 
 function! auf#format#evaluateFormattedToOrig(line1, line2, formatprg, curfile, formattedf, difpath, synmatch, overwrite, coward)
@@ -205,14 +206,12 @@ function! auf#format#evaluateFormattedToOrig(line1, line2, formatprg, curfile, f
         return [1, 0, 0]
     endif
 
-    " let lines_prev = line('$')
     let b:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(a:synmatch, b:auf_highlight_lines_hlids,
                     \ a:line1, a:line2)
-    let drift = auf#format#evalApplyDif(a:line1, a:difpath, a:coward)
-    if drift == -2
+    let [hunks, drift] = auf#format#evalApplyDif(a:line1, a:difpath, a:coward)
+    if hunks == -1
         return [4, 0, 0]
     endif
-    " let drift = line('$') - lines_prev
     if drift != 0
         call auf#util#driftHighlightsAfterLine_nolight(b:auf_highlight_lines_hlids, a:line1, drift)
     endif
@@ -303,6 +302,8 @@ function! auf#format#justInTimeFormat(synmatch) abort
             call auf#util#echoSuccessMsg('AufJIT> ' . b:formatters[b:current_formatter_index] . ' SUCCESS!')
         endif
         call auf#util#highlights_On(b:auf_highlight_lines_hlids, a:synmatch)
+    catch /.*/
+        call auf#utils#echoErrorMsg('AufJIT> Exception: ' . v:exception)
     finally
         call auf#util#logVerbose('justInTimeFormat: deleting temporary-current-buffer')
         call delete(tmpcurfile)
@@ -323,7 +324,7 @@ function! auf#format#InsertModeOn()
     call auf#util#logVerbose('InsertModeOn: End')
 endfunction
 
-function! s:driftHighlights(synmatch, hlids, oldf, newf, difpath) abort
+function! s:driftHighlights(synmatch, oldf, newf, difpath) abort
     let [issame, err, sherr] = auf#diff#diffFiles(g:auf_diffcmd, a:oldf, a:newf, a:difpath)
     if issame
         call auf#util#logVerbose('s:driftHighlights: no edit has detected - no diff')
@@ -346,14 +347,14 @@ function! s:driftHighlights(synmatch, hlids, oldf, newf, difpath) abort
                     \ . prevcnt . ' drift:' . drift)
         if prevcnt > 0
             let b:auf_highlight_lines_hlids =
-                    \ auf#util#clearHighlightsInRange(a:synmatch, a:hlids, linenr, linenr + prevcnt - 1)
+                \ auf#util#clearHighlightsInRange(a:synmatch, b:auf_highlight_lines_hlids, linenr, linenr + prevcnt - 1)
         endif
         if drift != 0
             call auf#util#driftHighlightsAfterLine_nolight(b:auf_highlight_lines_hlids, linenr, drift)
         endif
         if curcnt > 0
             let b:auf_highlight_lines_hlids =
-                    \ auf#util#addHighlightNewLines(a:synmatch, a:hlids, linenr, linenr + curcnt - 1)
+                \ auf#util#addHighlightNewLines(a:synmatch, b:auf_highlight_lines_hlids, linenr, linenr + curcnt - 1)
         endif
     endfor
 endfunction
@@ -364,10 +365,10 @@ function! auf#format#InsertModeOff(synmatch) abort
     let tmpcurfile = tempname()
     try
         call writefile(getline(1, '$'), tmpcurfile)
-        call s:driftHighlights(a:synmatch, b:auf_highlight_lines_hlids, b:auf_shadowpath, tmpcurfile, b:auf_difpath)
+        call s:driftHighlights(a:synmatch, b:auf_shadowpath, tmpcurfile, b:auf_difpath)
         let [b:auf_shadowpath, tmpcurfile] = [tmpcurfile, b:auf_shadowpath]
-    catch
-        call auf#util#echoErrorMsg('InsertModeOff: Exception!!')
+    catch /.*/
+        call auf#util#echoErrorMsg('InsertModeOff: Exception: ' . v:exception)
     finally
         call delete(tmpcurfile)
     endtry
