@@ -173,6 +173,11 @@ function! auf#format#evalApplyDif(line1, difpath, coward) abort
 endfunction
 
 function! auf#format#evaluateFormattedToOrig(line1, line2, formatprg, curfile, formattedf, difpath, synmatch, overwrite, coward)
+    if a:overwrite && g:auf_remove_trailing_spaces
+        keepjumps execute  a:line1 . ',' . a:line2 . 'substitute/\s\+$//e'
+        call histdel('search', -1)
+    endif
+
     call writefile(getline(1, '$'), a:curfile)
     let [res, is_formatter_ranged, sherr] = auf#format#formatSource(a:line1, a:line2, a:formatprg, a:curfile, a:formattedf)
     call auf#util#logVerbose('evaluateFormattedToOrig: sourceFormetted shErr:' . sherr)
