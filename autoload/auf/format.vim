@@ -115,16 +115,10 @@ function! auf#format#TryAllFormatters(bang, synmatch, ...) range
 endfunction
 
 function! auf#format#Fallback(line1, line2)
-    if exists('b:auf_remove_trailing_spaces') ? b:auf_remove_trailing_spaces == 1 : g:auf_remove_trailing_spaces == 1
-        call auf#util#logVerbose('Fallback: Removing trailing whitespace...')
-        call auf#format#RemoveTrailingSpaces()
-    endif
-
     if exists('b:auf_retab') ? b:auf_retab == 1 : g:auf_retab == 1
         call auf#util#logVerbose('Fallback: Retabbing...')
         keepjumps execute '' . a:line1 ',' . a:line2 . 'retab'
     endif
-
     if exists('b:auf_autoindent') ? b:auf_autoindent == 1 : g:auf_autoindent == 1
         call auf#util#logVerbose('Fallback: Autoindenting...')
         " Autoindent code
