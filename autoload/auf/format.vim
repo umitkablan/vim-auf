@@ -55,73 +55,93 @@ function! auf#format#getCurrentProgram() abort
     return b:formatprg
 endfunction
 
+function! s:tryFmtDefinition(line1, line2, fmt_prg, fmt_var, overwrite, coward, synmatch) abort
+    let [res, drift, resstr] = auf#format#TryFormatter(a:line1, a:line2, a:fmt_prg, a:overwrite, a:coward, a:synmatch)
+    if res > 1
+        call auf#util#echoErrorMsg('Auf> Formatter "' . a:fmt_var . '": ' . resstr)
+        return 0
+    elseif res == 0
+        call auf#util#echoSuccessMsg('Auf> ' . a:fmt_var . ' Format PASSED ~' . drift)
+        return 1
+    elseif res == 1
+        call auf#util#echoSuccessMsg('Auf> ' . a:fmt_var . ' ~' . drift . ' ' . resstr)
+        return 1
+    endif
+    return 0
+endfunction
+
 " Try all formatters, starting with the currently selected one, until one
 " works. If none works, autoindent the buffer.
 function! auf#format#TryAllFormatters(bang, synmatch, ...) range
-    " Make sure formatters are defined and detected
-    if !call('auf#format#find_formatters', a:000)
-        call auf#util#logVerbose('TryAllFormatters: No format definitions are defined for this FileType')
-        call auf#format#Fallback()
-        return 0
+    let overwrite = a:bang
+    if !has('eval')
+        call auf#util#echoErrorMsg('Auf> ERROR: vim has no support for eval (check :version output for +eval) - REQUIRED!')
+        if overwrite
+            call auf#format#Fallback(a:firstline, a:lastline)
+        endif
+        return 1
     endif
 
-    " Make sure index exist and is valid
+    " Make sure formatters are defined and detected
+    if !call('auf#format#find_formatters', a:000)
+        call auf#util#echoErrorMsg('Auf> No format definitions are defined for this FileType, fallback..')
+        if overwrite
+            call auf#format#Fallback(a:firstline, a:lastline)
+        endif
+        return 0
+    endif
     if !exists('b:current_formatter_index')
         let b:current_formatter_index = 0
     endif
     if b:current_formatter_index >= len(b:formatters)
         let b:current_formatter_index = 0
     endif
-
-    " Try all formatters, starting with selected one
-    let formatter_index = b:current_formatter_index
-
-    if !has('eval')
-        call auf#util#echoErrorMsg('AutoFormat ERROR: vim has no support for eval (check :version output for +eval) - REQUIRED!')
-        return 1
+    if !exists('b:formatprg')
+        let b:formatprg = ''
     endif
 
-    let overwrite = a:bang
-    let coward = 0
+    let [coward, fmt_index] = [0, b:current_formatter_index]
+    if b:formatprg !=# ''
+        let [fmt_var, fmt_prg] = auf#util#getFormatterAtIndex(fmt_index)
+        if s:tryFmtDefinition(a:firstline, a:lastline, b:formatprg, fmt_var, fmt_index, overwrite, coward, a:synmatch)
+            return 1
+        endif
+        let fmt_index = (fmt_index + 1) % len(b:formatters)
+    endif
 
     while 1
-        let [fmt_var, fmt_prg] = auf#util#getFormatterAtIndex(formatter_index)
-        if fmt_prg ==# ''
-            call auf#util#echoErrorMsg("No format definition found in '" . fmt_var . "'")
-            return 0
-        endif
-        let b:formatprg = fmt_prg
-
-        call auf#util#logVerbose("TryAllFormatters: Trying definition in '" . fmt_var)
-        let [res, drift, resstr] = auf#format#TryFormatter(a:firstline, a:lastline, fmt_prg, overwrite, coward, a:synmatch)
-        if res > 1
-            call auf#util#echoErrorMsg('Auf> Formatter #' . formatter_index . ':' . fmt_var . ' ' . resstr)
-            let formatter_index = (formatter_index + 1) % len(b:formatters)
-        elseif res == 0
-            call auf#util#echoSuccessMsg('Auf> ' . fmt_var . ' Format PASSED ~' . drift)
-            return 1
-        elseif res == 1
-            call auf#util#echoSuccessMsg('Auf> ' . fmt_var . ' ~' . drift . ' ' . resstr)
-            return 1
-        endif
-
-        if formatter_index == b:current_formatter_index
+        if b:formatprg !=# '' && fmt_index == b:current_formatter_index
             call auf#util#logVerbose('TryAllFormatters: No format definitions were successful.')
             " Tried all formatters, none worked
             call auf#format#Fallback(a:firstline, a:lastline)
             return 0
         endif
+        let [fmt_var, fmt_prg] = auf#util#getFormatterAtIndex(fmt_index)
+        if fmt_prg ==# ''
+            call auf#util#echoErrorMsg("No format definition found in '" . fmt_var . "'")
+            return 0
+        endif
+        call auf#util#logVerbose("TryAllFormatters: Trying definition in '" . fmt_var)
+        if s:tryFmtDefinition(a:firstline, a:lastline, fmt_prg, fmt_var, fmt_index, overwrite, coward, a:synmatch)
+            let b:formatprg = fmt_prg
+            return 1
+        endif
+        let fmt_index = (fmt_index + 1) % len(b:formatters)
     endwhile
 endfunction
 
 function! auf#format#Fallback(line1, line2)
+    if exists('b:auf_remove_trailing_spaces') ? b:auf_remove_trailing_spaces : g:auf_remove_trailing_spaces
+        call auf#util#logVerbose('Fallback: Removing trailing whitespace...')
+        keepjumps execute a:line1 . ',' . a:line2 . 'substitute/\s\+$//e'
+        call histdel('search', -1)
+    endif
     if exists('b:auf_retab') ? b:auf_retab == 1 : g:auf_retab == 1
         call auf#util#logVerbose('Fallback: Retabbing...')
         keepjumps execute '' . a:line1 ',' . a:line2 . 'retab'
     endif
-    if exists('b:auf_autoindent') ? b:auf_autoindent == 1 : g:auf_autoindent == 1
+    if exists('b:auf_autoindent') ? b:auf_autoindent : g:auf_autoindent
         call auf#util#logVerbose('Fallback: Autoindenting...')
-        " Autoindent code
         keepjumps execute 'normal ' . a:line1 . 'G=' . (a:line2 - a:line1 + 1) . 'j'
     endif
 endfunction
@@ -167,9 +187,8 @@ function! auf#format#evalApplyDif(line1, difpath, coward) abort
 endfunction
 
 function! auf#format#evaluateFormattedToOrig(line1, line2, formatprg, curfile, formattedf, difpath, synmatch, overwrite, coward)
-    if a:overwrite && g:auf_remove_trailing_spaces
-        keepjumps execute  a:line1 . ',' . a:line2 . 'substitute/\s\+$//e'
-        call histdel('search', -1)
+    if a:overwrite
+        call auf#format#Fallback(a:line1, a:line2)
     endif
 
     call writefile(getline(1, '$'), a:curfile)
