@@ -67,6 +67,10 @@ function! AufBufReadPost() abort
         let b:auf_highlight_lines_hlids = []
     endif
     if len(b:auf_highlight_lines_hlids)
+        if !g:auf_highlight_on_bufenter
+            call auf#util#logVerbose('AufBufReadPost: clearing highlights')
+            call auf#util#clearAllHighlights(b:auf_highlight_lines_hlids)
+        endif
         return
     endif
     if g:auf_highlight_on_bufenter
