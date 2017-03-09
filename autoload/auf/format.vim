@@ -103,7 +103,7 @@ function! auf#format#TryAllFormatters(bang, synmatch, ...) range
     let [coward, fmt_index] = [0, b:current_formatter_index]
     if b:formatprg !=# ''
         let [fmt_var, fmt_prg] = auf#util#getFormatterAtIndex(fmt_index)
-        if s:tryFmtDefinition(a:firstline, a:lastline, b:formatprg, fmt_var, fmt_index, overwrite, coward, a:synmatch)
+        if s:tryFmtDefinition(a:firstline, a:lastline, b:formatprg, fmt_var, overwrite, coward, a:synmatch)
             return 1
         endif
         let fmt_index = (fmt_index + 1) % len(b:formatters)
@@ -122,7 +122,7 @@ function! auf#format#TryAllFormatters(bang, synmatch, ...) range
             return 0
         endif
         call auf#util#logVerbose("TryAllFormatters: Trying definition in '" . fmt_var)
-        if s:tryFmtDefinition(a:firstline, a:lastline, fmt_prg, fmt_var, fmt_index, overwrite, coward, a:synmatch)
+        if s:tryFmtDefinition(a:firstline, a:lastline, fmt_prg, fmt_var, overwrite, coward, a:synmatch)
             let b:formatprg = fmt_prg
             return 1
         endif
