@@ -346,15 +346,8 @@ function! auf#format#InsertModeOn()
         let b:auf_shadowpath = tempname()
         " Nonetheless writefile doesn't work when you get into insert via o
         " (start on new line) - it gives *getline* with newline NOT before
-        let flpath = expand('%:.')
-        " when buffer/file is created brand new, there is no readable file in
-        " the filesystem; also tempfile() doesn't create file
-        if filereadable(flpath)
-            call system('cp ' . flpath . ' ' . b:auf_shadowpath)
-            " call writefile(getline(1, '$'), b:auf_shadowpath)
-        else
-            call writefile([], b:auf_shadowpath)
-        endif
+        call system('cp ' . expand('%:.') . ' ' . b:auf_shadowpath)
+        " call writefile(getline(1, '$'), b:auf_shadowpath)
     endif
     call auf#util#logVerbose('InsertModeOn: End')
 endfunction

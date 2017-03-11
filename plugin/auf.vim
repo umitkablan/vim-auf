@@ -68,6 +68,7 @@ function! AufJit() abort
 endfunction
 
 function! AufBufReadPost() abort
+    call auf#util#logVerbose('AufBufReadPost: START')
     if !exists('b:auf_highlight_lines_hlids')
         let b:auf_highlight_lines_hlids = []
     endif
@@ -86,6 +87,7 @@ function! AufBufReadPost() abort
     else
         %call auf#format#TryAllFormatters(0, '')
     endif
+    call auf#util#logVerbose('AufBufReadPost: END')
 endfunction
 
 " Save and recall window state to prevent vim from jumping to line 1: Beware
@@ -122,11 +124,7 @@ augroup END
 
 augroup Auf_Auto_BufEvents
     autocmd!
-    autocmd BufNewFile *
-        \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 |
-        \   call AufBufReadPost() |
-        \ endif
-    autocmd BufReadPost *
+    autocmd BufEnter *
         \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 |
         \   call AufBufReadPost() |
         \ endif
