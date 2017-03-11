@@ -175,7 +175,7 @@ function! s:hlClear(hlid) abort
 endfunction
 
 function! auf#util#clearAllHighlights(hlids) abort
-    call auf#util#logVerbose('clearAllHiglights:')
+    call auf#util#logVerbose('clearAllHiglights: @' . len(a:hlids))
     " execute 'syn clear ' . a:synmatch
     let i = 0
     while i < len(a:hlids)
@@ -183,7 +183,7 @@ function! auf#util#clearAllHighlights(hlids) abort
         let a:hlids[i][1] = s:hlClear(hlid)
         let i += 1
     endwhile
-    call auf#util#logVerbose('clearAllHiglights: DONE')
+    call auf#util#logVerbose('clearAllHiglights: DONE @' . len(a:hlids))
 endfunction
 
 function! auf#util#clearHighlightsInRange(synmatch, hlids, line1, line2) abort
@@ -217,32 +217,47 @@ endfunction
 
 function! auf#util#addHighlightNewLines(synmatch, hlids, line1, line2) abort
     call auf#util#logVerbose('addHighlightNewLines: ' . a:line1 . '-' . a:line2 . ' @' . len(a:hlids))
-    let ret = [] + a:hlids
-    let hl = a:line1
-    while hl <= a:line2
-        let hlid = s:hlLine(a:synmatch, hl, '$')
-        let ret += [[hl, hlid]]
-        let hl += 1
+    let [ret, ln1, ln2, i] = [[], a:line1, a:line2+1, 0]
+    while i < len(a:hlids)
+        let hll = a:hlids[i]
+        if hll[0] <= ln1
+            let ret += [hll]
+            let i += 1
+            if hll[0] == ln1
+                let ln1 += 1
+            endif
+        elseif ln1 < ln2
+            let ret += [[ln1, s:hlLine(a:synmatch, ln1, '$')]]
+            let ln1 += 1
+        else
+            let ret += [hll]
+            let i += 1
+        endif
+    endwhile
+    while ln1 < ln2
+        let ret += [[ln1, s:hlLine(a:synmatch, ln1, '$')]]
+        let ln1 += 1
     endwhile
     call auf#util#logVerbose('addHighlightNewLines: DONE @' . len(ret))
     return ret
 endfunction
 
 function! auf#util#driftHighlightsAfterLine_nolight(hlids, linenr, drift) abort
-    call auf#util#logVerbose('driftHighlightsAfterLine_nolight: line:' . a:linenr . ' drift:' . a:drift)
+    call auf#util#logVerbose('driftHighlightsAfterLine_nolight: line:' . a:linenr . ' drift:' . a:drift . ' @' . len(a:hlids))
     let i = 0
     while i < len(a:hlids)
-        let [hline, hlid] = [a:hlids[i][0], a:hlids[i][1]]
+        let [hline, hlid] = a:hlids[i]
         if hline >= a:linenr
             let a:hlids[i][0] = hline + a:drift
             let a:hlids[i][1] = s:hlClear(hlid)
         endif
         let i += 1
     endwhile
-    call auf#util#logVerbose('driftHighlightsAfterLine_nolight: DONE')
+    call auf#util#logVerbose('driftHighlightsAfterLine_nolight: DONE @' . len(a:hlids))
 endfunction
 
 function! auf#util#highlights_On(hlids, synmatch) abort
+    call auf#util#logVerbose('highlights_On:' . a:synmatch . ' @' . len(a:hlids))
     if a:synmatch ==# ''
         return
     endif
@@ -254,14 +269,17 @@ function! auf#util#highlights_On(hlids, synmatch) abort
         endif
         let i += 1
     endwhile
+    call auf#util#logVerbose('highlights_On: DONE @' . len(a:hlids))
 endfunction
 
 function! auf#util#highlightLines(hlines, synmatch) abort
+    call auf#util#logVerbose('highlightLines:' . a:synmatch . ' @' . len(a:hlines))
     let ret = []
     for hl in a:hlines
         let hlid = s:hlLine(a:synmatch, hl, g:auf_highlight_pattern)
         let ret += [[hl, hlid]]
     endfor
+    call auf#util#logVerbose('highlightLines: DONE @' . len(ret))
     return ret
 endfunction
 

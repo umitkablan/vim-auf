@@ -224,12 +224,12 @@ function! auf#format#evaluateFormattedToOrig(line1, line2, formatprg, curfile, f
         return [1, 0, 0]
     endif
 
-    let b:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(a:synmatch, b:auf_highlight_lines_hlids,
-                    \ a:line1, a:line2)
     let [hunks, drift] = auf#format#evalApplyDif(a:line1, a:difpath, a:coward)
     if hunks == -1
         return [4, 0, 0]
     endif
+    let b:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(a:synmatch, b:auf_highlight_lines_hlids,
+                    \ a:line1, a:line2)
     if drift != 0
         call auf#util#driftHighlightsAfterLine_nolight(b:auf_highlight_lines_hlids, a:line1, drift)
     endif
@@ -270,6 +270,22 @@ function! auf#format#TryFormatter(line1, line2, formatprg, overwrite, coward, sy
     return [res, drift, resstr]
 endfunction
 
+function! s:doFormatLines(ln0, ln1, synmatch) abort
+    let [coward, overwrite] = [1, 1]
+    call auf#util#logVerbose('s:doFormatLines: ' . a:ln0 . '-' . a:ln1)
+    let [res, drift, resstr] = auf#format#TryFormatter(a:ln0, a:ln1, b:formatprg, overwrite, coward, a:synmatch)
+    call auf#util#logVerbose('s:doFormatLines: result:' . res . ' ~' . drift)
+    if res > 1
+        call auf#util#echoErrorMsg('AufJIT> ' . b:formatters[b:current_formatter_index] . ' fail:' . res . ' ' . resstr)
+        return [0, 0]
+    endif
+    let b:auf_newadded_lines =
+                \ auf#util#clearHighlightsInRange(a:synmatch, b:auf_newadded_lines, a:ln0, a:ln1)
+    call auf#util#clearAllHighlights(b:auf_newadded_lines)
+    let b:auf_newadded_lines = []
+    return [1, drift]
+endfunction
+
 function! auf#format#justInTimeFormat(synmatch) abort
     call auf#util#get_verbose()
     if !exists('b:formatprg')
@@ -283,48 +299,42 @@ function! auf#format#justInTimeFormat(synmatch) abort
         let b:auf_difpath = tempname()
     endif
 
-    let tmpcurfile = tempname()
     call auf#util#logVerbose('justInTimeFormat: trying..')
+    if !len(b:auf_newadded_lines)
+        return 0
+    endif
     try
-        call writefile(getline(1, '$'), tmpcurfile)
-        let [issame, err, sherr] = auf#diff#diffFiles(g:auf_diffcmd, expand('%:.'), tmpcurfile, b:auf_difpath)
-        if issame
-            call auf#util#logVerbose('justInTimeFormat: no edit has detected - no diff')
-            return 0
-        elseif err
-            call auf#util#logVerbose('justInTimeFormat: diff error ' . err . '/'. sherr . ' diff current')
-            return 2
-        endif
-        call auf#util#logVerbose_fileContent('justInTimeFormat: diff done file:' . b:auf_difpath, b:auf_difpath,
-                    \ 'justInTimeFormat: ========')
-        let [coward, overwrite, tot_drift, res] = [1, 1, 0, 1]
-        for [linenr, addlines, rmlines] in auf#diff#parseHunks(b:auf_difpath)
-            let [prevcnt, curcnt, drift] = [len(rmlines), len(addlines), 0]
-            if prevcnt == 0 && curcnt == 0
-                call auf#util#echoErrorMsg('justInTimeFormat: invalid hunk-lines:' . linenr . '-' . prevcnt . ',' . curcnt)
-                continue
-            endif
-            if curcnt > 0
-                let [ln0, ln1] = [linenr+tot_drift, linenr+curcnt-1+tot_drift]
-                call auf#util#logVerbose('justInTimeFormat: hunk-lines:' . ln0 . '-' . ln1)
-                let [res, drift, resstr] = auf#format#TryFormatter(ln0, ln1, b:formatprg, overwrite, coward, a:synmatch)
-                call auf#util#logVerbose('justInTimeFormat: result:' . res . ' ~' . drift)
-                if res > 1
-                    call auf#util#echoErrorMsg('AufJIT> ' . b:formatters[b:current_formatter_index] . ' fail:' . res . ' ' . resstr)
+        let [tot_drift, res, msg, lines, i] = [0, 1, '', [b:auf_newadded_lines[0][0]], 1]
+        while i < len(b:auf_newadded_lines)
+            let [linenr, curcnt, i] = [b:auf_newadded_lines[i][0], len(lines), i+1]
+            if lines[curcnt-1] == linenr-1 " successive lines to be appended
+                let lines += [linenr]
+            else
+                let ln0 = lines[0]
+                let [res, drift] = s:doFormatLines(ln0+tot_drift, ln0+curcnt-1+tot_drift, a:synmatch)
+                if !res
                     break
                 endif
+                let msg .= '' . ln0 . ':' . curcnt . '~' . drift . ' /'
+                let [tot_drift, lines] = [tot_drift+drift, [linenr]]
             endif
-            let tot_drift += drift
-        endfor
+        endwhile
+        if len(lines) && res
+            let [ln0, curcnt] = [lines[0], len(lines)]
+            let [res, drift] = s:doFormatLines(ln0+tot_drift, ln0+curcnt-1+tot_drift, a:synmatch)
+            if res
+                let msg .= '' . ln0 . ':' . curcnt . '~' . drift . ' /'
+                let tot_drift += drift
+            endif
+        endif
         if res
-            call auf#util#echoSuccessMsg('AufJIT> ' . b:formatters[b:current_formatter_index] . ' SUCCESS!')
+            let msg .= '#' . tot_drift
+            call auf#util#echoSuccessMsg('AufJIT> ' . b:formatters[b:current_formatter_index] . '> ' . msg)
         endif
         call auf#util#highlights_On(b:auf_highlight_lines_hlids, a:synmatch)
     catch /.*/
-        call auf#utils#echoErrorMsg('AufJIT> Exception: ' . v:exception)
+        call auf#util#echoErrorMsg('AufJIT> Exception: ' . v:exception)
     finally
-        call auf#util#logVerbose('justInTimeFormat: deleting temporary-current-buffer')
-        call delete(tmpcurfile)
     endtry
     return 0
 endfunction
@@ -348,7 +358,7 @@ function! s:driftHighlights(synmatch, oldf, newf, difpath) abort
         call auf#util#logVerbose('s:driftHighlights: no edit has detected - no diff')
         return 0
     elseif err
-        call auf#util#echoErrorMsg('s:driftHighlights: diff error ' . err . '/'. sherr . ' diff current')
+        call auf#util#echoErrorMsg('s:driftHighlights: diff error ' . err . '/'. sherr)
         return 2
     endif
     call auf#util#logVerbose_fileContent('s:driftHighlights: diff done file:' . b:auf_difpath,
@@ -371,8 +381,8 @@ function! s:driftHighlights(synmatch, oldf, newf, difpath) abort
             call auf#util#driftHighlightsAfterLine_nolight(b:auf_highlight_lines_hlids, linenr, drift)
         endif
         if curcnt > 0
-            let b:auf_highlight_lines_hlids =
-                \ auf#util#addHighlightNewLines(a:synmatch, b:auf_highlight_lines_hlids, linenr, linenr + curcnt - 1)
+            let b:auf_newadded_lines =
+                \ auf#util#addHighlightNewLines(a:synmatch, b:auf_newadded_lines, linenr, linenr+curcnt-1)
         endif
     endfor
 endfunction

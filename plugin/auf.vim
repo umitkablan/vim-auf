@@ -36,6 +36,7 @@ augroup END
 execute s:AufErrLineSynCmd
 
 function! AufFormatRange(line1, line2) abort
+    call auf#util#logVerbose('AufFormatRange: ' . a:line1 . '-' . a:line2)
     let [overwrite, coward] = [1, 0]
     let [res, drift, resstr] = auf#format#TryFormatter(a:line1, a:line2, auf#format#getCurrentProgram(),
                 \ overwrite, coward, 'AufErrLine')
@@ -44,6 +45,7 @@ function! AufFormatRange(line1, line2) abort
     else
         call auf#util#echoSuccessMsg('Auf-gq fine:' . resstr . ' ~' . drift)
     endif
+    call auf#util#logVerbose('AufFormatRange: DONE')
 endfunction
 
 function! AufJit() abort
@@ -65,6 +67,9 @@ endfunction
 function! AufBufReadPost() abort
     if !exists('b:auf_highlight_lines_hlids')
         let b:auf_highlight_lines_hlids = []
+    endif
+    if !exists('b:auf_newadded_lines')
+        let b:auf_newadded_lines = []
     endif
     if len(b:auf_highlight_lines_hlids)
         if !g:auf_highlight_on_bufenter
