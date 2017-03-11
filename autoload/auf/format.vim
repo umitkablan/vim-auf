@@ -352,7 +352,7 @@ function! auf#format#InsertModeOn()
     call auf#util#logVerbose('InsertModeOn: End')
 endfunction
 
-function! s:driftHighlights(synmatch, oldf, newf, difpath) abort
+function! s:driftHighlights(synmatch_chg, lnregexp_chg, synmatch_err, oldf, newf, difpath) abort
     let [issame, err, sherr] = auf#diff#diffFiles(g:auf_diffcmd, a:oldf, a:newf, a:difpath)
     if issame
         call auf#util#logVerbose('s:driftHighlights: no edit has detected - no diff')
@@ -375,42 +375,46 @@ function! s:driftHighlights(synmatch, oldf, newf, difpath) abort
                     \ . prevcnt . ' drift:' . drift)
         if prevcnt > 0
             let b:auf_highlight_lines_hlids =
-                \ auf#util#clearHighlightsInRange(a:synmatch, b:auf_highlight_lines_hlids, linenr, linenr + prevcnt - 1)
+                \ auf#util#clearHighlightsInRange(a:synmatch_err, b:auf_highlight_lines_hlids, linenr, linenr + prevcnt - 1)
         endif
         if drift != 0
             call auf#util#driftHighlightsAfterLine_nolight(b:auf_highlight_lines_hlids, linenr, drift)
         endif
         if curcnt > 0
             let b:auf_newadded_lines =
-                \ auf#util#addHighlightNewLines(a:synmatch, b:auf_newadded_lines, linenr, linenr+curcnt-1)
+                \ auf#util#addHighlightNewLines(b:auf_newadded_lines, linenr, linenr+curcnt-1, a:synmatch_chg, a:lnregexp_chg)
         endif
     endfor
 endfunction
 
-function! auf#format#InsertModeOff(synmatch) abort
+function! auf#format#InsertModeOff(synmatch_chg, lnregexp_chg, synmatch_err) abort
     call auf#util#logVerbose('InsertModeOff: Start')
     let b:auf_linecnt_last = line('$')
     let tmpcurfile = tempname()
     try
         call writefile(getline(1, '$'), tmpcurfile)
-        call s:driftHighlights(a:synmatch, b:auf_shadowpath, tmpcurfile, b:auf_difpath)
+        call s:driftHighlights(a:synmatch_chg, a:lnregexp_chg, a:synmatch_err, b:auf_shadowpath, tmpcurfile, b:auf_difpath)
         let [b:auf_shadowpath, tmpcurfile] = [tmpcurfile, b:auf_shadowpath]
     catch /.*/
         call auf#util#echoErrorMsg('InsertModeOff: Exception: ' . v:exception)
     finally
         call delete(tmpcurfile)
     endtry
-    call auf#util#highlights_On(b:auf_highlight_lines_hlids, a:synmatch)
+    call auf#util#highlights_On(b:auf_highlight_lines_hlids, a:synmatch_err)
     call auf#util#logVerbose('InsertModeOff: End')
 endfunction
 
-function! auf#format#CursorHoldInNormalMode(synmatch) abort
+function! auf#format#CursorHoldInNormalMode(synmatch_chg, lnregexp_chg, synmatch_err) abort
     call auf#util#logVerbose('CursorHoldInNormalMode: Start')
-    if !exists('b:auf_linecnt_last') || b:auf_linecnt_last == line('$')
+    if (!exists('b:auf_linecnt_last') || b:auf_linecnt_last == line('$')) && !&modified
         return
     endif
+    if !exists('b:auf_shadowpath')
+        let b:auf_shadowpath = tempname()
+        call system('cp ' . expand('%:.') . ' ' . b:auf_shadowpath)
+    endif
     call auf#util#clearAllHighlights(b:auf_highlight_lines_hlids)
-    call auf#format#InsertModeOff(a:synmatch)
+    call auf#format#InsertModeOff(a:synmatch_chg, a:lnregexp_chg, a:synmatch_err)
     call auf#util#logVerbose('CursorHoldInNormalMode: End')
 endfunction
 

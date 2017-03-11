@@ -215,7 +215,7 @@ function! auf#util#clearHighlightsInRange(synmatch, hlids, line1, line2) abort
     return ret
 endfunction
 
-function! auf#util#addHighlightNewLines(synmatch, hlids, line1, line2) abort
+function! auf#util#addHighlightNewLines(hlids, line1, line2, synmatch, lnregexp) abort
     call auf#util#logVerbose('addHighlightNewLines: ' . a:line1 . '-' . a:line2 . ' @' . len(a:hlids))
     let [ret, ln1, ln2, i] = [[], a:line1, a:line2+1, 0]
     while i < len(a:hlids)
@@ -227,7 +227,7 @@ function! auf#util#addHighlightNewLines(synmatch, hlids, line1, line2) abort
                 let ln1 += 1
             endif
         elseif ln1 < ln2
-            let ret += [[ln1, s:hlLine(a:synmatch, ln1, '$')]]
+            let ret += [[ln1, s:hlLine(a:synmatch, ln1, a:lnregexp)]]
             let ln1 += 1
         else
             let ret += [hll]
@@ -235,7 +235,7 @@ function! auf#util#addHighlightNewLines(synmatch, hlids, line1, line2) abort
         endif
     endwhile
     while ln1 < ln2
-        let ret += [[ln1, s:hlLine(a:synmatch, ln1, '$')]]
+        let ret += [[ln1, s:hlLine(a:synmatch, ln1, a:lnregexp)]]
         let ln1 += 1
     endwhile
     call auf#util#logVerbose('addHighlightNewLines: DONE @' . len(ret))

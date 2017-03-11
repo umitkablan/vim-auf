@@ -23,7 +23,11 @@ if !exists('g:auf_autoindent')
 endif
 
 if !exists('g:auf_showdiff_synmatch')
-    let g:auf_showdiff_synmatch = 'ErrorMsg'
+    let g:auf_showdiff_synmatch = 'Todo'
+endif
+
+if !exists('g:auf_changedline_synmatch')
+    let g:auf_changedline_synmatch = 'ErrorMsg'
 endif
 
 if !exists('g:auf_diffcmd')
@@ -53,6 +57,13 @@ if !exists('g:auf_highlight_pattern')
     let g:auf_highlight_pattern = '\(\%##LINENUM##l\)\s'
     " Highlight white-space only when preceded by non-white
     let g:auf_highlight_pattern = '\(\%##LINENUM##l\)\zs\s\ze\S'
+endif
+
+if !exists('g:auf_changedline_pattern')
+    " Highlight leading white-space
+    let g:auf_changedline_pattern = '^\(\%##LINENUM##l\)\s\+'
+    " Highlight white-space only when preceded by non-white
+    let g:auf_changedline_pattern = '\(\%##LINENUM##l\)\zs\s\ze\S'
 endif
 
 if !exists('g:auf_highlight_on_bufenter')

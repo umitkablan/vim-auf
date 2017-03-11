@@ -29,11 +29,14 @@ endif
 let g:auf_diffcmd .= ' -u '
 
 let s:AufErrLineSynCmd = 'highlight def link AufErrLine ' . g:auf_showdiff_synmatch
+let s:AufChgLineSynCmd = 'highlight def link AufChgLine ' . g:auf_changedline_synmatch
 augroup Auf_Auto_Syntax
     autocmd!
     autocmd Syntax execute s:AufErrLineSynCmd
+    autocmd Syntax execute s:AufChgLineSynCmd
 augroup END
 execute s:AufErrLineSynCmd
+execute s:AufChgLineSynCmd
 
 function! AufFormatRange(line1, line2) abort
     call auf#util#logVerbose('AufFormatRange: ' . a:line1 . '-' . a:line2)
@@ -109,11 +112,11 @@ augroup Auf_Auto_Inserts
         \ endif
     autocmd InsertLeave *
         \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 |
-        \   call auf#format#InsertModeOff('AufErrLine') |
+        \   call auf#format#InsertModeOff('AufChgLine', g:auf_changedline_pattern, 'AufErrLine') |
         \ endif
     autocmd CursorHold *
         \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 |
-        \   call auf#format#CursorHoldInNormalMode('AufErrLine') |
+        \   call auf#format#CursorHoldInNormalMode('AufChgLine', g:auf_changedline_pattern, 'AufErrLine') |
         \ endif
 augroup END
 
