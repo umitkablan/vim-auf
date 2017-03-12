@@ -383,9 +383,13 @@ function! s:driftHighlights(synmatch_chg, lnregexp_chg, synmatch_err, oldf, newf
         if prevcnt > 0
             let b:auf_highlight_lines_hlids =
                 \ auf#util#clearHighlightsInRange(a:synmatch_err, b:auf_highlight_lines_hlids, linenr, linenr + prevcnt - 1)
+            let b:auf_newadded_lines =
+                \ auf#util#clearHighlightsInRange(a:synmatch_chg, b:auf_newadded_lines, linenr, linenr + prevcnt - 1)
         endif
         if drift != 0
-            call auf#util#driftHighlightsAfterLine_nolight(b:auf_highlight_lines_hlids, linenr, drift)
+            call auf#util#driftHighlightsAfterLine_nolight(b:auf_highlight_lines_hlids, linenr+1, drift)
+            call auf#util#driftHighlightsAfterLine_nolight(b:auf_newadded_lines, linenr+1, drift)
+            call auf#util#highlights_On(b:auf_newadded_lines, a:synmatch_chg)
         endif
         if curcnt > 0
             let b:auf_newadded_lines =
@@ -415,10 +419,6 @@ function! auf#format#CursorHoldInNormalMode(synmatch_chg, lnregexp_chg, synmatch
     call auf#util#logVerbose('CursorHoldInNormalMode: Start')
     if (!exists('b:auf_linecnt_last') || b:auf_linecnt_last == line('$')) && !&modified
         return
-    endif
-    if !exists('b:auf_shadowpath')
-        let b:auf_shadowpath = tempname()
-        call system('cp ' . expand('%:.') . ' ' . b:auf_shadowpath)
     endif
     call auf#util#clearAllHighlights(b:auf_highlight_lines_hlids)
     call auf#format#InsertModeOff(a:synmatch_chg, a:lnregexp_chg, a:synmatch_err)
