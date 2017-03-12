@@ -242,18 +242,22 @@ function! auf#util#addHighlightNewLines(hlids, line1, line2, synmatch, lnregexp)
     return ret
 endfunction
 
-function! auf#util#driftHighlightsAfterLine_nolight(hlids, linenr, drift) abort
-    call auf#util#logVerbose('driftHighlightsAfterLine_nolight: line:' . a:linenr . ' drift:' . a:drift . ' @' . len(a:hlids))
+function! auf#util#driftHighlightsAfterLine(hlids, linenr, drift, synmatch, hlpattern) abort
+    call auf#util#logVerbose('driftHighlightsAfterLine: line:' . a:linenr . ' drift:' . a:drift . ' @' . len(a:hlids))
     let i = 0
     while i < len(a:hlids)
         let [hline, hlid] = a:hlids[i]
         if hline >= a:linenr
-            let a:hlids[i][0] = hline + a:drift
-            let a:hlids[i][1] = s:hlClear(hlid)
+            let hline += a:drift
+            let hlid = s:hlClear(hlid)
+            if a:synmatch
+                let hlid = s:hlLine(a:synmatch, hline, a:hlpattern)
+            endif
+            let a:hlids[i] = [hline, hlid]
         endif
         let i += 1
     endwhile
-    call auf#util#logVerbose('driftHighlightsAfterLine_nolight: DONE @' . len(a:hlids))
+    call auf#util#logVerbose('driftHighlightsAfterLine: DONE @' . len(a:hlids))
 endfunction
 
 function! auf#util#highlights_On(hlids, synmatch) abort

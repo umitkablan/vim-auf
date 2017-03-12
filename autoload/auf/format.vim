@@ -231,7 +231,7 @@ function! auf#format#evaluateFormattedToOrig(line1, line2, formatprg, curfile, f
     let b:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(a:synmatch, b:auf_highlight_lines_hlids,
                     \ a:line1, a:line2)
     if drift != 0
-        call auf#util#driftHighlightsAfterLine_nolight(b:auf_highlight_lines_hlids, a:line1, drift)
+        call auf#util#driftHighlightsAfterLine(b:auf_highlight_lines_hlids, a:line1, drift, '', '')
     endif
 
     call auf#util#highlights_On(b:auf_highlight_lines_hlids, a:synmatch)
@@ -386,9 +386,8 @@ function! s:driftHighlights(synmatch_chg, lnregexp_chg, synmatch_err, oldf, newf
                 \ auf#util#clearHighlightsInRange(a:synmatch_chg, b:auf_newadded_lines, linenr, linenr + prevcnt - 1)
         endif
         if drift != 0
-            call auf#util#driftHighlightsAfterLine_nolight(b:auf_highlight_lines_hlids, linenr+1, drift)
-            call auf#util#driftHighlightsAfterLine_nolight(b:auf_newadded_lines, linenr+1, drift)
-            call auf#util#highlights_On(b:auf_newadded_lines, a:synmatch_chg)
+            call auf#util#driftHighlightsAfterLine(b:auf_highlight_lines_hlids, linenr+1, drift, '', '')
+            call auf#util#driftHighlightsAfterLine(b:auf_newadded_lines, linenr+1, drift, a:synmatch_chg, g:auf_changedline_pattern)
         endif
         if curcnt > 0
             let b:auf_newadded_lines =
