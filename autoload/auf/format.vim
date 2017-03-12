@@ -84,7 +84,7 @@ function! auf#format#TryAllFormatters(bang, synmatch, ...) range
 
     " Make sure formatters are defined and detected
     if !call('auf#format#find_formatters', a:000)
-        call auf#util#echoErrorMsg('Auf> No format definitions are defined for this FileType, fallback..')
+        call auf#util#logVerbose('Auf> No format definitions are defined for this FileType, fallback..')
         if overwrite
             call auf#format#Fallback(a:firstline, a:lastline)
         endif
@@ -125,8 +125,13 @@ function! auf#format#TryAllFormatters(bang, synmatch, ...) range
         if s:tryFmtDefinition(a:firstline, a:lastline, fmt_prg, fmt_var, overwrite, coward, a:synmatch)
             let b:formatprg = fmt_prg
             return 1
+        else
+            let fmt_index = (fmt_index + 1) % len(b:formatters)
+            if fmt_index == b:current_formatter_index
+                call auf#util#logVerbose('TryAllFormatters: No format definitions were successful.')
+                return 0
+            endif
         endif
-        let fmt_index = (fmt_index + 1) % len(b:formatters)
     endwhile
 endfunction
 
