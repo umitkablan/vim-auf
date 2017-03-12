@@ -10,9 +10,9 @@ Reformatting only your edits on-the-fly will make you forget about any formattin
 
 This plugin makes use of external formatter programs which are designed in UNIX philosophy and running in command line. Those programs are already well known/supported and already are actively used in other editors/IDEs. AUF will let you get those configurations directly from those environments and adapt quickly - no need to re-define them in another language. In order to utilize them by AUF, formatters at least should accept input path as argument and output to stdout. Yet it is always better to have those formatters get input and output paths as well as line range to format. The algorithm implemented here won't complain if the formatter is only-full-file and doesn't support line range - it will filter-out unnecessary formatted lines and still work on the code you touched.
 
-While AUF introduces JIT formatting which will format only your edits, you still can reformat *all* file easily (not preferred for our case). In order to still warn you about those wrong-format lines it uses line highlighting which is also configurable and slides as you edit. Those wrong-format lines will be shown once you start editing (i.e. get out of the insert mode) and it won't distract you during insert mode.
+While AUF introduces JIT formatting which will format only your edits, you still can reformat *all* file easily `:Auf!`(not preferred for our case). In order to still warn you about those wrong-format lines it uses line highlighting which is also configurable (`g:auf_showdiff_synmatch g:auf_highlight_pattern g:auf_changedline_synmatch g:auf_changedline_pattern`) and slides as you edit. Those wrong-format lines will be shown once you start editing (i.e. get out of the insert mode) and it won't distract you during insert mode.
 
-When no formatter exists (or none is installed) for a certain filetype, vim-auf falls back by default to indenting, (using vim's auto indent functionality), retabbing and removing trailing whitespace.
+When no formatter exists (or none is installed) for a certain filetype, vim-auf falls back by default to indenting, (using vim's auto indent functionality), retabbing and removing trailing whitespace working on touched lines only.
 
 ## How to install
 
@@ -37,46 +37,44 @@ First you should install an external program that can format code of the program
 
 ## Automation and Configuration
 
-Since AUF should be backed by command line formatters, it will be active only in filetypes defined in `g:auf_filetypes`. Naturally below options are all applicable for these filetypes - they are no-use otherwise. You can check those types by typing `:let g:auf_filetypes` in Vim.
+Since AUF should be backed by command line formatters, it will be active only in filetypes defined in `g:auf_filetypes [='*']`. It defaults to work on all types of regular files - don't be afraid it will retab/indent at worst and it helps. You can give comma separated values to that, `',c,cpp,java,html,'`; an empty string will disable Auf automation `''`.
 
-`g:auf_jitformat = 1` controls whether JITing on-the-fly is enabled. During typing if you encounter a bad style from formatter, you can temporarily set this to `0` and `:write` and then reset to `1` and go on typing. This situations should occur rare - otherwise your formatter has a bug or AUF misses something.
+During typing if you encounter a bad style from formatter, you can undo and `:write!` with a bang easily to skip formatting and accept as is. Auf will not touch this line after it is written. This situation should occur rare - and don't forget to `:w!`.
 
-While AUF doesn't show erronous lines after opening a file, `g:auf_highlight_on_bufenter = 0` variable will enable it to show it from very beginning.
+`g:auf_jitformat [=1]` controls whether JITing on-the-fly is enabled with precedence to buffer-local `b:auf_jitformat [default undefined]`. Use the buffer-local version to disable for certain filetypes/conditions you sketch.
 
-`g:auf_hijack_gq = 1` will enable `gq` a 'motion' - it would be easy and Vim-way to format a piece of code with `gq<motion>`, so it is enabled by default.
+`g:auf_hijack_gq [=1]` will enable `gq` a 'motion' - it would be handy and Vim-way to format a piece of code with `gq<motion>`, so it is enabled by default.
 
-`g:auf_showdiff_synmatch = 'ErrorMsg'` is the error Syntax to use for wrongly-formatted lines and `g:auf_highlight_pattern = '\(\%##LINENUM##l\)\s'` is the coloring pattern to apply on that line.
+`g:auf_showdiff_synmatch [='Todo']` is the error Syntax to use for wrongly-formatted lines and `g:auf_highlight_pattern` is the coloring pattern to apply on that line.
+Likely, `g:auf_changedline_synmatch [='ErrorMsg']` is the error Syntax to use for not yet checked newly-edited lines and `g:auf_changedline_pattern` is the coloring pattern to apply on those lines. Those patterns could be, e.g.:
 ```vim
     " Don't highlight
     let g:auf_highlight_pattern = ''
     " Full line highlight
-    let g:auf_highlight_pattern = '\(\%##LINENUM##l\)'
-    " Highlight leading white-space
-    let g:auf_highlight_pattern = '^\(\%##LINENUM##l\)\s\+'
-    " Highlight all white-space within
-    let g:auf_highlight_pattern = '\(\%##LINENUM##l\)\s'
-```
-`g:auf_diffcmd = 'diff'`, `g:auf_filterdiffcmd = 'filterdiff'`, and `let g:auf_patchcmd = 'patch'` are helpful when your diff-utils have different program names or path.
+    let g:auf_highlight_pattern = '$'
 
-Remember that when no formatter programs exists for a certain filetype, AUF falls back by default to indenting, retabbing and removing trailing whitespace. This will fix at least the most basic things, according to Vim's indentfile for that filetype. To disable the fallback to Vim's indent file, retabbing and removing trailing whitespace, set the following variables to 0:
+    " Highlight leading white-space
+    let g:auf_changedline_pattern = '^\(\%##LINENUM##l\)\s\+'
+    " Highlight all white-space within
+    let g:auf_changedline_pattern = '\(\%##LINENUM##l\)\s'
+```
+Remember that when no formatter program exists for a certain filetype, AUF falls back by default to indenting, retabbing and removing trailing whitespace - of course _only_ the lines you touched. This will fix at least the most basic things, according to Vim's indentfile for that filetype. To disable the fallback to Vim's indent file, retabbing and removing trailing whitespace, set the following variables to 0 which default to 1 and gives precedence to their `b:` variables:
 ```vim
 let g:auf_autoindent = 0
 let g:auf_retab = 0
 let g:auf_remove_trailing_spaces = 0
 ```
-To disable or re-enable these option for specific buffers, use the buffer local variants: `b:auf_autoindent`, `b:auf_retab` and `b:auf_remove_trailing_spaces`.
-
-So to disable autoindent for filetypes that have incompetent indent files, use:
+To disable or re-enable these option for specific buffers, use the buffer local variants: `b:auf_autoindent`, `b:auf_retab` and `b:auf_remove_trailing_spaces` which has precedence over global counterparts:
 ```vim
-autocmd FileType vim,tex let b:auf_autoindent=0
+autocmd FileType vim,tex let [b:auf_autoindent, b:auf_retab] = [0,0]
 ```
-You can manually autoindent, retab or remove trailing whitespace with the following respective
-commands.
+You can, of course, manually autoindent, retab or remove trailing whitespace with the following respective commands:
 ```vim
-gg=G
-:retab
-:RemoveTrailingSpaces
+<line_num>G=<movement>
+:<range>retab
+:<range>s[ubstitute]/\s\+$//g
 ```
+`g:auf_diffcmd = 'diff'`, `g:auf_filterdiffcmd = 'filterdiff'`, and `let g:auf_patchcmd = 'patch'` are helpful when your diff-utils have different program names or path. Note that these variables are unlikely to be set.
 
 ## Commands
 
