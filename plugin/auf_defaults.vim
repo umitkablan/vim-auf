@@ -14,14 +14,6 @@ if !exists('g:auf_remove_trailing_spaces')
     let g:auf_remove_trailing_spaces = 1
 endif
 
-if !exists('g:auf_verbosemode')
-    let g:auf_verbosemode = 0
-endif
-
-if !exists('g:auf_autoindent')
-    let g:auf_autoindent = 0
-endif
-
 if !exists('g:auf_showdiff_synmatch')
     let g:auf_showdiff_synmatch = 'Todo'
 endif
@@ -76,6 +68,10 @@ endif
 
 if !exists('g:auf_hijack_gq')
     let g:auf_hijack_gq = 1
+endif
+
+if !exists('g:auf_verbosemode')
+    let g:auf_verbosemode = 0
 endif
 
 " ****************
