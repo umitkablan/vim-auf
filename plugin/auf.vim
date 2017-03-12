@@ -109,15 +109,15 @@ command! AufClearHi call auf#util#clearAllHighlights(b:auf_highlight_lines_hlids
 augroup Auf_Auto_Inserts
     autocmd!
     autocmd InsertEnter *
-        \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 |
+        \ if g:auf_filetypes ==# '*' || stridx(g:auf_filetypes, ",".&ft.",") != -1 |
         \   call auf#format#InsertModeOn() |
         \ endif
     autocmd InsertLeave *
-        \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 |
+        \ if g:auf_filetypes ==# '*' || stridx(g:auf_filetypes, ",".&ft.",") != -1 |
         \   call auf#format#InsertModeOff('AufChgLine', g:auf_changedline_pattern, 'AufErrLine') |
         \ endif
     autocmd CursorHold *
-        \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 |
+        \ if g:auf_filetypes ==# '*' || stridx(g:auf_filetypes, ",".&ft.",") != -1 |
         \   call auf#format#CursorHoldInNormalMode('AufChgLine', g:auf_changedline_pattern, 'AufErrLine') |
         \ endif
 augroup END
@@ -125,24 +125,24 @@ augroup END
 augroup Auf_Auto_BufEvents
     autocmd!
     autocmd BufNewFile *
-        \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 |
+        \ if g:auf_filetypes ==# '*' || stridx(g:auf_filetypes, ",".&ft.",") != -1 |
         \   call AufBufReadPost() |
         \ endif
     autocmd BufReadPost *
-        \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 |
+        \ if g:auf_filetypes ==# '*' || stridx(g:auf_filetypes, ",".&ft.",") != -1 |
         \   call AufBufReadPost() |
         \ endif
     autocmd BufRead *
-        \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 &&
+        \ if (g:auf_filetypes ==# '*' || stridx(g:auf_filetypes, ",".&ft.",") != -1) &&
         \    g:auf_hijack_gq |
         \   setl formatexpr=AufFormatRange(v:lnum,v:lnum+v:count-1) |
         \ endif
     autocmd BufWritePre *
-        \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 |
+        \ if (g:auf_filetypes ==# '*' || stridx(g:auf_filetypes, ",".&ft.",") != -1) |
         \   call AufJit() |
         \ endif
     autocmd BufWritePost *
-        \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 &&
+        \ if (g:auf_filetypes ==# '*' || stridx(g:auf_filetypes, ",".&ft.",") != -1) &&
         \    g:auf_highlight_errs |
         \   Auf |
         \ endif

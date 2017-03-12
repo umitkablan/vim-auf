@@ -270,35 +270,30 @@ function! auf#format#TryFormatter(line1, line2, formatprg, overwrite, coward, sy
     return [res, drift, resstr]
 endfunction
 
-function! s:doFormatLines(ln0, ln1, synmatch) abort
-    let [coward, overwrite] = [1, 1]
-    call auf#util#logVerbose('s:doFormatLines: ' . a:ln0 . '-' . a:ln1)
-    let [res, drift, resstr] = auf#format#TryFormatter(a:ln0, a:ln1, b:formatprg, overwrite, coward, a:synmatch)
-    call auf#util#logVerbose('s:doFormatLines: result:' . res . ' ~' . drift)
-    if res > 1
-        call auf#util#echoErrorMsg('AufJIT> ' . b:formatters[b:current_formatter_index] . ' fail:' . res . ' ' . resstr)
-        return [0, 0]
+function! s:doFormatLines(ln1, ln2, synmatch) abort
+    call auf#util#logVerbose('s:doFormatLines: ' . a:ln1 . '-' . a:ln2)
+    let drift = 0
+    if exists('b:formatprg')
+        let [coward, overwrite] = [1, 1]
+        let [res, drift, resstr] = auf#format#TryFormatter(a:ln1, a:ln2, b:formatprg, overwrite, coward, a:synmatch)
+        call auf#util#logVerbose('s:doFormatLines: result:' . res . ' ~' . drift)
+        if res > 1
+            call auf#util#echoErrorMsg('AufJIT> ' . b:formatters[b:current_formatter_index] . ' fail:' . res . ' ' . resstr)
+            return [0, 0]
+        endif
+    else
+        call auf#util#logVerbose('justInTimeFormat: formatter program could not be found')
+        call auf#format#Fallback(a:ln1, a:ln2)
     endif
+
     let b:auf_newadded_lines =
-                \ auf#util#clearHighlightsInRange(a:synmatch, b:auf_newadded_lines, a:ln0, a:ln1)
+                \ auf#util#clearHighlightsInRange(a:synmatch, b:auf_newadded_lines, a:ln1, a:ln2)
     call auf#util#clearAllHighlights(b:auf_newadded_lines)
     let b:auf_newadded_lines = []
     return [1, drift]
 endfunction
 
 function! auf#format#justInTimeFormat(synmatch) abort
-    call auf#util#get_verbose()
-    if !exists('b:formatprg')
-        call auf#format#find_formatters()
-    endif
-    if !exists('b:formatprg')
-        call auf#util#logVerbose('justInTimeFormat: formatter program could not be found')
-        return 1
-    endif
-    if !exists('b:auf_difpath')
-        let b:auf_difpath = tempname()
-    endif
-
     call auf#util#logVerbose('justInTimeFormat: trying..')
     if !len(b:auf_newadded_lines)
         return 0
@@ -329,7 +324,11 @@ function! auf#format#justInTimeFormat(synmatch) abort
         endif
         if res
             let msg .= '#' . tot_drift
-            call auf#util#echoSuccessMsg('AufJIT> ' . b:formatters[b:current_formatter_index] . '> ' . msg)
+            if exists('b:formatprg')
+                call auf#util#echoSuccessMsg('AufJIT> ' . b:formatters[b:current_formatter_index] . '> ' . msg)
+            else
+                call auf#util#echoSuccessMsg('AufJIT> Fallback> ' . msg)
+            endif
         endif
         call auf#util#highlights_On(b:auf_highlight_lines_hlids, a:synmatch)
     catch /.*/
@@ -417,6 +416,13 @@ endfunction
 
 function! auf#format#CursorHoldInNormalMode(synmatch_chg, lnregexp_chg, synmatch_err) abort
     call auf#util#logVerbose('CursorHoldInNormalMode: Start')
+    if !exists('b:auf_shadowpath')
+        let b:auf_shadowpath = tempname()
+        call system('cp ' . expand('%:.') . ' ' . b:auf_shadowpath)
+    endif
+    if !exists('b:auf_difpath')
+        let b:auf_difpath = tempname()
+    endif
     if (!exists('b:auf_linecnt_last') || b:auf_linecnt_last == line('$')) && !&modified
         return
     endif
