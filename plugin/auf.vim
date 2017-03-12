@@ -45,10 +45,16 @@ function! AufJit() abort
     try
         if !g:auf_jitformat
             call auf#util#echoErrorMsg('AufJit: JITing is disabled GLOBALLY')
+            call auf#util#clearAllHighlights(b:auf_newadded_lines)
+            let b:auf_newadded_lines = []
         elseif exists('b:auf_jitformat') && !b:auf_jitformat
             call auf#util#echoErrorMsg('AufJit: JITing is disabled locally')
+            call auf#util#clearAllHighlights(b:auf_newadded_lines)
+            let b:auf_newadded_lines = []
         elseif v:cmdbang
             call auf#util#echoErrorMsg('AufJit: JITing is disabled due to w! bang')
+            call auf#util#clearAllHighlights(b:auf_newadded_lines)
+            let b:auf_newadded_lines = []
         else
             call auf#format#justInTimeFormat('AufErrLine')
         endif
