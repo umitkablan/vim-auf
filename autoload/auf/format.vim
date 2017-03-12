@@ -111,10 +111,7 @@ function! auf#format#TryAllFormatters(bang, synmatch, ...) range
 
     while 1
         if b:formatprg !=# '' && fmt_index == b:current_formatter_index
-            call auf#util#logVerbose('TryAllFormatters: No format definitions were successful.')
-            " Tried all formatters, none worked
-            call auf#format#Fallback(a:firstline, a:lastline)
-            return 0
+            break
         endif
         let [fmt_var, fmt_prg] = auf#util#getFormatterAtIndex(fmt_index)
         if fmt_prg ==# ''
@@ -128,11 +125,17 @@ function! auf#format#TryAllFormatters(bang, synmatch, ...) range
         else
             let fmt_index = (fmt_index + 1) % len(b:formatters)
             if fmt_index == b:current_formatter_index
-                call auf#util#logVerbose('TryAllFormatters: No format definitions were successful.')
-                return 0
+                break
             endif
         endif
     endwhile
+
+    call auf#util#logVerbose('TryAllFormatters: No format definitions were successful.')
+    unlet! b:formatprg
+    if overwrite
+        call auf#format#Fallback(a:firstline, a:lastline)
+    endif
+    return 0
 endfunction
 
 function! auf#format#Fallback(line1, line2)
