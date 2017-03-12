@@ -150,7 +150,8 @@ function! auf#format#Fallback(line1, line2)
     endif
     if exists('b:auf_autoindent') ? b:auf_autoindent : g:auf_autoindent
         call auf#util#logVerbose('Fallback: Autoindenting...')
-        keepjumps execute 'normal ' . a:line1 . 'G=' . (a:line2 - a:line1 + 1) . 'j'
+        let dif = a:line2 - a:line1
+        keepjumps execute 'normal ' . a:line1 . 'G=' . (dif > 0 ? (dif.'j') : '=')
     endif
 endfunction
 
