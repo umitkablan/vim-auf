@@ -445,5 +445,8 @@ if !exists('g:aufformatters_fortran')
 endif
 
 if !exists('g:auf_filetypes')
+    " those defined to have a formatter
     let g:auf_filetypes = ',c,cpp,cs,css,dart,fortran,go,haskell,html,java,javascript,json,markdown,objc,perl,python,ruby,rust,scss,typescript,xhtml,xml,'
+    " allow for *all*
+    let g:auf_filetypes = '*'
 endif
