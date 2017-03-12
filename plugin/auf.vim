@@ -124,7 +124,11 @@ augroup END
 
 augroup Auf_Auto_BufEvents
     autocmd!
-    autocmd BufEnter *
+    autocmd BufNewFile *
+        \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 |
+        \   call AufBufReadPost() |
+        \ endif
+    autocmd BufReadPost *
         \ if stridx(g:auf_filetypes, ",".&ft.",") != -1 |
         \   call AufBufReadPost() |
         \ endif
