@@ -25,11 +25,11 @@ function! auf#format#find_formatters(...)
             let formatters_var = 'g:aufformatters_' . supertype
         endif
         if !exists(formatters_var)
-            call auf#util#echoErrorMsg('Auf: No formatters defined for SuperType:' . supertype)
+            call auf#util#logVerbose('find_formatters: No formatters defined for SuperType:' . supertype)
         else
             let formatters = eval(formatters_var)
             if type(formatters) != type([])
-                call auf#util#echoErrorMsg('Auf: ' . formatters_var . ' is not a list')
+                call auf#util#logVerbose('find_formatters: ' . formatters_var . ' is not a list')
             else
                 let b:formatters = b:formatters + formatters
             endif
@@ -37,7 +37,7 @@ function! auf#format#find_formatters(...)
     endfor
 
     if len(b:formatters) == 0
-        call auf#util#echoErrorMsg("Auf: No formatters defined for FileType:'" . ftype . "'")
+        call auf#util#logVerbose("find_formatters: No formatters defined for FileType:'" . ftype . "'")
         return 0
     endif
     return 1
