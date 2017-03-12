@@ -70,6 +70,13 @@ if !exists('g:auf_hijack_gq')
     let g:auf_hijack_gq = 1
 endif
 
+if !exists('g:auf_filetypes')
+    " those defined to have a formatter
+    let g:auf_filetypes = ',c,cpp,cs,css,dart,fortran,go,haskell,html,java,javascript,json,markdown,objc,perl,python,ruby,rust,scss,typescript,xhtml,xml,'
+    " allow for *all*
+    let g:auf_filetypes = '*'
+endif
+
 if !exists('g:auf_verbosemode')
     let g:auf_verbosemode = 0
 endif
@@ -438,11 +445,4 @@ endif
 
 if !exists('g:aufformatters_fortran')
     let g:aufformatters_fortran = ['fprettify']
-endif
-
-if !exists('g:auf_filetypes')
-    " those defined to have a formatter
-    let g:auf_filetypes = ',c,cpp,cs,css,dart,fortran,go,haskell,html,java,javascript,json,markdown,objc,perl,python,ruby,rust,scss,typescript,xhtml,xml,'
-    " allow for *all*
-    let g:auf_filetypes = '*'
 endif
