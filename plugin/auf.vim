@@ -28,16 +28,6 @@ endif
 
 let g:auf_diffcmd .= ' -u '
 
-let s:AufErrLineSynCmd = 'highlight def link AufErrLine ' . g:auf_showdiff_synmatch
-let s:AufChgLineSynCmd = 'highlight def link AufChgLine ' . g:auf_changedline_synmatch
-augroup Auf_Auto_Syntax
-    autocmd!
-    autocmd Syntax execute s:AufErrLineSynCmd
-    autocmd Syntax execute s:AufChgLineSynCmd
-augroup END
-execute s:AufErrLineSynCmd
-execute s:AufChgLineSynCmd
-
 function! AufFormatRange(line1, line2) abort
     call auf#util#logVerbose('AufFormatRange: ' . a:line1 . '-' . a:line2)
     let [overwrite, coward] = [1, 0]
@@ -105,6 +95,17 @@ command! AufCurrFormatter call auf#format#CurrentFormatter()
 
 command! AufShowDiff call auf#format#ShowDiff()
 command! AufClearHi call auf#util#clearAllHighlights(b:auf_highlight_lines_hlids)
+
+let s:AufErrLineSynCmd = 'highlight def link AufErrLine ' . g:auf_showdiff_synmatch
+let s:AufChgLineSynCmd = 'highlight def link AufChgLine ' . g:auf_changedline_synmatch
+execute s:AufErrLineSynCmd
+execute s:AufChgLineSynCmd
+
+augroup Auf_Auto_Syntax
+    autocmd!
+    autocmd Syntax execute s:AufErrLineSynCmd
+    autocmd Syntax execute s:AufChgLineSynCmd
+augroup END
 
 augroup Auf_Auto_Inserts
     autocmd!
