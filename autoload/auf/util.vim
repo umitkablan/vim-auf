@@ -100,20 +100,19 @@ endfunction
 
 function! auf#util#replaceLines(linenr, linecnt, lines) abort
     let execmd = '' . a:linenr . ',' . (a:linenr + a:linecnt - 1) . 'delete _'
-    "keepjumps ?
-    silent execute execmd
+    keepjumps silent execute execmd
     let execmd = '' . (a:linenr - 1) . 'put=a:lines'
-    silent execute execmd
+    keepjumps silent execute execmd
 endfunction
 
 function! auf#util#addLines(linenr, lines) abort
     let execmd = '' . a:linenr . 'put=a:lines'
-    silent execute execmd
+    keepjumps silent execute execmd
 endfunction
 
 function! auf#util#removeLines(linenr, linecnt) abort
     let execmd = '' . a:linenr . ',' . (a:linenr + a:linecnt - 1) . 'delete _'
-    silent execute execmd
+    keepjumps silent execute execmd
 endfunction
 
 function! auf#util#rewriteCurBuffer(newpath) abort
