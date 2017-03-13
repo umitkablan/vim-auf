@@ -4,6 +4,12 @@ endif
 let g:loaded_auf_util_autoload = 1
 let s:is_win = has('win32') || has('win64')
 
+let s:dispMsgs = []
+augroup Auf_Util_Display_Au
+    autocmd!
+    autocmd CursorHold * call auf#util#displayMessages()
+augroup END
+
 function! auf#util#get_verbose() abort
     return &verbose || g:auf_verbosemode == 1
 endfunction
@@ -26,11 +32,19 @@ function! auf#util#logVerbose_fileContent(pretext, filepath, posttext) abort
 endfunction
 
 function! auf#util#echoSuccessMsg(line) abort
-    echohl DiffAdd | echomsg a:line | echohl None
+    let s:dispMsgs += [['DiffAdd', a:line]]
 endfunction
 
 function! auf#util#echoErrorMsg(line) abort
-    echohl ErrorMsg | echomsg a:line | echohl None
+    let s:dispMsgs += [['ErrorMsg', a:line]]
+endfunction
+
+function! auf#util#displayMessages() abort
+    for [typ, msg] in s:dispMsgs
+        execute 'echohl ' . typ
+        echomsg msg | echohl None
+    endfor
+    let s:dispMsgs = []
 endfunction
 
 function! auf#util#isFullSelected(line1, line2) abort
