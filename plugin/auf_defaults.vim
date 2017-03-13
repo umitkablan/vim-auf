@@ -14,6 +14,10 @@ if !exists('g:auf_remove_trailing_spaces')
     let g:auf_remove_trailing_spaces = 1
 endif
 
+if !exists('g:auf_fallback_func')
+    let g:auf_fallback_func = ''
+endif
+
 if !exists('g:auf_showdiff_synmatch')
     let g:auf_showdiff_synmatch = 'Todo'
 endif
