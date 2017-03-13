@@ -77,16 +77,16 @@ function! auf#format#TryAllFormatters(bang, synmatch, ...) range
     if !has('eval')
         call auf#util#echoErrorMsg('Auf> ERROR: vim has no support for eval (check :version output for +eval) - REQUIRED!')
         if overwrite
-            call auf#format#Fallback(a:firstline, a:lastline)
+            call auf#format#Fallback(1, a:firstline, a:lastline)
         endif
         return 1
     endif
 
     " Make sure formatters are defined and detected
     if !call('auf#format#find_formatters', a:000)
-        call auf#util#logVerbose('Auf> No format definitions are defined for this FileType, fallback..')
+        call auf#util#logVerbose('TryAllFormatters: No format definitions are defined for this FileType, fallback..')
         if overwrite
-            call auf#format#Fallback(a:firstline, a:lastline)
+            call auf#format#Fallback(1, a:firstline, a:lastline)
         endif
         return 0
     endif
@@ -133,12 +133,12 @@ function! auf#format#TryAllFormatters(bang, synmatch, ...) range
     call auf#util#logVerbose('TryAllFormatters: No format definitions were successful.')
     unlet! b:formatprg
     if overwrite
-        call auf#format#Fallback(a:firstline, a:lastline)
+        call auf#format#Fallback(1, a:firstline, a:lastline)
     endif
     return 0
 endfunction
 
-function! auf#format#Fallback(line1, line2)
+function! auf#format#Fallback(iserr, line1, line2)
     if exists('b:auf_remove_trailing_spaces') ? b:auf_remove_trailing_spaces : g:auf_remove_trailing_spaces
         call auf#util#logVerbose('Fallback: Removing trailing whitespace...')
         keepjumps execute a:line1 . ',' . a:line2 . 'substitute/\s\+$//e'
@@ -152,6 +152,13 @@ function! auf#format#Fallback(line1, line2)
         call auf#util#logVerbose('Fallback: Autoindenting...')
         let dif = a:line2 - a:line1
         keepjumps execute 'normal ' . a:line1 . 'G=' . (dif > 0 ? (dif.'j') : '=')
+    endif
+    if a:iserr && g:auf_fallback_func !=# ''
+        call auf#util#logVerbose('Fallback: Calling fallback function defined by user...')
+        if call(g:auf_fallback_func, [])
+            call auf#util#logVerbose('Fallback: g:auf_fallback_func returned non-zero - stop FB')
+            return
+        endif
     endif
 endfunction
 
@@ -197,7 +204,7 @@ endfunction
 
 function! auf#format#evaluateFormattedToOrig(line1, line2, formatprg, curfile, formattedf, difpath, synmatch, overwrite, coward)
     if a:overwrite
-        call auf#format#Fallback(a:line1, a:line2)
+        call auf#format#Fallback(0, a:line1, a:line2)
     endif
 
     call writefile(getline(1, '$'), a:curfile)
@@ -292,7 +299,7 @@ function! s:doFormatLines(ln1, ln2, synmatch) abort
         endif
     else
         call auf#util#logVerbose('justInTimeFormat: formatter program could not be found')
-        call auf#format#Fallback(a:ln1, a:ln2)
+        call auf#format#Fallback(1, a:ln1, a:ln2)
     endif
 
     let b:auf_newadded_lines =
@@ -307,6 +314,7 @@ function! auf#format#justInTimeFormat(synmatch) abort
     if !len(b:auf_newadded_lines)
         return 0
     endif
+    let [l, c] = [line('.'), col('.')]
     try
         let [tot_drift, res, msg, lines, i] = [0, 1, '', [b:auf_newadded_lines[0][0]], 1]
         while i < len(b:auf_newadded_lines)
@@ -343,6 +351,10 @@ function! auf#format#justInTimeFormat(synmatch) abort
     catch /.*/
         call auf#util#echoErrorMsg('AufJIT> Exception: ' . v:exception)
     finally
+        keepjumps silent execute 'normal! ' . l . 'gg'
+        if c-col('.') > 0
+            keepjumps silent execute 'normal! ' . (c-col('.')) . 'l'
+        endif
     endtry
     return 0
 endfunction
