@@ -174,6 +174,18 @@ function! auf#format#formatSource(line1, line2, formatprg, inpath, outpath) abor
     return [v:shell_error == 0, isranged, v:shell_error]
 endfunction
 
+function! s:checkAllRmLinesEmpty(n, rmlines) abort
+    let [rmcnt, emp, i] = [len(a:rmlines), 1, 0]
+    while i < a:n
+        if rmcnt > i && len(a:rmlines[i]) > 0
+            let emp = 0
+            break
+        endif
+        let i += 1
+    endwhile
+    return emp
+endfunction
+
 function! auf#format#evalApplyDif(line1, difpath, coward) abort
     let [hunks, tot_drift] = [0, 0]
     for [linenr, addlines, rmlines] in auf#diff#parseHunks(a:difpath)
@@ -182,9 +194,16 @@ function! auf#format#evalApplyDif(line1, difpath, coward) abort
             call auf#util#echoErrorMsg('evalApplyDif: diff line:' . linenr . ' has zero change!')
             continue
         endif
-        if linenr < a:line1 && a:coward && (prevcnt > 0 && len(rmlines[0]) > 0)
-            call auf#util#logVerbose('evalApplyDif: COWARD ' . linenr . ' - ' . a:line1 . '-' . len(rmlines[0]))
-            return [-1, 0]
+        if a:coward
+            if linenr < a:line1
+                " if all those to-be-removed lines are empty then no need to be coward
+                if !s:checkAllRmLinesEmpty(a:line1-linenr, rmlines)
+                    call auf#util#logVerbose('evalApplyDif: COWARD ' . linenr . ' - ' . a:line1 . '-' . linenr)
+                    continue
+                endif
+            elseif linenr > a:line1
+                break
+            endif
         endif
         if prevcnt > 0 && curcnt > 0
             call auf#util#logVerbose('evalApplyDif: *replace* ' . (linenr + tot_drift) . ',' . prevcnt . ',' . curcnt)
@@ -199,6 +218,9 @@ function! auf#format#evalApplyDif(line1, difpath, coward) abort
         let tot_drift += (curcnt - prevcnt)
         let hunks += 1
     endfor
+    if !hunks && a:coward
+        return [-1, 0]
+    endif
     return [hunks, tot_drift]
 endfunction
 
@@ -295,6 +317,9 @@ function! s:doFormatLines(ln1, ln2, synmatch) abort
         call auf#util#logVerbose('s:doFormatLines: result:' . res . ' ~' . drift)
         if res > 1
             call auf#util#echoErrorMsg('AufJIT> ' . b:formatters[b:current_formatter_index] . ' fail:' . res . ' ' . resstr)
+            return [0, 0]
+        elseif resstr !=# ''
+            call auf#util#echoSuccessMsg('AufJIT> ' . b:formatters[b:current_formatter_index] . '> ' . resstr)
             return [0, 0]
         endif
     else
