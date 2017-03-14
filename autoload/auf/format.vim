@@ -102,7 +102,7 @@ function! auf#format#TryAllFormatters(bang, synmatch, ...) range
 
     let [coward, fmt_index] = [0, b:current_formatter_index]
     if b:formatprg !=# ''
-        let [fmt_var, fmt_prg] = auf#util#getFormatterAtIndex(fmt_index)
+        let [fmt_var, fmt_prg, err] = auf#util#getFormatterAtIndex(fmt_index)
         if s:tryFmtDefinition(a:firstline, a:lastline, b:formatprg, fmt_var, overwrite, coward, a:synmatch)
             return 1
         endif
@@ -113,9 +113,9 @@ function! auf#format#TryAllFormatters(bang, synmatch, ...) range
         if b:formatprg !=# '' && fmt_index == b:current_formatter_index
             break
         endif
-        let [fmt_var, fmt_prg] = auf#util#getFormatterAtIndex(fmt_index)
+        let [fmt_var, fmt_prg, err] = auf#util#getFormatterAtIndex(fmt_index)
         if fmt_prg ==# ''
-            call auf#util#echoErrorMsg("No format definition found in '" . fmt_var . "'")
+            call auf#util#echoErrorMsg("Auf> No format definition found in '" . fmt_var . "':" . err)
             return 0
         endif
         call auf#util#logVerbose("TryAllFormatters: Trying definition in '" . fmt_var)

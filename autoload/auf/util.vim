@@ -99,17 +99,25 @@ endfunction
 
 function! auf#util#getFormatterAtIndex(index) abort
     " Formatter definition must be existent
-    let auffmt_var = 'b:auffmt_' . b:formatters[a:index]
-    if !exists(auffmt_var)
-        let auffmt_var = 'g:auffmt_' . b:formatters[a:index]
+    let var = 'b:auffmt_' . b:formatters[a:index]
+    if !exists(var)
+        let var = 'g:auffmt_' . b:formatters[a:index]
     endif
-    if !exists(auffmt_var)
-        return [auffmt_var, '']
+    if !exists(var)
+        return [var, '', 'No variable named [g,b]:auffmt_'.b:formatters[a:index]]
     endif
-    call auf#util#logVerbose('getFormatterAtIndex: evaluating "' . auffmt_var . '"')
+    call auf#util#logVerbose('getFormatterAtIndex: evaluating "' . var . '"')
     " Eval twice, once for getting definition content,
     " once for getting the final expression
-    return [auffmt_var, eval(eval(auffmt_var))]
+    let [val, err] = ['', '']
+    try
+        let val = eval(var)
+        call auf#util#logVerbose('getFormatterAtIndex:' . val)
+        let val = eval(val)
+    catch /.*/
+        let [err, val] = [v:exception, '']
+    endtry
+    return [var, val, err]
 endfunction
 
 function! auf#util#replaceLines(linenr, linecnt, lines) abort
