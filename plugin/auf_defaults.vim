@@ -285,7 +285,7 @@ endif
 " XML
 " ****************
 if !exists('g:auffmt_tidy_xml')
-    let g:auffmt_tidy_xml = '"tidy -q -xml --show-errors 0 --show-warnings 0 --force-output --indent auto --indent-spaces ".shiftwidth()." --vertical-space yes --tidy-mark no -wrap ".&textwidth'.' ##INPUTSRC## -o ##OUTPUTSRC##'
+    let g:auffmt_tidy_xml = '"tidy -q -xml --show-errors 0 --show-warnings 0 --force-output --indent auto --indent-spaces ".shiftwidth()." --vertical-space yes --tidy-mark no -wrap ".&textwidth." ##INPUTSRC##"'
 endif
 
 if !exists('g:aufformatters_xml')
@@ -296,7 +296,7 @@ endif
 " XHTML
 " ****************
 if !exists('g:auffmt_tidy_xhtml')
-    let g:auffmt_tidy_xhtml = '"tidy -q --show-errors 0 --show-warnings 0 --force-output --indent auto --indent-spaces ".shiftwidth()." --vertical-space yes --tidy-mark no -asxhtml -wrap ".&textwidth'.' ##INPUTSRC## -o ##OUTPUTSRC##'
+    let g:auffmt_tidy_xhtml = '"tidy -q --show-errors 0 --show-warnings 0 --force-output --indent auto --indent-spaces ".shiftwidth()." --vertical-space yes --tidy-mark no -asxhtml -wrap ".&textwidth." ##INPUTSRC## -o ##OUTPUTSRC##"'
 endif
 
 if !exists('g:aufformatters_xhtml')
