@@ -56,11 +56,18 @@ function! AufJit() abort
             call auf#util#clearAllHighlights(b:auf_newadded_lines)
             let b:auf_newadded_lines = []
         else
+            let b:auf__highlight__ = 1
             call auf#format#justInTimeFormat('AufErrLine')
         endif
     catch /.*/
         call auf#util#echoErrorMsg('AufJit: Exception: ' . v:exception)
     endtry
+endfunction
+
+function! AufBufNewFile() abort
+    call auf#util#logVerbose('AufBufNewFile: START')
+    let b:auf__highlight__ = 1
+    call AufBufReadPost()
 endfunction
 
 function! AufBufReadPost() abort
@@ -71,6 +78,9 @@ function! AufBufReadPost() abort
     if !exists('b:auf_newadded_lines')
         let b:auf_newadded_lines = []
     endif
+    if !exists('b:auf__highlight__')
+        let b:auf__highlight__ = g:auf_highlight_on_bufenter
+    endif
     if len(b:auf_highlight_lines_hlids)
         if !g:auf_highlight_on_bufenter
             call auf#util#logVerbose('AufBufReadPost: clearing highlights')
@@ -78,12 +88,28 @@ function! AufBufReadPost() abort
         endif
         return
     endif
-    if g:auf_highlight_on_bufenter
-        Auf
+    if b:auf__highlight__
+        %call auf#format#TryAllFormatters(0, 'AufErrLine')
     else
         %call auf#format#TryAllFormatters(0, '')
     endif
     call auf#util#logVerbose('AufBufReadPost: END')
+endfunction
+
+function! AufBufEnter() abort
+    call auf#util#logVerbose('AufBufEnter: START')
+    if exists('b:auf_highlight_lines_hlids') && b:auf__highlight__
+        call auf#util#highlights_On(b:auf_highlight_lines_hlids, 'AufErrLine')
+    endif
+    call auf#util#logVerbose('AufBufEnter: END')
+endfunction
+
+function! AufBufLeave() abort
+    call auf#util#logVerbose('AufBufLeave: START')
+    if exists('b:auf_highlight_lines_hlids')
+        call auf#util#clearAllHighlights(b:auf_highlight_lines_hlids)
+    endif
+    call auf#util#logVerbose('AufBufLeave: END')
 endfunction
 
 " Save and recall window state to prevent vim from jumping to line 1: Beware
@@ -91,6 +117,7 @@ endfunction
 command! -nargs=? -range=% -complete=filetype -bang -bar Auf
     \ let ww=winsaveview()|
     \ <line1>,<line2>call auf#format#TryAllFormatters(<bang>0, 'AufErrLine', <f-args>)|
+    \ let b:auf__highlight__ = 1 |
     \ call winrestview(ww)
 command! -nargs=0 -bar AufJIT call AufJit()
 
@@ -100,7 +127,9 @@ command! AufPrevFormatter call auf#format#PreviousFormatter()
 command! AufCurrFormatter call auf#format#CurrentFormatter()
 
 command! AufShowDiff call auf#format#ShowDiff()
-command! AufClearHi call auf#util#clearAllHighlights(b:auf_highlight_lines_hlids)
+command! AufClearHi
+    \ call auf#util#clearAllHighlights(b:auf_highlight_lines_hlids) |
+    \ let b:auf__highlight__ = 0
 
 let s:AufErrLineSynCmd = 'highlight def link AufErrLine ' . g:auf_showdiff_synmatch
 let s:AufChgLineSynCmd = 'highlight def link AufChgLine ' . g:auf_changedline_synmatch
@@ -133,7 +162,7 @@ augroup Auf_Auto_BufEvents
     autocmd!
     autocmd BufNewFile *
         \ if (g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ",".&ft.",") != -1 |
-        \   call AufBufReadPost() |
+        \   call AufBufNewFile() |
         \ endif
     autocmd BufReadPost *
         \ if (g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ",".&ft.",") != -1 |
@@ -148,18 +177,9 @@ augroup Auf_Auto_BufEvents
         \ if (g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ",".&ft.",") != -1 |
         \   call AufJit() |
         \ endif
-    autocmd BufWritePost *
-        \ if ((g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ",".&ft.",") != -1) &&
-        \    g:auf_highlight_errs |
-        \   Auf |
-        \ endif
     autocmd BufLeave *
-        \ if exists('b:auf_highlight_lines_hlids') |
-        \   call auf#util#clearAllHighlights(b:auf_highlight_lines_hlids) |
-        \ endif
+        \ call AufBufLeave()
     autocmd BufEnter *
-        \ if exists('b:auf_highlight_lines_hlids') |
-        \   call auf#util#highlights_On(b:auf_highlight_lines_hlids, 'AufErrLine') |
-        \ endif
+        \ call AufBufEnter()
 augroup END
 
