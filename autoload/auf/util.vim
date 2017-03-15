@@ -14,22 +14,60 @@ function! auf#util#get_verbose() abort
     return &verbose || g:auf_verbosemode == 1
 endfunction
 
+if exists('g:auf_verbose_logfile')
+
+function! auf#util#logVerbose(line) abort
+    try
+        if auf#util#get_verbose()
+            execute 'redir >> ' . g:auf_verbose_logfile
+            silent echomsg expand('%') . ': ' . a:line
+            silent! redir END
+        endif
+    catch /.*/
+        echomsg 'Exception in log writing: ' . v:exception
+    endtry
+endfunction
+
+function! auf#util#logVerbose_fileContent(pretext, filepath, posttext) abort
+    try
+        if auf#util#get_verbose()
+            execute 'redir >> ' . g:auf_verbose_logfile
+            silent! echomsg expand('%') . ': ' . a:pretext
+            let flines = readfile(a:filepath)
+            for fl in flines
+                silent! echomsg fl
+            endfor
+            silent! echomsg expand('%') . ': ' a:posttext
+            silent! redir END
+        endif
+    catch /.*/
+        echomsg 'Exception in log -writing: ' . v:exception
+    endtry
+
+    if auf#util#get_verbose()
+    endif
+endfunction
+
+else
+
 function! auf#util#logVerbose(line) abort
     if auf#util#get_verbose()
-        echomsg a:line
+        echomsg expand('%') . ': ' . a:line
     endif
 endfunction
 
 function! auf#util#logVerbose_fileContent(pretext, filepath, posttext) abort
     if auf#util#get_verbose()
-        echomsg a:pretext
+        echomsg expand('%') . ': ' . a:pretext
         let flines = readfile(a:filepath)
         for fl in flines
             echomsg fl
         endfor
-        echomsg a:posttext
+        echomsg expand('%') . ': ' a:posttext
     endif
 endfunction
+
+endif
 
 function! auf#util#echoSuccessMsg(line) abort
     let s:dispMsgs += [['DiffAdd', a:line]]
@@ -282,7 +320,7 @@ function! auf#util#driftHighlightsAfterLine(hlids, linenr, drift, synmatch, hlpa
 endfunction
 
 function! auf#util#highlights_On(hlids, synmatch) abort
-    call auf#util#logVerbose('highlights_On:' . a:synmatch . ' @' . len(a:hlids))
+    call auf#util#logVerbose('highlights_On: "' . a:synmatch . '" @' . len(a:hlids))
     if a:synmatch ==# ''
         return
     endif
@@ -298,7 +336,7 @@ function! auf#util#highlights_On(hlids, synmatch) abort
 endfunction
 
 function! auf#util#highlightLines(hlines, synmatch) abort
-    call auf#util#logVerbose('highlightLines:' . a:synmatch . ' @' . len(a:hlines))
+    call auf#util#logVerbose('highlightLines: "' . a:synmatch . '" @' . len(a:hlines))
     let ret = []
     for hl in a:hlines
         let hlid = s:hlLine(a:synmatch, hl, g:auf_highlight_pattern)
