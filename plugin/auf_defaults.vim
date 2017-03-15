@@ -26,22 +26,6 @@ if !exists('g:auf_changedline_synmatch')
     let g:auf_changedline_synmatch = 'ErrorMsg'
 endif
 
-if !exists('g:auf_diffcmd')
-    let g:auf_diffcmd = 'diff'
-endif
-
-if !exists('g:auf_filterdiffcmd')
-    let g:auf_filterdiffcmd = 'filterdiff'
-endif
-
-if !exists('g:auf_patchcmd')
-    let g:auf_patchcmd = 'patch'
-endif
-
-if !exists('g:auf_highlight_errs')
-    let g:auf_highlight_errs = 1
-endif
-
 if !exists('g:auf_highlight_pattern')
     " Don't highlight
     let g:auf_highlight_pattern = ''
@@ -83,6 +67,18 @@ endif
 
 if !exists('g:auf_verbosemode')
     let g:auf_verbosemode = 0
+endif
+
+if !exists('g:auf_diffcmd')
+    let g:auf_diffcmd = 'diff'
+endif
+
+if !exists('g:auf_filterdiffcmd')
+    let g:auf_filterdiffcmd = 'filterdiff'
+endif
+
+if !exists('g:auf_patchcmd')
+    let g:auf_patchcmd = 'patch'
 endif
 
 " ****************
