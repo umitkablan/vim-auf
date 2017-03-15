@@ -455,7 +455,9 @@ function! auf#format#InsertModeOff(synmatch_chg, lnregexp_chg, synmatch_err) abo
     finally
         call delete(tmpcurfile)
     endtry
-    call auf#util#highlights_On(b:auf_highlight_lines_hlids, a:synmatch_err)
+    if b:auf__highlight__
+        call auf#util#highlights_On(b:auf_highlight_lines_hlids, a:synmatch_err)
+    endif
     call auf#util#logVerbose('InsertModeOff: End')
 endfunction
 
