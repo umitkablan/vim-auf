@@ -58,7 +58,9 @@ endfunction
 function! s:tryFmtDefinition(line1, line2, fmt_prg, fmt_var, overwrite, coward, synmatch) abort
     let [res, drift, resstr] = auf#format#TryFormatter(a:line1, a:line2, a:fmt_prg, a:overwrite, a:coward, a:synmatch)
     if res > 1
-        call auf#util#echoErrorMsg('Auf> Formatter "' . a:fmt_var . '": ' . resstr)
+        if b:auf__highlight__
+            call auf#util#echoErrorMsg('Auf> Formatter "' . a:fmt_var . '": ' . resstr)
+        endif
         return 0
     elseif res == 0
         if b:auf__highlight__
