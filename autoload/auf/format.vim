@@ -47,7 +47,7 @@ function! auf#format#getCurrentProgram() abort
     if !exists('b:formatprg')
         let [fmt_var, fmt_prg] = auf#util#getFormatterAtIndex(b:current_formatter_index)
         if fmt_prg ==# ''
-            call auf#util#echoErrorMsg("No format definition found in '" . fmt_var . "'")
+            call auf#util#echoErrorMsg("Auf> No format definition found in '" . fmt_var . "'")
             return ''
         endif
         let b:formatprg = fmt_prg
@@ -61,10 +61,14 @@ function! s:tryFmtDefinition(line1, line2, fmt_prg, fmt_var, overwrite, coward, 
         call auf#util#echoErrorMsg('Auf> Formatter "' . a:fmt_var . '": ' . resstr)
         return 0
     elseif res == 0
-        call auf#util#echoSuccessMsg('Auf> ' . a:fmt_var . ' Format PASSED ~' . drift)
+        if b:auf__highlight__
+            call auf#util#echoSuccessMsg('Auf> ' . a:fmt_var . ' Format PASSED ~' . drift)
+        endif
         return 1
     elseif res == 1
-        call auf#util#echoSuccessMsg('Auf> ' . a:fmt_var . ' ~' . drift . ' ' . resstr)
+        if b:auf__highlight__
+            call auf#util#echoWarningMsg('Auf> ' . a:fmt_var . ' ~' . drift . ' ' . resstr)
+        endif
         return 1
     endif
     return 0
@@ -191,7 +195,7 @@ function! auf#format#evalApplyDif(line1, difpath, coward) abort
     for [linenr, addlines, rmlines] in auf#diff#parseHunks(a:difpath)
         let [prevcnt, curcnt] = [len(rmlines), len(addlines)]
         if prevcnt == 0 && curcnt == 0
-            call auf#util#echoErrorMsg('evalApplyDif: diff line:' . linenr . ' has zero change!')
+            call auf#util#echoErrorMsg('Auf> evalApplyDif: diff line:' . linenr . ' has zero change!')
             continue
         endif
         if a:coward
@@ -316,10 +320,14 @@ function! s:doFormatLines(ln1, ln2, synmatch) abort
         let [res, drift, resstr] = auf#format#TryFormatter(a:ln1, a:ln2, b:formatprg, overwrite, coward, a:synmatch)
         call auf#util#logVerbose('s:doFormatLines: result:' . res . ' ~' . drift)
         if res > 1
-            call auf#util#echoErrorMsg('AufJIT> ' . b:formatters[b:current_formatter_index] . ' fail:' . res . ' ' . resstr)
+            if b:auf__highlight__
+                call auf#util#echoErrorMsg('Auf> ' . b:formatters[b:current_formatter_index] . ' fail:' . res . ' ' . resstr)
+            endif
             return [0, 0]
         elseif resstr !=# ''
-            call auf#util#echoSuccessMsg('AufJIT> ' . b:formatters[b:current_formatter_index] . '> ' . resstr)
+            if b:auf__highlight__
+                call auf#util#echoWarningMsg('Auf> ' . b:formatters[b:current_formatter_index] . '> ' . resstr)
+            endif
             return [0, 0]
         endif
     else
@@ -367,14 +375,14 @@ function! auf#format#justInTimeFormat(synmatch) abort
         if res
             let msg .= '#' . tot_drift
             if exists('b:formatprg')
-                call auf#util#echoSuccessMsg('AufJIT> ' . b:formatters[b:current_formatter_index] . '> ' . msg)
+                call auf#util#echoSuccessMsg('Auf> ' . b:formatters[b:current_formatter_index] . '> ' . msg)
             else
-                call auf#util#echoSuccessMsg('AufJIT> Fallback> ' . msg)
+                call auf#util#echoWarningMsg('Auf> Fallback> ' . msg)
             endif
         endif
         call auf#util#highlights_On(b:auf_highlight_lines_hlids, a:synmatch)
     catch /.*/
-        call auf#util#echoErrorMsg('AufJIT> Exception: ' . v:exception)
+        call auf#util#echoErrorMsg('Auf> Exception: ' . v:exception)
     finally
         keepjumps silent execute 'normal! ' . l . 'gg'
         if c-col('.') > 0
@@ -410,15 +418,16 @@ function! s:driftHighlights(synmatch_chg, lnregexp_chg, synmatch_err, oldf, newf
         call auf#util#logVerbose('s:driftHighlights: no edit has detected - no diff')
         return 0
     elseif err
-        call auf#util#echoErrorMsg('s:driftHighlights: diff error ' . err . '/'. sherr)
+        call auf#util#echoErrorMsg('Auf> s:driftHighlights: diff error ' . err . '/'. sherr)
         return 2
     endif
     call auf#util#logVerbose_fileContent('s:driftHighlights: diff done file:' . b:auf_difpath,
                 \ b:auf_difpath, 's:driftHighlights: ========')
+    let b:auf__highlight__ = 1
     for [linenr, addlines, rmlines] in auf#diff#parseHunks(a:difpath)
         let [prevcnt, curcnt] = [len(rmlines), len(addlines)]
         if prevcnt == 0 && curcnt == 0
-            call auf#util#echoErrorMsg('s:driftHighlights: invalid hunk-lines:' .
+            call auf#util#echoErrorMsg('Auf> s:driftHighlights: invalid hunk-lines:' .
                     \ linenr . '-' . prevcnt . ',' . curcnt)
             continue
         endif
@@ -451,7 +460,7 @@ function! auf#format#InsertModeOff(synmatch_chg, lnregexp_chg, synmatch_err) abo
         call s:driftHighlights(a:synmatch_chg, a:lnregexp_chg, a:synmatch_err, b:auf_shadowpath, tmpcurfile, b:auf_difpath)
         let [b:auf_shadowpath, tmpcurfile] = [tmpcurfile, b:auf_shadowpath]
     catch /.*/
-        call auf#util#echoErrorMsg('InsertModeOff: Exception: ' . v:exception)
+        call auf#util#echoErrorMsg('Auf> InsertModeOff: Exception: ' . v:exception)
     finally
         call delete(tmpcurfile)
     endtry

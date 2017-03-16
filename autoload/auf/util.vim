@@ -73,6 +73,10 @@ function! auf#util#echoSuccessMsg(line) abort
     let s:dispMsgs += [['DiffAdd', a:line]]
 endfunction
 
+function! auf#util#echoWarningMsg(line) abort
+    let s:dispMsgs += [['WarningMsg', a:line]]
+endfunction
+
 function! auf#util#echoErrorMsg(line) abort
     let s:dispMsgs += [['ErrorMsg', a:line]]
 endfunction
