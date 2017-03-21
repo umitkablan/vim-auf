@@ -96,22 +96,6 @@ function! AufBufReadPost() abort
     call auf#util#logVerbose('AufBufReadPost: END')
 endfunction
 
-function! AufBufEnter() abort
-    call auf#util#logVerbose('AufBufEnter: START')
-    if exists('b:auf_highlight_lines_hlids') && b:auf__highlight__
-        call auf#util#highlights_On(b:auf_highlight_lines_hlids, 'AufErrLine')
-    endif
-    call auf#util#logVerbose('AufBufEnter: END')
-endfunction
-
-function! AufBufLeave() abort
-    call auf#util#logVerbose('AufBufLeave: START')
-    if exists('b:auf_highlight_lines_hlids')
-        call auf#util#clearAllHighlights(b:auf_highlight_lines_hlids)
-    endif
-    call auf#util#logVerbose('AufBufLeave: END')
-endfunction
-
 " Save and recall window state to prevent vim from jumping to line 1: Beware
 " that it should be done here due to <line1>,<line2> range.
 command! -nargs=? -range=% -complete=filetype -bang -bar Auf
@@ -177,9 +161,5 @@ augroup Auf_Auto_BufEvents
         \ if (g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ",".&ft.",") != -1 |
         \   call AufJit() |
         \ endif
-    autocmd BufLeave *
-        \ call AufBufLeave()
-    autocmd BufEnter *
-        \ call AufBufEnter()
 augroup END
 
