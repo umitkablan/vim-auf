@@ -163,5 +163,11 @@ augroup Auf_Auto_BufEvents
         \ if (g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ",".&ft.",") != -1 |
         \   call AufJit() |
         \ endif
+    autocmd BufWritePost *
+        \ if ((g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ",".&ft.",") != -1) &&
+        \    g:auf_rescan_on_writepost |
+        \   call auf#util#logVerbose('Auf: BufWritePost: Rescanning') |
+        \   Auf |
+        \ endif
 augroup END
 
