@@ -139,6 +139,7 @@ if !exists('g:auffmt_clangformat')
     let s:configfile_def = "'clang-format -lines=##FIRSTLINE##:##LASTLINE## --assume-filename=\"'.expand('%:.').'\" -style=file \"##INPUTSRC##\"'"
     let s:noconfigfile_def = "'clang-format -lines=##FIRSTLINE##:##LASTLINE## --assume-filename=\"'.expand('%:.').'\" -style=\"{BasedOnStyle: WebKit, AlignTrailingComments: true, '.(&textwidth ? 'ColumnLimit: '.&textwidth.', ' : '').(&expandtab ? 'UseTab: Never, IndentWidth: '.shiftwidth() : 'UseTab: Always').'}\" \"##INPUTSRC##\"'"
     let g:auffmt_clangformat = 'g:ClangFormatConfigFileExists() ? (' . s:configfile_def . ') : (' . s:noconfigfile_def . ')'
+    unlet! s:configfile_def s:noconfigfile_def
 endif
 
 function! g:ClangFormatConfigFileExists()
