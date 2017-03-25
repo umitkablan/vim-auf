@@ -181,14 +181,14 @@ function! auf#format#formatSource(line1, line2, formatprg, inpath, outpath) abor
 endfunction
 
 function! s:checkAllRmLinesEmpty(n, rmlines) abort
-    let [rmcnt, emp, i] = [len(a:rmlines), 1, 0]
-    while i < a:n
+    let [rmcnt, emp] = [len(a:rmlines), 1]
+    for i in range(0, a:n-1)
         if rmcnt > i && len(a:rmlines[i]) > 0
             let emp = 0
             break
         endif
         let i += 1
-    endwhile
+    endfor
     return emp
 endfunction
 
@@ -351,9 +351,9 @@ function! auf#format#justInTimeFormat(synmatch) abort
     endif
     let [l, c] = [line('.'), col('.')]
     try
-        let [tot_drift, res, msg, lines, i] = [0, 1, '', [b:auf_newadded_lines[0][0]], 1]
-        while i < len(b:auf_newadded_lines)
-            let [linenr, curcnt, i] = [b:auf_newadded_lines[i][0], len(lines), i+1]
+        let [tot_drift, res, msg, lines] = [0, 1, '', [b:auf_newadded_lines[0][0]]]
+        for i in range(1, len(b:auf_newadded_lines)-1)
+            let [linenr, curcnt] = [b:auf_newadded_lines[i][0], len(lines)]
             if lines[curcnt-1] == linenr-1 " successive lines to be appended
                 let lines += [linenr]
             else
@@ -365,7 +365,7 @@ function! auf#format#justInTimeFormat(synmatch) abort
                 let msg .= '' . ln0 . ':' . curcnt . '~' . drift . ' /'
                 let [tot_drift, lines] = [tot_drift+drift, [linenr]]
             endif
-        endwhile
+        endfor
         if len(lines) && res
             let [ln0, curcnt] = [lines[0], len(lines)]
             let [res, drift] = s:doFormatLines(ln0+tot_drift, ln0+curcnt-1+tot_drift, a:synmatch)
