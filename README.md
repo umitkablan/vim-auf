@@ -225,41 +225,53 @@ let verbose=1
 If you need a formatter that is not among the defaults, or if you are not satisfied with the default formatting behaviour that is provided by AUF, you can define it yourself.
 *The formatter program, at least should be able to receive file input argument and output to standard output. It is better to also have file output argument as well as line range to specify which lines to format.*
 
-#### Basic definitions
+#### Autoload module as a formatter definition
 
-The formatter programs that available for a certain `<filetype>` are defined in `g:aufformatters_<filetype>`. This is a list containing string identifiers, which point to corresponding formatter definitions. The formatter definitions themselves are defined in `g:auffmt_<identifier>` as a string expression. Defining any of these variable manually in your .vimrc, will override the default value, if existing.
+Formatter definitions should be implemented in Vimscript inside autoload/auf/formatters/ directory - check already implemented definitions for a sample.
 
-For example, a complete definition in your .vimrc for C# files could look like this:
+#### Scaffolding for new formatter
+
 ```vim
-let g:auffmt_my_custom_cs = '"astyle --mode=cs --style=ansi -pcHs4 < ##INPUTSRC##"'
-let g:aufformatters_cs = ['my_custom_cs']
+"
+" File autoload/auf/formatters/mytypefmt0.vim
+"
+if exists('g:loaded_auffmt_mytypefmt0_definition') || !exists('g:loaded_auf_registry_autoload')
+  finish
+endif
+let g:loaded_auffmt_mytypefmt0_definition = 1
+
+let s:definition = {
+  \ 'ID'        : 'mytypefmt0',        " ID is the basename of the autoload/* file and unique
+  \ 'executable': 'mytypefmt',         " Executable name
+  \ 'filetypes' : ['mytype', 'mytyp'], " All types this formatter activates for
+  \ 'ranged'    : 0,                   " Tell whether formatter supports line range
+  \ 'fileout'   : 1                    " Is formatter capable of outputting to a file or not (stdout)
+  \ }
+
+function! auf#formatters#mytypefmt0#define() abort
+  return s:definition
+endfunction
+
+" Should return the command line string to execute the formatter.
+" The declarations we made above and this function's return should sync; meaning if file
+" output declared to be 0, then outpath below should not be used and returned command
+" line should be outputting to standard output
+function! auf#formatters#mytypefmt0#cmd(ftype, inpath, outpath, line0, line1) abort
+  let mode = ''
+  if a:ftype ==# 'mytype'
+    let mode = '-m mytype'
+  elseif a:ftype ==# 'mytyp'
+    let mode = '-m mytyp'
+  else
+    " Not possible to get to here
+    return 'invalid!!!'
+  endif
+  return 'mytypefmt ' . a:inpath . ' ' . mode . ' -o ' . a:outpath
+endfunction
+
+" Register our formatter to the auf-registry
+call auf#registry#RegisterFormatter(s:definition)
 ```
-In this example, `my_custom_cs` is the identifier for our formatter definition. `##INPUTSRC##` is the file input path to feed the formatter. It will be better to have also `##OUTPUTSRC##` as file output, `##FIRSTLINE##` and `##LASTLINE##` to identify which range to format - but not necessary. The first line defines how to call the external formatter, while the second line tells AUF that this is the only formatter that we want to use for C# files.
-
-*Please note the double quotes in `g:auffmt_my_custom_cs`*. This allows you to define the arguments dynamically (and what makes AUF to seek for `+eval` feature):
-```vim
-let g:auffmt_my_custom_cs = '"--mode=cs --style=ansi -pcHs".&shiftwidth." < ##INPUTSRC##"'
-let g:aufformatters_cs = ['my_custom_cs']
-```
-Please notice that `g:auffmt_my_custom_cs` contains an expression that can be evaluated (`+eval`), as required. As you see, this allows us to dynamically define some parameters. In this example, the indent width that astyle will use, depends on the buffer local value of `&shiftwidth`, instead of being fixed at 4. So if you're editing a csharp file and change the `shiftwidth` (even at runtime), the `g:auffmt_my_custom_cs` will change correspondingly.
-
-For the default formatter program definitions, the options `expandtab`, `shiftwidth` and `textwidth` are taken into account whenever possible. This means that the formatting style will match your current vim settings as much as possible. You can have look look at the exact default definitions for more examples. They are defined in `vim-auf/plugin/auf_defaults.vim`. As a small side note, in the actual defaults the function `shiftwidth()` is used instead of the property. This is because it falls back to the value of `tabstop` if `shiftwidth` is 0.
-
-If you have a composite filetype with dots (like `django.python` or `php.wordpress`), AUF internally replaces the dots with underscores so you can specify formatters through `g:auf_django_python` and so on.
-
-To override these options for a local buffer, use the buffer local variants: `b:auf_<filetype>` and `b:auffmt_<identifier>`. This can be useful, for example, when working with different projects with conflicting formatting rules, with each project having settings in its own vimrc or exrc file:
-```vim
-let b:auffmt_custom_c='"astyle --mode=c --suffix=none --options=/home/user/special_project/astylerc < ##INPUTSRC##"'
-let b:aufformatters_c = ['custom_c']
-```
-#### Ranged definitions
-
-If your format program supports formatting specific ranges, you can provide a format definition which allows to make use of this. The first and last line of the current range can be retrieved by the placeholders `##FIRSTLINE##` and `##LASTLINE##`. They default to the first and last line of your file, if no range was explicitly specified. So, a ranged definition could look like this:
-```vim
-let g:auffmt_autopep8 = "'autopep8 --range ##FIRSTLINE##-##LASTLINE## < ##INPUTSRC##'"
-let g:aufformatters_python = ['autopep8']
-```
-Note that AUF is not dependant on ranged definitions to make ranged formats since it uses diff-tools to 'range'ify those formatters which are not. You can use line ranges on any formatter having at least file input parameter. (But still, if it supports range and file output parameters please define them as well)
 
 ## Contributing
 
