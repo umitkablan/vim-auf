@@ -16,7 +16,7 @@ When no formatter exists (or none is installed) for a certain filetype, vim-auf 
 
 ## How to install
 
-This plugin is supported by Vim 7.4+ and is pure Vimscript i.e. has no python (or any other language dependency). Only Vim feature that we need, currently, is +eval, you can check it with :version command within Vim.
+This plugin is supported by Vim 7.4+ and is pure Vimscript i.e. has no `+python`, `+eval` or other feature dependency than Vimscript and supporting command line programs.
 
 As the main logic of finding unsaved lines or filtering is built on diff-file processing, you need to install diff(.exe), filterdiff(.exe), and patch(.exe) utilities (some call it diff-utils). Windows users might need to install Cygwin with those diff-utils inside.
 

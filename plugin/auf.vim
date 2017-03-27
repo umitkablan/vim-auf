@@ -30,8 +30,14 @@ let g:auf_diffcmd .= ' -u '
 
 function! AufFormatRange(line1, line2) abort
     call auf#util#logVerbose('AufFormatRange: ' . a:line1 . '-' . a:line2)
+    let def = auf#format#GetCurrentFormatter()
+    if empty(def)
+        call auf#util#echoErrorMsg('auf-gq: no available formatter: Fallbacking..')
+        call auf#format#Fallback(1, a:line1, a:line2)
+        return
+    endif
     let [overwrite, coward] = [1, 0]
-    let [res, drift, resstr] = auf#format#TryFormatter(a:line1, a:line2, auf#format#getCurrentProgram(),
+    let [res, drift, resstr] = auf#format#TryFormatter(a:line1, a:line2, def,
                 \ overwrite, coward, 'AufErrLine')
     if res > 1
         call auf#util#echoErrorMsg('Auf-gq error: ' . resstr)
@@ -170,4 +176,6 @@ augroup Auf_Auto_BufEvents
         \   Auf |
         \ endif
 augroup END
+
+call auf#registry#LoadAllFormatters()
 
