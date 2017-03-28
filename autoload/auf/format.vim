@@ -37,7 +37,7 @@ endfunction
 
 " Try all formatters, starting with the currently selected one, until one
 " works. If none works, autoindent the buffer.
-function! auf#format#TryAllFormatters(bang, synmatch, ...) range
+function! auf#format#TryAllFormatters(bang, synmatch, ...) range abort
     let overwrite = a:bang
 
     let [def, ftype] = [{}, &ft] "a:0 ? a:1 : &filetype
@@ -93,7 +93,7 @@ function! auf#format#TryAllFormatters(bang, synmatch, ...) range
     return 0
 endfunction
 
-function! auf#format#Fallback(iserr, line1, line2)
+function! auf#format#Fallback(iserr, line1, line2) abort
     if exists('b:auf_remove_trailing_spaces') ? b:auf_remove_trailing_spaces : g:auf_remove_trailing_spaces
         call auf#util#logVerbose('Fallback: Removing trailing whitespace...')
         keepjumps execute a:line1 . ',' . a:line2 . 'substitute/\s\+$//e'
@@ -179,7 +179,7 @@ function! auf#format#evalApplyDif(line1, difpath, coward) abort
     return [hunks, tot_drift]
 endfunction
 
-function! auf#format#evaluateFormattedToOrig(line1, line2, fmtdef, curfile, formattedf, difpath, synmatch, overwrite, coward)
+function! auf#format#evaluateFormattedToOrig(line1, line2, fmtdef, curfile, formattedf, difpath, synmatch, overwrite, coward) abort
     if a:overwrite
         call auf#format#Fallback(0, a:line1, a:line2)
     endif
@@ -231,7 +231,7 @@ function! auf#format#evaluateFormattedToOrig(line1, line2, fmtdef, curfile, form
     return [1, 0, drift]
 endfunction
 
-function! auf#format#TryFormatter(line1, line2, fmtdef, overwrite, coward, synmatch)
+function! auf#format#TryFormatter(line1, line2, fmtdef, overwrite, coward, synmatch) abort
     call auf#util#logVerbose('TryFormatter: ' . a:line1 . ',' . a:line2 . ' ' . a:fmtdef['ID'] .
                 \ ' ow:' . a:overwrite . ' SynMatch:' . a:synmatch)
     let [tmpf0path, tmpf1path] = [tempname(), tempname()]
@@ -343,7 +343,7 @@ function! auf#format#justInTimeFormat(synmatch) abort
     return 0
 endfunction
 
-function! auf#format#InsertModeOn()
+function! auf#format#InsertModeOn() abort
     call auf#util#logVerbose('InsertModeOn: Start')
     call auf#util#clearAllHighlights(b:auf_highlight_lines_hlids)
     if !exists('b:auf_shadowpath')
