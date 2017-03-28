@@ -20,7 +20,7 @@ function! auf#formatters#clangformat#cmd(ftype, inpath, outpath, line0, line1) a
   endif
   let style = ''
   let confpath = s:clangformatGetConfig()
-  if confpath !=# ''
+  if len(confpath)
     let style = '-style="{' . s:clangformatParseConfig(confpath) . '}"'
   else
     if a:ftype ==# 'cpp'
@@ -48,9 +48,8 @@ function! s:clangformatGetConfig() abort
   if len(ll)
     return ll
   endif
-  " $HOME . '/.vim/clang-format'
-  let conf =  get(g:, 'auffmt_clangformat_config', '')
-  if conf
+  let conf = get(g:, 'auffmt_clangformat_config', '')
+  if len(conf)
     return conf
   endif
   return ''
