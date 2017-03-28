@@ -4,14 +4,16 @@ endif
 let g:loaded_auf_format_autoload = 1
 
 function! auf#format#GetCurrentFormatter() abort
-    if !exists('b:auffmt_current_idx')
+    let [def, is_set] = [get(b:, 'auffmt_definition', {}), 0]
+    if empty(def)
         let def = auf#registry#GetFormatterByIndex(&ft, 0)
         if empty(def)
-            return {}
+            return [def, is_set]
         endif
         let [b:auffmt_definition, b:auffmt_current_idx] = [def, 0]
+        let is_set = 1
     endif
-    return b:auffmt_definition
+    return [def, is_set]
 endfunction
 
 function! s:tryFmtDefinition(line1, line2, fmtdef, overwrite, coward, synmatch) abort
@@ -38,19 +40,16 @@ endfunction
 " Try all formatters, starting with the currently selected one, until one
 " works. If none works, autoindent the buffer.
 function! auf#format#TryAllFormatters(bang, synmatch, ...) range abort
-    let overwrite = a:bang
-
-    let [def, ftype] = [{}, &ft] "a:0 ? a:1 : &filetype
-    if !exists('b:auffmt_current_idx')
-        let def = auf#registry#GetFormatterByIndex(ftype, 0)
-        if empty(def)
-            call auf#util#logVerbose('TryAllFormatters: No format definitions are defined for this type:' . ftype . ', fallback..')
-            if overwrite
-                call auf#format#Fallback(1, a:firstline, a:lastline)
-            endif
-            return 0
+    let [overwrite, ftype] = [a:bang, &ft] " a:0 ? a:1 : &filetype
+    let [def, is_set] = auf#format#GetCurrentFormatter()
+    if empty(def)
+        if is_set
         endif
-        let b:auffmt_current_idx = 0
+        call auf#util#logVerbose('TryAllFormatters: No format definitions are defined for this type:' . ftype . ', fallback..')
+        if overwrite
+            call auf#format#Fallback(1, a:firstline, a:lastline)
+        endif
+        return 0
     endif
 
     if !exists('b:auffmt_definition')
@@ -440,13 +439,12 @@ endfunction
 
 " Functions for iterating through list of available formatters
 function! auf#format#NextFormatter() abort
-    if !exists('b:auffmt_current_idx')
-        let def = auf#registry#GetFormatterByIndex(&ft, 0)
+    let [def, is_set] = auf#format#GetCurrentFormatter()
+    if is_set
         if empty(def)
             call auf#util#echoErrorMsg('Auf> No formatter could be found for:' . &ft)
             return
         endif
-        let [b:auffmt_definition, b:current_formatter_index] = [def, 0]
         call auf#util#echoSuccessMsg('Auf> Selected formatter: #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
     else
         let n = auf#FormattersCount(&ft)
@@ -466,13 +464,13 @@ function! auf#format#NextFormatter() abort
 endfunction
 
 function! auf#format#PreviousFormatter() abort
-    if !exists('b:auffmt_current_idx')
-        let def = auf#registry#GetFormatterByIndex(&ft, 0)
+    let [def, is_set] = auf#format#GetCurrentFormatter()
+    if is_set
         if empty(def)
             call auf#util#echoErrorMsg('Auf> No formatter could be found for:' . &ft)
             return
         endif
-        let [b:auffmt_definition, b:current_formatter_index] = [def, 0]
+        call auf#util#echoSuccessMsg('Auf> Selected formatter: #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
     else
         let [n, idx] = [auf#FormattersCount(&ft), b:auffmt_current_idx-1]
         if n < 2
@@ -493,9 +491,11 @@ function! auf#format#PreviousFormatter() abort
 endfunction
 
 function! auf#format#CurrentFormatter() abort
-    let def = auf#format#GetCurrentFormatter()
+    let [def, is_set] = auf#format#GetCurrentFormatter()
     if empty(def)
         call auf#util#echoErrorMsg('Auf> No formatter could be found for:' . &ft)
+        if is_set
+        endif
         return
     endif
     call auf#util#echoSuccessMsg('Auf> Current formatter: #' . b:auffmt_current_idx . ': ' . def['ID'])
