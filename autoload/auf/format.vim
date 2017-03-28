@@ -272,12 +272,12 @@ function! s:doFormatLines(ln1, ln2, synmatch) abort
         call auf#util#logVerbose('s:doFormatLines: result:' . res . ' ~' . drift)
         if res > 1
             if b:auf__highlight__
-                call auf#util#echoErrorMsg('Auf> ' . b:formatters[b:auffmt_current_idx] . ' fail:' . res . ' ' . resstr)
+                call auf#util#echoErrorMsg('Auf> ' . b:auffmt_definition['ID'] . ' fail:' . res . ' ' . resstr)
             endif
             return [0, 0]
         elseif resstr !=# ''
             if b:auf__highlight__
-                call auf#util#echoWarningMsg('Auf> ' . b:formatters[b:auffmt_current_idx] . '> ' . resstr)
+                call auf#util#echoWarningMsg('Auf> ' . b:auffmt_definition['ID'] . '> ' . resstr)
             endif
             return [0, 0]
         endif
