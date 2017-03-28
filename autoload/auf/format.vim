@@ -5,13 +5,30 @@ let g:loaded_auf_format_autoload = 1
 
 function! auf#format#GetCurrentFormatter() abort
     let [def, is_set] = [get(b:, 'auffmt_definition', {}), 0]
-    if empty(def)
-        let def = auf#registry#GetFormatterByIndex(&ft, 0)
-        if empty(def)
-            return [def, is_set]
+    if empty(def) || !exists('b:auffmt_current_idx')
+        let varname = 'aufformatters_' . &ft
+        let fmt_list = get(b:, varname, get(g:, varname, ''))
+        if type(fmt_list) == type('')
+            let def = auf#registry#GetFormatterByIndex(&ft, 0)
+            if empty(def)
+                return [def, is_set]
+            endif
+            let [b:auffmt_definition, b:auffmt_current_idx] = [def, 0]
+            let is_set = 1
+        elseif type(fmt_list) == type([])
+            for i in range(0, len(fmt_list)-1)
+                let id = fmt_list[i]
+                call auf#util#logVerbose('GetCurrentFormatter: Cheking format definitions for ID:' . id)
+                let def = auf#registry#GetFormatterByID(id, &ft)
+                if !empty(def)
+                    let [b:auffmt_definition, b:auffmt_current_idx] = [def, i]
+                    let is_set = 1
+                    break
+                endif
+            endfor
+        else
+            call auf#util#echoErrorMsg('Auf> Supply a list in variable: g:' . varname)
         endif
-        let [b:auffmt_definition, b:auffmt_current_idx] = [def, 0]
-        let is_set = 1
     endif
     return [def, is_set]
 endfunction
