@@ -58,6 +58,22 @@ function! auf#registry#GetFormatterByIndex(ftype, idx) abort
     return ret
 endfunction
 
+function! auf#registry#GetFormatterByID(id, ftype) abort
+    call auf#util#logVerbose('GetFormatterByID: ' . a:id)
+    let ret = {}
+    for rg in s:auf_registry
+        if rg['ID'] ==# a:id
+            if index(rg['filetypes'], a:ftype) > -1
+                let ret = rg
+                let ret['needed_ftype'] = a:ftype
+            endif
+            break
+        endif
+    endfor
+    call auf#util#logVerbose('GetFormatterByID: ' . get(ret, 'ID', '__NONE__'))
+    return ret
+endfunction
+
 function! auf#registry#BuildCmdFromDefinition(fmtdef, inpath, outpath, line0, line1) abort
     return [
         \ a:fmtdef['fileout'],
