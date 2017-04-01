@@ -170,7 +170,7 @@ function! auf#util#replaceLines(linenr, linecnt, lines) abort
 endfunction
 
 function! auf#util#addLines(linenr, lines) abort
-    let execmd = '' . a:linenr . 'put=a:lines'
+    let execmd = '' . (a:linenr - 1) . 'put=a:lines'
     keepjumps silent execute execmd
 endfunction
 
