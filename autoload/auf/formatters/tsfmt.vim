@@ -6,19 +6,17 @@ let g:loaded_auffmt_tsfmt_definition = 1
 let s:definition = {
             \ 'ID'        : 'tsfmt',
             \ 'executable': 'tsfmt',
-            \ 'filetypes' : ['typescript'],
-            \ 'ranged'    : 0,
-            \ 'fileout'   : 0
+            \ 'filetypes' : ['typescript']
             \ }
 
 function! auf#formatters#tsfmt#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#tsfmt#cmd(ftype, inpath, outpath, line0, line1) abort
-    if a:outpath || a:line0 || a:line1 || a:ftype
+function! auf#formatters#tsfmt#cmdArgs(ftype) abort
+    if a:ftype
     endif
-    return 'tsfmt ' . a:inpath . ' ' . bufname('%')
+    return ''
 endfunction
 
 call auf#registry#RegisterFormatter(s:definition)

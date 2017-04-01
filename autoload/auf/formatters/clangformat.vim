@@ -6,18 +6,14 @@ let g:loaded_auffmt_clangformat_definition = 1
 let s:definition = {
       \ 'ID'        : 'clangformat',
       \ 'executable': 'clang-format',
-      \ 'filetypes' : ['c', 'cpp', 'objc'],
-      \ 'ranged'    : 1,
-      \ 'fileout'   : 0
+      \ 'filetypes' : ['c', 'cpp', 'objc']
       \ }
 
 function! auf#formatters#clangformat#define() abort
   return s:definition
 endfunction
 
-function! auf#formatters#clangformat#cmd(ftype, inpath, outpath, line0, line1) abort
-  if a:outpath
-  endif
+function! auf#formatters#clangformat#cmdArgs(ftype) abort
   let style = ''
   let confpath = s:clangformatGetConfig()
   if len(confpath)
@@ -32,11 +28,11 @@ function! auf#formatters#clangformat#cmd(ftype, inpath, outpath, line0, line1) a
             \ '}"'
     endif
   endif
-  let ret =
-        \ 'clang-format -lines=' . a:line0 . ':' . a:line1 .
-        \ ' --assume-filename="' . expand('%:.') . '" ' . style .
-        \ ' "' . a:inpath . '"'
-  return ret
+  return '--assume-filename="'.expand('%:.') . '" ' . style
+endfunction
+
+function! auf#formatters#clangformat#cmdAddRange(cmd, line0, line1) abort
+  return a:cmd . ' -lines=' . a:line0 . ':' . a:line1
 endfunction
 
 function! s:clangformatGetConfig() abort

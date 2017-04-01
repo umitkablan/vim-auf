@@ -13,16 +13,14 @@ function! auf#format#GetCurrentFormatter() abort
             if empty(def)
                 return [def, is_set]
             endif
-            let [b:auffmt_definition, b:auffmt_current_idx] = [def, 0]
-            let is_set = 1
+            let [b:auffmt_definition, b:auffmt_current_idx, is_set] = [def, 0, 1]
         elseif type(fmt_list) == type([])
             for i in range(0, len(fmt_list)-1)
                 let id = fmt_list[i]
                 call auf#util#logVerbose('GetCurrentFormatter: Cheking format definitions for ID:' . id)
                 let def = auf#registry#GetFormatterByID(id, &ft)
                 if !empty(def)
-                    let [b:auffmt_definition, b:auffmt_current_idx] = [def, i]
-                    let is_set = 1
+                    let [b:auffmt_definition, b:auffmt_current_idx, is_set] = [def, i, 1]
                     break
                 endif
             endfor
@@ -78,6 +76,10 @@ function! auf#format#TryAllFormatters(bang, synmatch, ...) range abort
         if s:tryFmtDefinition(a:firstline, a:lastline, b:auffmt_definition, overwrite, coward, a:synmatch)
             return 1
         endif
+        if tot < 2
+            return 0
+        endif
+        unlet! b:auf__formatprg_base
         let fmtidx = (fmtidx + 1) % tot
     endif
 
@@ -133,8 +135,12 @@ function! auf#format#Fallback(iserr, line1, line2) abort
     endif
 endfunction
 
-function! auf#format#formatSource(line1, line2, fmtdef, inpath, outpath) abort
-    let [isoutf, cmd, isranged] = auf#registry#BuildCmdFromDefinition(a:fmtdef, a:inpath, a:outpath, a:line1, a:line2)
+function! s:formatSource(line1, line2, fmtdef, inpath, outpath) abort
+    if !exists('b:auf__formatprg_base')
+        let b:auf__formatprg_base = auf#registry#BuildCmdBaseFromDef(a:fmtdef)
+    endif
+    let [isoutf, cmd, isranged] = auf#registry#BuildCmdFullFromDef(a:fmtdef,
+                \ b:auf__formatprg_base.' "'.a:inpath.'"', a:outpath, a:line1, a:line2)
     call auf#util#logVerbose('formatSource: isOutF:' . isoutf . ' Command:' . cmd . ' isRanged:' . isranged)
     if !isoutf
         let out = auf#util#execWithStdout(cmd)
@@ -176,15 +182,16 @@ function! auf#format#evalApplyDif(line1, difpath, coward) abort
                 break
             endif
         endif
+        let linenr += tot_drift
         if prevcnt > 0 && curcnt > 0
-            call auf#util#logVerbose('evalApplyDif: *replace* ' . (linenr + tot_drift) . ',' . prevcnt . ',' . curcnt)
-            call auf#util#replaceLines(linenr + tot_drift, prevcnt, addlines)
+            call auf#util#logVerbose('evalApplyDif: *replace* ' . linenr . ',' . prevcnt . ',' . curcnt)
+            call auf#util#replaceLines(linenr, prevcnt, addlines)
         elseif prevcnt > 0
-            call auf#util#logVerbose('evalApplyDif: *remove* ' . (linenr + tot_drift) . ',' . prevcnt . ',' . curcnt)
-            call auf#util#removeLines(linenr + tot_drift, prevcnt)
+            call auf#util#logVerbose('evalApplyDif: *remove* ' . linenr . ',' . prevcnt . ',' . curcnt)
+            call auf#util#removeLines(linenr, prevcnt)
         else
-            call auf#util#logVerbose('evalApplyDif: *addline* ' . (linenr + tot_drift) . ',' . prevcnt . ',' . curcnt)
-            call auf#util#addLines(linenr + tot_drift, addlines)
+            call auf#util#logVerbose('evalApplyDif: *addline* ' . linenr . ',' . prevcnt . ',' . curcnt)
+            call auf#util#addLines(linenr, addlines)
         endif
         let tot_drift += (curcnt - prevcnt)
         let hunks += 1
@@ -200,8 +207,7 @@ function! auf#format#evaluateFormattedToOrig(line1, line2, fmtdef, curfile, form
         call auf#format#Fallback(0, a:line1, a:line2)
     endif
 
-    call writefile(getline(1, '$'), a:curfile)
-    let [res, is_formatter_ranged, sherr] = auf#format#formatSource(a:line1, a:line2, a:fmtdef, a:curfile, a:formattedf)
+    let [res, is_formatter_ranged, sherr] = s:formatSource(a:line1, a:line2, a:fmtdef, a:curfile, a:formattedf)
     call auf#util#logVerbose('evaluateFormattedToOrig: sourceFormetted shErr:' . sherr)
     if !res
         return [2, sherr, 0]
@@ -250,16 +256,19 @@ endfunction
 function! auf#format#TryFormatter(line1, line2, fmtdef, overwrite, coward, synmatch) abort
     call auf#util#logVerbose('TryFormatter: ' . a:line1 . ',' . a:line2 . ' ' . a:fmtdef['ID'] .
                 \ ' ow:' . a:overwrite . ' SynMatch:' . a:synmatch)
-    let [tmpf0path, tmpf1path] = [tempname(), tempname()]
-    call auf#util#logVerbose('TryFormatter: origTmp:' . tmpf0path . ' formTmp:' . tmpf1path)
-
     if !exists('b:auf_difpath')
         let b:auf_difpath = tempname()
     endif
+    if !exists('b:auf_shadowpath')
+        let b:auf_shadowpath = tempname()
+        call writefile(getline(1, '$'), b:auf_shadowpath)
+    endif
+    let formattedf = tempname()
+    call auf#util#logVerbose('TryFormatter: origTmp:' . formattedf . ' formTmp:' . formattedf)
 
     let resstr = ''
-    let [res, sherr, drift] = auf#format#evaluateFormattedToOrig(a:line1, a:line2, a:fmtdef, tmpf0path,
-                \ tmpf1path, b:auf_difpath, a:synmatch, a:overwrite, a:coward)
+    let [res, sherr, drift] = auf#format#evaluateFormattedToOrig(a:line1, a:line2, a:fmtdef, b:auf_shadowpath,
+                \ formattedf, b:auf_difpath, a:synmatch, a:overwrite, a:coward)
     call auf#util#logVerbose('TryFormatter: res:' . res . ' ShErr:' . sherr)
     if res == 0 "No diff found
     elseif res == 2 "Format program error
@@ -269,13 +278,12 @@ function! auf#format#TryFormatter(line1, line2, fmtdef, overwrite, coward, synma
     elseif res == 4 "Refuse to format - coward mode on
         let [resstr, res] = ['cowardly refusing - it touches more lines than edited', 1]
     else
-        if a:overwrite && exists('b:auf_shadowpath')
+        if a:overwrite
             call writefile(getline(1, '$'), b:auf_shadowpath)
         endif
     endif
 
-    call delete(tmpf0path)
-    call delete(tmpf1path)
+    call delete(formattedf)
     return [res, drift, resstr]
 endfunction
 
@@ -439,14 +447,19 @@ endfunction
 
 function! auf#format#CursorHoldInNormalMode(synmatch_chg, lnregexp_chg, synmatch_err) abort
     call auf#util#logVerbose('CursorHoldInNormalMode: Start')
+    if !&modified
+        if !exists('b:auf_linecnt_last')
+            let b:auf_linecnt_last = line('$')
+        endif
+        call auf#util#logVerbose('CursorHoldInNormalMode: NoModif End')
+        return
+    endif
     if !exists('b:auf_shadowpath')
         let b:auf_shadowpath = tempname()
         call system('cp ' . expand('%:.') . ' ' . b:auf_shadowpath)
     endif
-    if !exists('b:auf_difpath')
-        let b:auf_difpath = tempname()
-    endif
-    if (!exists('b:auf_linecnt_last') || b:auf_linecnt_last == line('$')) && !&modified
+    if b:auf_linecnt_last == line('$')
+        call auf#util#logVerbose('CursorHoldInNormalMode: NoLineDiff End')
         return
     endif
     call auf#util#clearAllHighlights(b:auf_highlight_lines_hlids)
@@ -464,9 +477,9 @@ function! auf#format#NextFormatter() abort
         endif
         call auf#util#echoSuccessMsg('Auf> Selected formatter: #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
     else
-        let n = auf#FormattersCount(&ft)
+        let n = auf#registry#FormattersCount(&ft)
         if n < 2
-            call auf#util#echoSuccessMsg('Auf> Selected formatter (same): #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
+            call auf#util#echoSuccessMsg('Auf> ++Selected formatter (same): #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
             return
         endif
         let idx = (b:auffmt_current_idx + 1) % n
@@ -489,11 +502,12 @@ function! auf#format#PreviousFormatter() abort
         endif
         call auf#util#echoSuccessMsg('Auf> Selected formatter: #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
     else
-        let [n, idx] = [auf#FormattersCount(&ft), b:auffmt_current_idx-1]
+        let n = auf#registry#FormattersCount(&ft)
         if n < 2
-            call auf#util#echoSuccessMsg('Auf> Selected formatter (same): #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
+            call auf#util#echoSuccessMsg('Auf> --Selected formatter (same): #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
             return
         endif
+        let idx = b:auffmt_current_idx - 1
         if idx < 0
             let idx = n - 1
         endif

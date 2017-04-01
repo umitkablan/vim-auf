@@ -74,10 +74,21 @@ function! auf#registry#GetFormatterByID(id, ftype) abort
     return ret
 endfunction
 
-function! auf#registry#BuildCmdFromDefinition(fmtdef, inpath, outpath, line0, line1) abort
-    return [
-        \ a:fmtdef['fileout'],
-        \ auf#formatters#{a:fmtdef['ID']}#cmd(a:fmtdef['needed_ftype'], a:inpath, a:outpath, a:line0, a:line1),
-        \ a:fmtdef['ranged']
-        \ ]
+function! auf#registry#BuildCmdBaseFromDef(fmtdef) abort
+    return auf#formatters#{a:fmtdef['ID']}#cmdArgs(a:fmtdef['needed_ftype'])
+endfunction
+
+function! auf#registry#BuildCmdFullFromDef(fmtdef, cmdbase, outpath, line0, line1) abort
+    let [isfileout, isranged, ret] = [0, 0, a:cmdbase]
+    let [func_range, func_outf] = ['auf#formatters#'.a:fmtdef['ID'].'#cmdAddRange',
+                                \ 'auf#formatters#'.a:fmtdef['ID'].'#cmdAddOutFile']
+    if exists('*'.func_range)
+        let isranged = 1
+        let ret = call(func_range, [ret, a:line0, a:line1])
+    endif
+    if exists('*'.func_outf)
+        let isfileout = 1
+        let ret = call(func_outf, [ret, a:outpath])
+    endif
+    return [isfileout, a:fmtdef['executable'].' '.ret, isranged]
 endfunction

@@ -6,17 +6,15 @@ let g:loaded_auffmt_tidyhtml_definition = 1
 let s:definition = {
         \ 'ID'        : 'tidyhtml',
         \ 'executable': 'tidy',
-        \ 'filetypes' : ['html', 'xhtml', 'xml'],
-        \ 'ranged'    : 0,
-        \ 'fileout'   : 1
+        \ 'filetypes' : ['html', 'xhtml', 'xml']
         \ }
 
 function! auf#formatters#tidyhtml#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#tidyhtml#cmd(ftype, inpath, outpath, line0, line1) abort
-    if a:outpath || a:line0 || a:line1 || a:ftype
+function! auf#formatters#tidyhtml#cmdArgs(ftype) abort
+    if a:ftype
     endif
     let style = ''
     if a:ftype ==# 'xml'
@@ -26,8 +24,11 @@ function! auf#formatters#tidyhtml#cmd(ftype, inpath, outpath, line0, line1) abor
     endif
     let style .= ' --indent auto --indent-spaces ' . shiftwidth() . ' --vertical-space yes --tidy-mark no' .
                 \ '-wrap ' . &textwidth
-    return 'tidy -q --show-errors 0 --show-warnings 0 --force-output ' . style . ' ' .
-                \ a:inpath . ' -o ' . a:outpath
+    return '-q --show-errors 0 --show-warnings 0 --force-output ' . style
+endfunction
+
+function! auf#formatters#tidyhtml#cmdAddOutfile(cmd, outpath) abort
+    return a:cmd . ' -o ' . a:outpath
 endfunction
 
 call auf#registry#RegisterFormatter(s:definition)

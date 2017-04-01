@@ -6,19 +6,14 @@ let g:loaded_auffmt_astyle_definition = 1
 let s:definition = {
       \ 'ID'        : 'astyle',
       \ 'executable': 'astyle',
-      \ 'filetypes' : ['c', 'cpp', 'cs', 'java'],
-      \ 'ranged'    : 0,
-      \ 'fileout'   : 0
+      \ 'filetypes' : ['c', 'cpp', 'cs', 'java']
       \ }
 
 function! auf#formatters#astyle#define() abort
   return s:definition
 endfunction
 
-function! auf#formatters#astyle#cmd(ftype, inpath, outpath, line0, line1) abort
-  if a:outpath || a:line0 || a:line1
-  endif
-
+function! auf#formatters#astyle#cmdArgs(ftype) abort
   let mode = '--mode=' . a:ftype
   let options = ''
   if filereadable('.astylerc')
@@ -34,7 +29,7 @@ function! auf#formatters#astyle#cmd(ftype, inpath, outpath, line0, line1) abort
     endif
     let options .= (&expandtab ? 's'.shiftwidth() : 't')
   endif
-  return 'astyle ' . mode . ' ' . options . ' <' . a:inpath
+  return mode . ' ' . options . ' <'
 endfunction
 
 call auf#registry#RegisterFormatter(s:definition)

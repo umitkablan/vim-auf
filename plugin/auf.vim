@@ -91,6 +91,9 @@ function! AufBufReadPost() abort
     if !exists('b:auf__highlight__')
         let b:auf__highlight__ = g:auf_highlight_on_bufenter
     endif
+    if !exists('b:auf_difpath')
+        let b:auf_difpath = tempname()
+    endif
     if len(b:auf_highlight_lines_hlids)
         if !g:auf_highlight_on_bufenter
             call auf#util#logVerbose('AufBufReadPost: clearing highlights')

@@ -6,20 +6,17 @@ let g:loaded_auffmt_fprettify_definition = 1
 let s:definition = {
             \ 'ID'        : 'fprettify',
             \ 'executable': 'fprettify',
-            \ 'filetypes' : ['fortran'],
-            \ 'ranged'    : 0,
-            \ 'fileout'   : 0
+            \ 'filetypes' : ['fortran']
             \ }
 
 function! auf#formatters#fprettify#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#fprettify#cmd(ftype, inpath, outpath, line0, line1) abort
-    if a:outpath || a:line0 || a:line1 || a:ftype
+function! auf#formatters#fprettify#cmdArgs(ftype) abort
+    if a:ftype
     endif
-    let style = '--no-report-errors --indent=' . &shiftwidth
-    return 'fprettify ' . style . ' ' . a:inpath
+    return '--no-report-errors --indent=' . &shiftwidth
 endfunction
 
 call auf#registry#RegisterFormatter(s:definition)

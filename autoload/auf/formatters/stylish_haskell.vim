@@ -6,19 +6,17 @@ let g:loaded_auffmt_stylish_haskell_definition = 1
 let s:definition = {
             \ 'ID'        : 'stylish_haskell',
             \ 'executable': 'stylish-haskell',
-            \ 'filetypes' : ['haskell'],
-            \ 'ranged'    : 0,
-            \ 'fileout'   : 0
+            \ 'filetypes' : ['haskell']
             \ }
 
 function! auf#formatters#stylish_haskell#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#stylish_haskell#cmd(ftype, inpath, outpath, line0, line1) abort
-    if a:outpath || a:line0 || a:line1 || a:ftype
+function! auf#formatters#stylish_haskell#cmdArgs(ftype) abort
+    if a:ftype
     endif
-    return 'stylish-haskell ' . a:inpath
+    return ''
 endfunction
 
 call auf#registry#RegisterFormatter(s:definition)

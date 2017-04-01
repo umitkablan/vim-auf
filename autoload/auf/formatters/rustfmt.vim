@@ -6,19 +6,17 @@ let g:loaded_auffmt_rustfmt_definition = 1
 let s:definition = {
             \ 'ID'        : 'rustfmt',
             \ 'executable': 'rustfmt',
-            \ 'filetypes' : ['rust'],
-            \ 'ranged'    : 0,
-            \ 'fileout'   : 0
+            \ 'filetypes' : ['rust']
             \ }
 
 function! auf#formatters#rustfmt#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#rustfmt#cmd(ftype, inpath, outpath, line0, line1) abort
-    if a:outpath || a:line0 || a:line1 || a:ftype
+function! auf#formatters#rustfmt#cmdArgs(ftype) abort
+    if a:ftype
     endif
-    return 'rustfmt ' . a:inpath
+    return ''
 endfunction
 
 call auf#registry#RegisterFormatter(s:definition)

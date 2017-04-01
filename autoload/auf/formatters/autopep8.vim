@@ -6,25 +6,26 @@ let g:loaded_auffmt_autopep8_definition = 1
 let s:definition = {
             \ 'ID'        : 'autopep8',
             \ 'executable': 'autopep8',
-            \ 'filetypes' : ['python'],
-            \ 'ranged'    : 1,
-            \ 'fileout'   : 0
+            \ 'filetypes' : ['python']
             \ }
 
 function! auf#formatters#autopep8#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#autopep8#cmd(ftype, inpath, outpath, line0, line1) abort
-    if a:outpath || a:line0 || a:line1 || a:ftype
+function! auf#formatters#autopep8#cmdArgs(ftype) abort
+    if a:ftype
     endif
+    let style = (&textwidth ? '--max-line-length=' . &textwidth : '')
+    return style . ' <'
+endfunction
 
+function! auf#formatters#autopep8#cmdAddRange(cmd, line0, line1) abort
     " Autopep8 will not do indentation fixes when a range is specified, so we
     " only pass a range when there is a visual selection that is not the
     " entire file. See #125.
     let range = '-' . (s:doesRangeEqualBuffer(a:line0, a:line1) ? ' --range ' . a:line0 . ' ' . a:line1 : '')
-    let style = (&textwidth ? '--max-line-length=' . &textwidth : '')
-    return 'autopep8 ' . range . ' ' . style . ' <' . a:inpath
+    return range . ' ' . a:cmd
 endfunction
 
 " There doesn't seem to be a reliable way to detect if are in some kind of visual mode,

@@ -6,17 +6,15 @@ let g:loaded_auffmt_jsbeautify_definition = 1
 let s:definition = {
       \ 'ID'        : 'jsbeautify',
       \ 'executable': 'js-beautify',
-      \ 'filetypes' : ['javascript', 'json'],
-      \ 'ranged'    : 0,
-      \ 'fileout'   : 0
+      \ 'filetypes' : ['javascript', 'json']
       \ }
 
 function! auf#formatters#jsbeautify#define() abort
   return s:definition
 endfunction
 
-function! auf#formatters#jsbeautify#cmd(ftype, inpath, outpath, line0, line1) abort
-  if a:outpath || a:line0 || a:line1 || a:ftype
+function! auf#formatters#jsbeautify#cmdArgs(ftype) abort
+  if a:ftype
   endif
 
   let style = ''
@@ -26,7 +24,7 @@ function! auf#formatters#jsbeautify#cmd(ftype, inpath, outpath, line0, line1) ab
     let style = '-X -' .
           \ (&expandtab ? 's '.shiftwidth() : 't') . (&textwidth ? ' -w '.&textwidth : '')
   endif
-  return 'js-beautify ' . style . ' -f ' . a:inpath
+  return style . ' -f'
 endfunction
 
 call auf#registry#RegisterFormatter(s:definition)

@@ -6,20 +6,17 @@ let g:loaded_auffmt_rbeautify_definition = 1
 let s:definition = {
         \ 'ID'        : 'rbeautify',
         \ 'executable': 'rbeautify',
-        \ 'filetypes' : ['ruby'],
-        \ 'ranged'    : 0,
-        \ 'fileout'   : 0
+        \ 'filetypes' : ['ruby']
         \ }
 
 function! auf#formatters#rbeautify#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#rbeautify#cmd(ftype, inpath, outpath, line0, line1) abort
-    if a:outpath || a:line0 || a:line1 || a:ftype
+function! auf#formatters#rbeautify#cmdArgs(ftype) abort
+    if a:ftype
     endif
-    let style = (&expandtab ? '-s -c '.shiftwidth() : '-t')
-    return 'rbeautify ' . style. ' ' . a:inpath
+    return &expandtab ? '-s -c '.shiftwidth() : '-t'
 endfunction
 
 call auf#registry#RegisterFormatter(s:definition)

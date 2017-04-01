@@ -6,19 +6,17 @@ let g:loaded_auffmt_dartfmt_definition = 1
 let s:definition = {
             \ 'ID'        : 'dartfmt',
             \ 'executable': 'dartfmt',
-            \ 'filetypes' : ['dart'],
-            \ 'ranged'    : 0,
-            \ 'fileout'   : 0
+            \ 'filetypes' : ['dart']
             \ }
 
 function! auf#formatters#dartfmt#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#dartfmt#cmd(ftype, inpath, outpath, line0, line1) abort
-    if a:outpath || a:line0 || a:line1 || a:ftype
+function! auf#formatters#dartfmt#cmdArgs(ftype) abort
+    if a:ftype
     endif
-    return 'dartfmt ' . a:inpath
+    return ''
 endfunction
 
 call auf#registry#RegisterFormatter(s:definition)

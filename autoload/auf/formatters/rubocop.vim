@@ -6,22 +6,19 @@ let g:loaded_auffmt_rubocop_definition = 1
 let s:definition = {
             \ 'ID'        : 'rubocop',
             \ 'executable': 'rubocop',
-            \ 'filetypes' : ['ruby'],
-            \ 'ranged'    : 0,
-            \ 'fileout'   : 0
+            \ 'filetypes' : ['ruby']
             \ }
 
 function! auf#formatters#rubocop#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#rubocop#cmd(ftype, inpath, outpath, line0, line1) abort
-    if a:outpath || a:line0 || a:line1 || a:ftype
+function! auf#formatters#rubocop#cmdArgs(ftype) abort
+    if a:ftype
     endif
     " The pipe to sed is required to remove some rubocop output that could not
     " be suppressed.
-    let style = '--auto-correct -o /dev/null -s ' . bufname('%')
-    return 'rubocop ' . style . ' < ' . a:inpath . ' \| sed /^===/d'
+    return '--auto-correct -o /dev/null -s ' . bufname('%') . ' <'
 endfunction
 
 call auf#registry#RegisterFormatter(s:definition)
