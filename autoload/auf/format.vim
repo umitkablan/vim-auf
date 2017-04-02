@@ -306,14 +306,12 @@ function! s:doFormatLines(ln1, ln2, synmatch) abort
             return [0, 0]
         endif
     else
-        call auf#util#logVerbose('justInTimeFormat: formatter program could not be found')
+        call auf#util#logVerbose('doFormatLines: formatter program could not be found')
         call auf#format#Fallback(1, a:ln1, a:ln2)
     endif
 
     let b:auf_newadded_lines =
                 \ auf#util#clearHighlightsInRange(a:synmatch, b:auf_newadded_lines, a:ln1, a:ln2)
-    call auf#util#clearAllHighlights(b:auf_newadded_lines)
-    let b:auf_newadded_lines = []
     return [1, drift]
 endfunction
 
@@ -345,6 +343,8 @@ function! auf#format#justInTimeFormat(synmatch) abort
             if res
                 let msg .= '' . ln0 . ':' . curcnt . '~' . drift . ' /'
                 let tot_drift += drift
+                " call auf#util#clearAllHighlights(b:auf_newadded_lines)
+                " let b:auf_newadded_lines = []
             endif
         endif
         if res
