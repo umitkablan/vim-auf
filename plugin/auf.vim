@@ -66,8 +66,13 @@ function! AufJit() abort
             call auf#util#clearAllHighlights(b:auf_newadded_lines)
             let b:auf_newadded_lines = []
         else
-            let b:auf__highlight__ = 1
-            call auf#format#justInTimeFormat('AufErrLine')
+            if &modified
+                let b:auf__highlight__ = 1
+                call auf#format#justInTimeFormat('AufErrLine')
+            else
+                call auf#util#clearAllHighlights(b:auf_newadded_lines)
+                let b:auf_newadded_lines = []
+            endif
         endif
     catch /.*/
         call auf#util#echoErrorMsg('AufJit: Exception: ' . v:exception)

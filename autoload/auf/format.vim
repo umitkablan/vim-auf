@@ -343,8 +343,6 @@ function! auf#format#justInTimeFormat(synmatch) abort
             if res
                 let msg .= '' . ln0 . ':' . curcnt . '~' . drift . ' /'
                 let tot_drift += drift
-                " call auf#util#clearAllHighlights(b:auf_newadded_lines)
-                " let b:auf_newadded_lines = []
             endif
         endif
         if res
