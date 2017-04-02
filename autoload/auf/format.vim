@@ -25,7 +25,7 @@ function! auf#format#GetCurrentFormatter() abort
                 endif
             endfor
         else
-            call auf#util#echoErrorMsg('Auf> Supply a list in variable: g:' . varname)
+            call auf#util#echoErrorMsg('Supply a list in variable: g:' . varname)
         endif
     endif
     return [def, is_set]
@@ -35,17 +35,17 @@ function! s:tryFmtDefinition(line1, line2, fmtdef, overwrite, coward, synmatch) 
     let [res, drift, resstr] = auf#format#TryFormatter(a:line1, a:line2, a:fmtdef, a:overwrite, a:coward, a:synmatch)
     if res > 1
         if b:auf__highlight__
-            call auf#util#echoErrorMsg('Auf> Formatter "' . a:fmtdef['ID'] . '": ' . resstr)
+            call auf#util#echoErrorMsg('Formatter "' . a:fmtdef['ID'] . '": ' . resstr)
         endif
         return 0
     elseif res == 0
         if b:auf__highlight__
-            call auf#util#echoSuccessMsg('Auf> ' . a:fmtdef['ID'] . ' Format PASSED ~' . drift)
+            call auf#util#echoSuccessMsg(a:fmtdef['ID'] . ' Format PASSED ~' . drift)
         endif
         return 1
     elseif res == 1
         if b:auf__highlight__
-            call auf#util#echoWarningMsg('Auf> ' . a:fmtdef['ID'] . ' ~' . drift . ' ' . resstr)
+            call auf#util#echoWarningMsg(a:fmtdef['ID'] . ' ~' . drift . ' ' . resstr)
         endif
         return 1
     endif
@@ -87,7 +87,7 @@ function! auf#format#TryAllFormatters(bang, synmatch, ...) range abort
         let def = auf#registry#GetFormatterByIndex(ftype, fmtidx)
         if empty(def)
             if b:auffmt_current_idx == fmtidx
-                call auf#util#echoErrorMsg('Auf> Tried all definitions and no suitable #' . fmtidx)
+                call auf#util#echoErrorMsg('Tried all definitions and no suitable #' . fmtidx)
                 break
             endif
         endif
@@ -168,7 +168,7 @@ function! auf#format#evalApplyDif(line1, difpath, coward) abort
     for [linenr, addlines, rmlines] in auf#diff#parseHunks(a:difpath)
         let [prevcnt, curcnt] = [len(rmlines), len(addlines)]
         if prevcnt == 0 && curcnt == 0
-            call auf#util#echoErrorMsg('Auf> evalApplyDif: diff line:' . linenr . ' has zero change!')
+            call auf#util#echoErrorMsg('evalApplyDif: diff line:' . linenr . ' has zero change!')
             continue
         endif
         if a:coward
@@ -296,12 +296,12 @@ function! s:doFormatLines(ln1, ln2, synmatch) abort
         call auf#util#logVerbose('s:doFormatLines: result:' . res . ' ~' . drift)
         if res > 1
             if b:auf__highlight__
-                call auf#util#echoErrorMsg('Auf> ' . b:auffmt_definition['ID'] . ' fail:' . res . ' ' . resstr)
+                call auf#util#echoErrorMsg(b:auffmt_definition['ID'] . ' fail:' . res . ' ' . resstr)
             endif
             return [0, 0]
         elseif resstr !=# ''
             if b:auf__highlight__
-                call auf#util#echoWarningMsg('Auf> ' . b:auffmt_definition['ID'] . '> ' . resstr)
+                call auf#util#echoWarningMsg(b:auffmt_definition['ID'] . '> ' . resstr)
             endif
             return [0, 0]
         endif
@@ -346,9 +346,9 @@ function! s:jitAddedLines(synmatch) abort
     if res
         let msg .= '#' . tot_drift
         if exists('b:auffmt_definition')
-            call auf#util#echoSuccessMsg('Auf> ' . b:auffmt_definition['ID'] . '> ' . msg)
+            call auf#util#echoSuccessMsg(b:auffmt_definition['ID'] . '> ' . msg)
         else
-            call auf#util#echoWarningMsg('Auf> Fallback> ' . msg)
+            call auf#util#echoWarningMsg('Fallback> ' . msg)
         endif
     endif
 endfunction
@@ -389,9 +389,9 @@ function! s:jitDiffedLines(synmatch) abort
     if res
         let msg .= '#' . tot_drift
         if exists('b:auffmt_definition')
-            call auf#util#echoSuccessMsg('Auf> ' . b:auffmt_definition['ID'] . '> ' . msg)
+            call auf#util#echoSuccessMsg(b:auffmt_definition['ID'] . '> ' . msg)
         else
-            call auf#util#echoWarningMsg('Auf> Fallback> ' . msg)
+            call auf#util#echoWarningMsg('Fallback> ' . msg)
         endif
     endif
 endfunction
@@ -406,7 +406,7 @@ function! auf#format#justInTimeFormat(synmatch) abort
         call s:jitDiffedLines(a:synmatch) " call s:jitAddedLines(a:synmatch)
         call auf#util#highlights_On(b:auf_highlight_lines_hlids, a:synmatch)
     catch /.*/
-        call auf#util#echoErrorMsg('Auf> Exception: ' . v:exception)
+        call auf#util#echoErrorMsg('Exception: ' . v:exception)
     finally
         keepjumps silent execute 'normal! ' . l . 'gg'
         if c-col('.') > 0
@@ -442,7 +442,7 @@ function! s:driftHighlights(synmatch_chg, lnregexp_chg, synmatch_err, oldf, newf
         call auf#util#logVerbose('s:driftHighlights: no edit has detected - no diff')
         return 0
     elseif err
-        call auf#util#echoErrorMsg('Auf> s:driftHighlights: diff error ' . err . '/'. sherr)
+        call auf#util#echoErrorMsg('s:driftHighlights: diff error ' . err . '/'. sherr)
         return 2
     endif
     call auf#util#logVerbose_fileContent('s:driftHighlights: diff done file:' . b:auf_difpath,
@@ -451,8 +451,7 @@ function! s:driftHighlights(synmatch_chg, lnregexp_chg, synmatch_err, oldf, newf
     for [linenr, addlines, rmlines] in auf#diff#parseHunks(a:difpath)
         let [prevcnt, curcnt] = [len(rmlines), len(addlines)]
         if prevcnt == 0 && curcnt == 0
-            call auf#util#echoErrorMsg('Auf> s:driftHighlights: invalid hunk-lines:' .
-                    \ linenr . '-' . prevcnt . ',' . curcnt)
+            call auf#util#echoErrorMsg('s:driftHighlights: invalid hunk-lines:' . linenr . '-' . prevcnt . ',' . curcnt)
             continue
         endif
         let drift = curcnt - prevcnt
@@ -484,7 +483,7 @@ function! auf#format#InsertModeOff(synmatch_chg, lnregexp_chg, synmatch_err) abo
         call s:driftHighlights(a:synmatch_chg, a:lnregexp_chg, a:synmatch_err, b:auf_shadowpath, tmpcurfile, b:auf_difpath)
         let [b:auf_shadowpath, tmpcurfile] = [tmpcurfile, b:auf_shadowpath]
     catch /.*/
-        call auf#util#echoErrorMsg('Auf> InsertModeOff: Exception: ' . v:exception)
+        call auf#util#echoErrorMsg('InsertModeOff: Exception: ' . v:exception)
     finally
         call delete(tmpcurfile)
     endtry
@@ -521,24 +520,24 @@ function! auf#format#NextFormatter() abort
     let [def, is_set] = auf#format#GetCurrentFormatter()
     if is_set
         if empty(def)
-            call auf#util#echoErrorMsg('Auf> No formatter could be found for:' . &ft)
+            call auf#util#echoErrorMsg('No formatter could be found for:' . &ft)
             return
         endif
-        call auf#util#echoSuccessMsg('Auf> Selected formatter: #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
+        call auf#util#echoSuccessMsg('Selected formatter: #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
     else
         let n = auf#registry#FormattersCount(&ft)
         if n < 2
-            call auf#util#echoSuccessMsg('Auf> ++Selected formatter (same): #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
+            call auf#util#echoSuccessMsg('++Selected formatter (same): #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
             return
         endif
         let idx = (b:auffmt_current_idx + 1) % n
         let def = auf#registry#GetFormatterByIndex(&ft, idx)
         if empty(def)
-            call auf#util#echoErrorMsg('Auf> Cannot select next')
+            call auf#util#echoErrorMsg('Cannot select next')
             return
         endif
         let [b:auffmt_definition, b:current_formatter_index] = [def, idx]
-        call auf#util#echoSuccessMsg('Auf> ++Selected formatter: #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
+        call auf#util#echoSuccessMsg('++Selected formatter: #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
     endif
 endfunction
 
@@ -546,14 +545,14 @@ function! auf#format#PreviousFormatter() abort
     let [def, is_set] = auf#format#GetCurrentFormatter()
     if is_set
         if empty(def)
-            call auf#util#echoErrorMsg('Auf> No formatter could be found for:' . &ft)
+            call auf#util#echoErrorMsg('No formatter could be found for:' . &ft)
             return
         endif
-        call auf#util#echoSuccessMsg('Auf> Selected formatter: #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
+        call auf#util#echoSuccessMsg('Selected formatter: #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
     else
         let n = auf#registry#FormattersCount(&ft)
         if n < 2
-            call auf#util#echoSuccessMsg('Auf> --Selected formatter (same): #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
+            call auf#util#echoSuccessMsg('--Selected formatter (same): #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
             return
         endif
         let idx = b:auffmt_current_idx - 1
@@ -562,23 +561,23 @@ function! auf#format#PreviousFormatter() abort
         endif
         let def = auf#registry#GetFormatterByIndex(&ft, idx)
         if empty(def)
-            call auf#util#echoErrorMsg('Auf> Cannot select previous')
+            call auf#util#echoErrorMsg('Cannot select previous')
             return
         endif
         let [b:auffmt_definition, b:current_formatter_index] = [def, idx]
     endif
-    call auf#util#echoSuccessMsg('Auf> --Selected formatter: #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
+    call auf#util#echoSuccessMsg('--Selected formatter: #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
 endfunction
 
 function! auf#format#CurrentFormatter() abort
     let [def, is_set] = auf#format#GetCurrentFormatter()
     if empty(def)
-        call auf#util#echoErrorMsg('Auf> No formatter could be found for:' . &ft)
+        call auf#util#echoErrorMsg('No formatter could be found for:' . &ft)
         if is_set
         endif
         return
     endif
-    call auf#util#echoSuccessMsg('Auf> Current formatter: #' . b:auffmt_current_idx . ': ' . def['ID'])
+    call auf#util#echoSuccessMsg('Current formatter: #' . b:auffmt_current_idx . ': ' . def['ID'])
 endfunction
 
 function! auf#format#BufDeleted(bufnr) abort

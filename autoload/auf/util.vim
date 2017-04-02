@@ -70,15 +70,15 @@ endfunction
 endif
 
 function! auf#util#echoSuccessMsg(line) abort
-    let s:dispMsgs += [['DiffAdd', a:line]]
+    let s:dispMsgs += [['DiffAdd', 'Auf> ' . a:line]]
 endfunction
 
 function! auf#util#echoWarningMsg(line) abort
-    let s:dispMsgs += [['WarningMsg', a:line]]
+    let s:dispMsgs += [['WarningMsg', 'Auf>' . a:line]]
 endfunction
 
 function! auf#util#echoErrorMsg(line) abort
-    let s:dispMsgs += [['ErrorMsg', a:line]]
+    let s:dispMsgs += [['ErrorMsg', 'Auf> ' . a:line]]
 endfunction
 
 function! auf#util#displayMessages() abort

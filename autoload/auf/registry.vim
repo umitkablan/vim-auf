@@ -24,7 +24,7 @@ endfunction
 function! auf#registry#RegisterFormatter(formatterdef) abort
     call auf#util#logVerbose('RegisterFormatter: ' . a:formatterdef['ID'] . ' ' . a:formatterdef['executable'])
     if auf#registry#HasFormatter(a:formatterdef['ID'])
-        call auf#util#echoErrorMsg('auf#registry#RegisterFormatter: Double registry for ID:' . a:formatterdef['ID'])
+        call auf#util#echoErrorMsg('RegisterFormatter: Double registry for ID:' . a:formatterdef['ID'])
         return
     endif
     let s:auf_registry += [a:formatterdef]

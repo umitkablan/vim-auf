@@ -9,7 +9,7 @@ if g:auf_diffcmd ==# '' || !executable(g:auf_diffcmd)
     augroup Auf_Error
         autocmd!
         autocmd VimEnter *
-            \ call auf#util#echoErrorMsg("Auf: Can't start! \
+            \ call auf#util#echoErrorMsg("Can't start! \
                 \Couldn't locate 'diff' program (defined in g:auf_diffcmd as '"
                 \ . g:auf_diffcmd . "').")
     augroup END
@@ -19,7 +19,7 @@ if g:auf_filterdiffcmd ==# '' || !executable(g:auf_filterdiffcmd)
     augroup Auf_Error
         autocmd!
         autocmd VimEnter *
-            \ call auf#util#echoErrorMsg("Auf: Can't start! \
+            \ call auf#util#echoErrorMsg("Can't start! \
                 \Couldn't locate 'filterdiff' program (defined in g:auf_filterdiffcmd as '"
                 \ . g:auf_filterdiffcmd . "').")
     augroup END
@@ -34,7 +34,7 @@ function! AufFormatRange(line1, line2) abort
     if empty(def)
         if is_set
         endif
-        call auf#util#echoErrorMsg('auf-gq: no available formatter: Fallbacking..')
+        call auf#util#echoErrorMsg('gq: no available formatter: Fallbacking..')
         call auf#format#Fallback(1, a:line1, a:line2)
         return
     endif
@@ -42,9 +42,9 @@ function! AufFormatRange(line1, line2) abort
     let [res, drift, resstr] = auf#format#TryFormatter(a:line1, a:line2, def,
                 \ overwrite, coward, 'AufErrLine')
     if res > 1
-        call auf#util#echoErrorMsg('Auf-gq error: ' . resstr)
+        call auf#util#echoErrorMsg('gq error: ' . resstr)
     else
-        call auf#util#echoSuccessMsg('Auf-gq fine:' . resstr . ' ~' . drift)
+        call auf#util#echoSuccessMsg('gq fine:' . resstr . ' ~' . drift)
     endif
     call auf#util#logVerbose('AufFormatRange: DONE')
 endfunction
@@ -53,11 +53,11 @@ function! AufJit() abort
     try
         let jit = 0
         if !g:auf_jitformat
-            call auf#util#echoErrorMsg('AufJit> JITing is disabled GLOBALLY')
+            call auf#util#echoErrorMsg('Jit> JITing is disabled GLOBALLY')
         elseif exists('b:auf_jitformat') && !b:auf_jitformat
-            call auf#util#echoErrorMsg('AufJit> JITing is disabled locally')
+            call auf#util#echoErrorMsg('Jit> JITing is disabled locally')
         elseif v:cmdbang
-            call auf#util#echoErrorMsg('AufJit> Did NOT JIT due to w! bang - accepted as is..')
+            call auf#util#echoErrorMsg('Jit> Did NOT JIT due to w! bang - accepted as is..')
         else
             let jit = 1
         endif
@@ -75,7 +75,7 @@ function! AufJit() abort
             endif
         endif
     catch /.*/
-        call auf#util#echoErrorMsg('AufJit: Exception: ' . v:exception)
+        call auf#util#echoErrorMsg('Exception: ' . v:exception)
     endtry
 endfunction
 
