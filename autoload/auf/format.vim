@@ -315,44 +315,95 @@ function! s:doFormatLines(ln1, ln2, synmatch) abort
     return [1, drift]
 endfunction
 
-function! auf#format#justInTimeFormat(synmatch) abort
-    call auf#util#logVerbose('justInTimeFormat: trying..')
+function! s:jitAddedLines(synmatch) abort
     if !len(b:auf_newadded_lines)
         return 0
     endif
+
+    let [tot_drift, res, msg, lines] = [0, 1, '', [b:auf_newadded_lines[0][0]]]
+    for i in range(1, len(b:auf_newadded_lines)-1)
+        let [linenr, curcnt] = [b:auf_newadded_lines[i][0], len(lines)]
+        if lines[curcnt-1] == linenr-1 " successive lines to be appended
+            let lines += [linenr]
+        else
+            let ln0 = lines[0]
+            let [res, drift] = s:doFormatLines(ln0+tot_drift, ln0+curcnt-1+tot_drift, a:synmatch)
+            if !res
+                break
+            endif
+            let msg .= '' . ln0 . ':' . curcnt . '~' . drift . ' /'
+            let [tot_drift, lines] = [tot_drift+drift, [linenr]]
+        endif
+    endfor
+    if len(lines) && res
+        let [ln0, curcnt] = [lines[0], len(lines)]
+        let [res, drift] = s:doFormatLines(ln0+tot_drift, ln0+curcnt-1+tot_drift, a:synmatch)
+        if res
+            let msg .= '' . ln0 . ':' . curcnt . '~' . drift . ' /'
+            let tot_drift += drift
+        endif
+    endif
+    if res
+        let msg .= '#' . tot_drift
+        if exists('b:auffmt_definition')
+            call auf#util#echoSuccessMsg('Auf> ' . b:auffmt_definition['ID'] . '> ' . msg)
+        else
+            call auf#util#echoWarningMsg('Auf> Fallback> ' . msg)
+        endif
+    endif
+endfunction
+
+function! s:jitDiffedLines(synmatch) abort
+    call writefile(getline(1, '$'), b:auf_shadowpath)
+    let [issame, err, sherr] = auf#diff#diffFiles(g:auf_diffcmd, expand('%:.'), b:auf_shadowpath, b:auf_difpath)
+    if issame
+        call auf#util#logVerbose('jitDiffedLines: no edit has detected - no diff')
+        return 0
+    elseif err
+        call auf#util#logVerbose('jitDiffedLines: diff error ' . err . '/'. sherr . ' diff current')
+        return 2
+    endif
+    call auf#util#logVerbose_fileContent('jitDiffedLines: diff done file:' . b:auf_difpath, b:auf_difpath,
+                \ 'jitDiffedLines: ========')
+    let [tot_drift, res, msg] = [0, 1, '']
+    for [linenr, addlines, rmlines] in auf#diff#parseHunks(b:auf_difpath)
+        let [prevcnt, curcnt] = [len(rmlines), len(addlines)]
+        if prevcnt == 0 && curcnt == 0
+            call auf#util#echoErrorMsg('jitDiffedLines: invalid hunk-lines:' . linenr . '-' . prevcnt . ',' . curcnt)
+            continue
+        endif
+        if curcnt > 0
+            let [ln0, ln1] = [linenr+tot_drift, linenr+curcnt-1+tot_drift]
+            call auf#util#logVerbose('jitDiffedLines: hunk-lines:' . ln0 . '-' . ln1)
+            let [res, drift] = s:doFormatLines(ln0, ln1, a:synmatch)
+            if !res
+                break
+            endif
+            let msg .= '' . ln0 . ':' . curcnt . '~' . drift . ' /'
+            if res > 1
+                break
+            endif
+            let tot_drift += drift
+        endif
+    endfor
+    if res
+        let msg .= '#' . tot_drift
+        if exists('b:auffmt_definition')
+            call auf#util#echoSuccessMsg('Auf> ' . b:auffmt_definition['ID'] . '> ' . msg)
+        else
+            call auf#util#echoWarningMsg('Auf> Fallback> ' . msg)
+        endif
+    endif
+endfunction
+
+function! auf#format#justInTimeFormat(synmatch) abort
+    call auf#util#logVerbose('justInTimeFormat: trying..')
     let [l, c] = [line('.'), col('.')]
     try
-        let [tot_drift, res, msg, lines] = [0, 1, '', [b:auf_newadded_lines[0][0]]]
-        for i in range(1, len(b:auf_newadded_lines)-1)
-            let [linenr, curcnt] = [b:auf_newadded_lines[i][0], len(lines)]
-            if lines[curcnt-1] == linenr-1 " successive lines to be appended
-                let lines += [linenr]
-            else
-                let ln0 = lines[0]
-                let [res, drift] = s:doFormatLines(ln0+tot_drift, ln0+curcnt-1+tot_drift, a:synmatch)
-                if !res
-                    break
-                endif
-                let msg .= '' . ln0 . ':' . curcnt . '~' . drift . ' /'
-                let [tot_drift, lines] = [tot_drift+drift, [linenr]]
-            endif
-        endfor
-        if len(lines) && res
-            let [ln0, curcnt] = [lines[0], len(lines)]
-            let [res, drift] = s:doFormatLines(ln0+tot_drift, ln0+curcnt-1+tot_drift, a:synmatch)
-            if res
-                let msg .= '' . ln0 . ':' . curcnt . '~' . drift . ' /'
-                let tot_drift += drift
-            endif
-        endif
-        if res
-            let msg .= '#' . tot_drift
-            if exists('b:auffmt_definition')
-                call auf#util#echoSuccessMsg('Auf> ' . b:auffmt_definition['ID'] . '> ' . msg)
-            else
-                call auf#util#echoWarningMsg('Auf> Fallback> ' . msg)
-            endif
-        endif
+        " Diff current state with on-the-disk saved state - tracked changes
+        " might be out of sync due to uncatchable normal mode edits, so
+        " re-diffing whole is better idea
+        call s:jitDiffedLines(a:synmatch) " call s:jitAddedLines(a:synmatch)
         call auf#util#highlights_On(b:auf_highlight_lines_hlids, a:synmatch)
     catch /.*/
         call auf#util#echoErrorMsg('Auf> Exception: ' . v:exception)
