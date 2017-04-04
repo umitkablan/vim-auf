@@ -114,6 +114,21 @@ function! AufBufReadPost() abort
     call auf#util#logVerbose('AufBufReadPost: END')
 endfunction
 
+function! AufInfo() abort
+    let [i, formatters] = [0, '']
+    while 1
+        let def = auf#registry#GetFormatterByIndex(&ft, i)
+        if empty(def)
+            break
+        endif
+        if index(def['filetypes'], &ft) > -1
+            let formatters .= get(def, 'ID', '') . ', '
+        endif
+        let i += 1
+    endwhile
+    echomsg 'Formatters: [' . formatters[:-3] . ']'
+endfunction
+
 " Save and recall window state to prevent vim from jumping to line 1: Beware
 " that it should be done here due to <line1>,<line2> range.
 command! -nargs=? -range=% -complete=filetype -bang -bar Auf
@@ -127,6 +142,7 @@ command! -nargs=0 -bar AufJIT call AufJit()
 command! AufNextFormatter call auf#format#NextFormatter()
 command! AufPrevFormatter call auf#format#PreviousFormatter()
 command! AufCurrFormatter call auf#format#CurrentFormatter()
+command! AufInfo call AufInfo()
 
 command! AufShowDiff call auf#format#ShowDiff()
 command! AufClearHi
