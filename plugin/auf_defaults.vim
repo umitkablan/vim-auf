@@ -14,6 +14,10 @@ if !exists('g:auf_remove_trailing_spaces')
     let g:auf_remove_trailing_spaces = 1
 endif
 
+if !exists('g:auf_probe_formatter')
+    let g:auf_probe_formatter = 1
+endif
+
 if !exists('g:auf_fallback_func')
     let g:auf_fallback_func = ''
 endif

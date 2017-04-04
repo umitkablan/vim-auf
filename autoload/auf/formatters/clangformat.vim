@@ -6,7 +6,8 @@ let g:loaded_auffmt_clangformat_definition = 1
 let s:definition = {
       \ 'ID'        : 'clangformat',
       \ 'executable': 'clang-format',
-      \ 'filetypes' : ['c', 'cpp', 'objc']
+      \ 'filetypes' : ['c', 'cpp', 'objc'],
+      \ 'probefiles': ['.clang-format', '_clang-format']
       \ }
 
 function! auf#formatters#clangformat#define() abort

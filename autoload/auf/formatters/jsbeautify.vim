@@ -6,7 +6,8 @@ let g:loaded_auffmt_jsbeautify_definition = 1
 let s:definition = {
       \ 'ID'        : 'jsbeautify',
       \ 'executable': 'js-beautify',
-      \ 'filetypes' : ['javascript', 'json']
+      \ 'filetypes' : ['javascript', 'json'],
+      \ 'probefiles': ['.jsbeautifyrc']
       \ }
 
 function! auf#formatters#jsbeautify#define() abort

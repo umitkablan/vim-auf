@@ -5,28 +5,40 @@ let g:loaded_auf_format_autoload = 1
 
 function! auf#format#GetCurrentFormatter() abort
     let [def, is_set] = [get(b:, 'auffmt_definition', {}), 0]
-    if empty(def) || !exists('b:auffmt_current_idx')
-        let varname = 'aufformatters_' . &ft
-        let fmt_list = get(b:, varname, get(g:, varname, ''))
-        if type(fmt_list) == type('')
-            let def = auf#registry#GetFormatterByIndex(&ft, 0)
-            if empty(def)
-                return [def, is_set]
-            endif
-            let [b:auffmt_definition, b:auffmt_current_idx, is_set] = [def, 0, 1]
-        elseif type(fmt_list) == type([])
-            for i in range(0, len(fmt_list)-1)
-                let id = fmt_list[i]
-                call auf#util#logVerbose('GetCurrentFormatter: Cheking format definitions for ID:' . id)
-                let def = auf#registry#GetFormatterByID(id, &ft)
-                if !empty(def)
-                    let [b:auffmt_definition, b:auffmt_current_idx, is_set] = [def, i, 1]
-                    break
-                endif
-            endfor
-        else
-            call auf#util#echoErrorMsg('Supply a list in variable: g:' . varname)
+    if !empty(def) && exists('b:auffmt_current_idx')
+        return [def, is_set]
+    endif
+
+    let is_set = 1
+    if g:auf_probe_formatter
+        let [i, def] = s:probeFormatter()
+        if !empty(def)
+            call auf#util#logVerbose('GetCurrentFormatter: Probed ' . def['ID'] . ' formatter at ' . i)
+            let [b:auffmt_definition, b:auffmt_current_idx] = [def, i]
+            return [def, is_set]
         endif
+    endif
+
+    let varname = 'aufformatters_' . &ft
+    let fmt_list = get(g:, varname, '')
+    if type(fmt_list) == type('')
+        let def = auf#registry#GetFormatterByIndex(&ft, 0)
+        if empty(def)
+            return [def, 0]
+        endif
+        let [b:auffmt_definition, b:auffmt_current_idx] = [def, 0]
+    elseif type(fmt_list) == type([])
+        for i in range(0, len(fmt_list)-1)
+            let id = fmt_list[i]
+            call auf#util#logVerbose('GetCurrentFormatter: Cheking format definitions for ID:' . id)
+            let def = auf#registry#GetFormatterByID(id, &ft)
+            if !empty(def)
+                let [b:auffmt_definition, b:auffmt_current_idx] = [def, i]
+                break
+            endif
+        endfor
+    else
+        call auf#util#echoErrorMsg('Supply a list in variable: g:' . varname)
     endif
     return [def, is_set]
 endfunction
@@ -537,6 +549,7 @@ function! auf#format#NextFormatter() abort
             return
         endif
         let [b:auffmt_definition, b:current_formatter_index] = [def, idx]
+        unlet! b:auf__formatprg_base
         call auf#util#echoSuccessMsg('++Selected formatter: #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
     endif
 endfunction
@@ -565,6 +578,7 @@ function! auf#format#PreviousFormatter() abort
             return
         endif
         let [b:auffmt_definition, b:current_formatter_index] = [def, idx]
+        unlet! b:auf__formatprg_base
     endif
     call auf#util#echoSuccessMsg('--Selected formatter: #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
 endfunction
@@ -608,3 +622,40 @@ augroup AUF_BufDel
     autocmd!
     autocmd BufDelete * call auf#format#BufDeleted(expand('<abuf>'))
 augroup END
+
+function! s:probeFormatter() abort
+    call auf#util#logVerbose('s:probeFormatter: Started')
+    let varname = 'aufformatters_' . &ft
+    let [fmt_list, def, i] = [get(g:, varname, ''), {}, 0]
+    if type(fmt_list) == type('')
+        call auf#util#logVerbose('s:probeFormatter: Check probe files of all defined formatters')
+        while 1
+            let def = auf#registry#GetFormatterByIndex(&ft, i)
+            if empty(def)
+                break
+            endif
+            let probefile = auf#util#CheckProbeFileUpRecursive(expand('%:p:h'), get(def, 'probefiles', []))
+            if len(probefile)
+                break
+            endif
+            let [i, def] = [i+1, {}]
+        endwhile
+    else
+        for i in range(0, len(fmt_list)-1)
+            let id = fmt_list[i]
+            call auf#util#logVerbose('s:probeFormatter: Cheking format definitions for ID:' . id)
+            let def = auf#registry#GetFormatterByID(id, &ft)
+            if empty(def)
+                continue
+            endif
+            let probefile = auf#util#CheckProbeFileUpRecursive(expand('%:p:h'), get(def, 'probefiles', []))
+            if len(probefile)
+                break
+            endif
+            let def = {}
+        endfor
+    endif
+    call auf#util#logVerbose('s:probeFormatter: Ended: i:' . i . ' def:' . get(def, 'ID', '_VOID_'))
+    return [empty(def) ? -1 : i, def]
+endfunction
+

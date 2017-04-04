@@ -6,7 +6,8 @@ let g:loaded_auffmt_perltidy_definition = 1
 let s:definition = {
             \ 'ID'        : 'perltidy',
             \ 'executable': 'perltidy',
-            \ 'filetypes' : ['perl']
+            \ 'filetypes' : ['perl'],
+            \ 'probefiles': ['.perltidyrc']
             \ }
 
 function! auf#formatters#perltidy#define() abort

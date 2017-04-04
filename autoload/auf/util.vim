@@ -3,6 +3,10 @@ if exists('g:loaded_auf_util_autoload') || !exists('g:loaded_auf_plugin')
 endif
 let g:loaded_auf_util_autoload = 1
 let s:is_win = has('win32') || has('win64')
+let s:home = substitute($HOME, '/\|\\', '[/\\\\]', 'g')
+" Regex used to determine when we must stop looking for file name in directory
+" Sometimes paths appears as Z:\\ ....
+let s:re_last_path = '^/\=$\|^[A-Za-z]:[/\\]\+$\|^//$\|^\\\\$'.((s:home !=# '') ? ('\|^'.s:home.'$') : '')
 
 let s:dispMsgs = []
 augroup Auf_Util_Display_Au
@@ -160,6 +164,36 @@ function! auf#util#getFormatterAtIndex(index) abort
         let [err, val] = [v:exception, '']
     endtry
     return [var, val, err]
+endfunction
+
+function! s:findFileRecursiveUp(dirpath, filename) abort
+    let p = a:dirpath . '/' . a:filename
+    if filereadable(p)
+        return p
+    endif
+    if (a:dirpath =~ s:re_last_path)
+        return ''
+    endif
+    let up_path = fnamemodify(a:dirpath, ':h')
+    while up_path !=# '.' && isdirectory(up_path) && up_path !~ s:re_last_path
+        let p = up_path . '/' . a:filename
+        if filereadable(p)
+            return p
+        endif
+        let up_path = fnamemodify(up_path, ':h')
+    endwhile
+    return ''
+endfunction
+
+function! auf#util#CheckProbeFileUpRecursive(dirpath, files) abort
+    for p in a:files
+        call auf#util#logVerbose('s:checkProbeFileUpRecursive: probing ' . p)
+        let pp = s:findFileRecursiveUp(a:dirpath, p)
+        if len(pp)
+            return pp
+        endif
+    endfor
+    return ''
 endfunction
 
 function! auf#util#replaceLines(linenr, linecnt, lines) abort
