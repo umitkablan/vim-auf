@@ -14,11 +14,10 @@ function! auf#formatters#clangformat#define() abort
   return s:definition
 endfunction
 
-function! auf#formatters#clangformat#cmdArgs(ftype) abort
+function! auf#formatters#clangformat#cmdArgs(ftype, confpath) abort
   let style = ''
-  let confpath = s:clangformatGetConfig()
-  if len(confpath)
-    let style = '-style="{' . s:clangformatParseConfig(confpath) . '}"'
+  if len(a:confpath)
+    let style = '-style="{' . s:clangformatParseConfig(a:confpath) . '}"'
   else
     if a:ftype ==# 'cpp'
       let style = '-style="{' .
@@ -34,22 +33,6 @@ endfunction
 
 function! auf#formatters#clangformat#cmdAddRange(cmd, line0, line1) abort
   return a:cmd . ' -lines=' . a:line0 . ':' . a:line1
-endfunction
-
-function! s:clangformatGetConfig() abort
-  let ll = findfile('.clang-format', expand('%:p:h').';')
-  if len(ll)
-    return ll
-  endif
-  let ll = findfile('_clang-format', expand('%:p:h').';')
-  if len(ll)
-    return ll
-  endif
-  let conf = get(g:, 'auffmt_clangformat_config', '')
-  if len(conf)
-    return conf
-  endif
-  return ''
 endfunction
 
 function! s:clangformatParseConfig(fpath) abort

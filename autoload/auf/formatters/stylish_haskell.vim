@@ -13,8 +13,8 @@ function! auf#formatters#stylish_haskell#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#stylish_haskell#cmdArgs(ftype) abort
-    if a:ftype
+function! auf#formatters#stylish_haskell#cmdArgs(ftype, confpath) abort
+    if a:ftype || a:confpath
     endif
     return ''
 endfunction

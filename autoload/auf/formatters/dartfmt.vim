@@ -13,8 +13,8 @@ function! auf#formatters#dartfmt#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#dartfmt#cmdArgs(ftype) abort
-    if a:ftype
+function! auf#formatters#dartfmt#cmdArgs(ftype, confpath) abort
+    if a:ftype || a:confpath
     endif
     return ''
 endfunction

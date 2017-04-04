@@ -13,8 +13,8 @@ function! auf#formatters#cssbeautify#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#cssbeautify#cmdArgs(ftype) abort
-    if a:ftype
+function! auf#formatters#cssbeautify#cmdArgs(ftype, confpath) abort
+    if a:ftype || a:confpath
     endif
     return '-f - -s ' . shiftwidth()
 endfunction

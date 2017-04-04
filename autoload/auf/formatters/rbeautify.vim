@@ -13,8 +13,8 @@ function! auf#formatters#rbeautify#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#rbeautify#cmdArgs(ftype) abort
-    if a:ftype
+function! auf#formatters#rbeautify#cmdArgs(ftype, confpath) abort
+    if a:ftype || a:confpath
     endif
     return &expandtab ? '-s -c '.shiftwidth() : '-t'
 endfunction

@@ -13,8 +13,8 @@ function! auf#formatters#jscs#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#jscs#cmdArgs(ftype) abort
-    if a:ftype
+function! auf#formatters#jscs#cmdArgs(ftype, confpath) abort
+    if a:ftype || a:confpath
     endif
     return '-x -n <'
 endfunction

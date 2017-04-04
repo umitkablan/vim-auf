@@ -13,8 +13,8 @@ function! auf#formatters#rustfmt#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#rustfmt#cmdArgs(ftype) abort
-    if a:ftype
+function! auf#formatters#rustfmt#cmdArgs(ftype, confpath) abort
+    if a:ftype || a:confpath
     endif
     return ''
 endfunction

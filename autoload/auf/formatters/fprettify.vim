@@ -13,8 +13,8 @@ function! auf#formatters#fprettify#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#fprettify#cmdArgs(ftype) abort
-    if a:ftype
+function! auf#formatters#fprettify#cmdArgs(ftype, confpath) abort
+    if a:ftype || a:confpath
     endif
     return '--no-report-errors --indent=' . &shiftwidth
 endfunction

@@ -13,8 +13,8 @@ function! auf#formatters#remark_md#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#remark_md#cmdArgs(ftype) abort
-    if a:ftype
+function! auf#formatters#remark_md#cmdArgs(ftype, confpath) abort
+    if a:ftype || a:confpath
     endif
     return '--silent --no-color'
 endfunction

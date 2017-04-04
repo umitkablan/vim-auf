@@ -13,8 +13,8 @@ function! auf#formatters#rubocop#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#rubocop#cmdArgs(ftype) abort
-    if a:ftype
+function! auf#formatters#rubocop#cmdArgs(ftype, confpath) abort
+    if a:ftype || a:confpath
     endif
     " The pipe to sed is required to remove some rubocop output that could not
     " be suppressed.

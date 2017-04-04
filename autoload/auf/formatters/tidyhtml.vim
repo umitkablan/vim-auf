@@ -13,8 +13,8 @@ function! auf#formatters#tidyhtml#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#tidyhtml#cmdArgs(ftype) abort
-    if a:ftype
+function! auf#formatters#tidyhtml#cmdArgs(ftype, confpath) abort
+    if a:ftype || a:confpath
     endif
     let style = ''
     if a:ftype ==# 'xml'

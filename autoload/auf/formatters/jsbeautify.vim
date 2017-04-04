@@ -14,12 +14,12 @@ function! auf#formatters#jsbeautify#define() abort
   return s:definition
 endfunction
 
-function! auf#formatters#jsbeautify#cmdArgs(ftype) abort
+function! auf#formatters#jsbeautify#cmdArgs(ftype, confpath) abort
   if a:ftype
   endif
 
   let style = ''
-  if filereadable('.jsbeautifyrc')
+  if len(a:confpath)
   elseif filereadable(expand('~/.jsbeautifyrc'))
   else
     let style = '-X -' .

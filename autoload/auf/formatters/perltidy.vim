@@ -14,15 +14,15 @@ function! auf#formatters#perltidy#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#perltidy#cmdArgs(ftype) abort
-    if a:ftype
+function! auf#formatters#perltidy#cmdArgs(ftype, confpath) abort
+    if a:ftype || a:confpath
     endif
     let style = '--perl-best-practices --format-skipping -q'
     " use perltidyrc file if readable
     if (has('win32') && (filereadable('perltidy.ini') ||
                 \ filereadable($HOMEPATH.'/perltidy.ini'))) ||
                 \ ((has('unix') ||
-                \ has('mac')) && (filereadable('.perltidyrc') ||
+                \ has('mac')) && (len(a:confpath) ||
                 \ filereadable('~/.perltidyrc') ||
                 \ filereadable('/usr/local/etc/perltidyrc') ||
                 \ filereadable('/etc/perltidyrc')))

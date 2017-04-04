@@ -74,8 +74,8 @@ function! auf#registry#GetFormatterByID(id, ftype) abort
     return ret
 endfunction
 
-function! auf#registry#BuildCmdBaseFromDef(fmtdef) abort
-    return auf#formatters#{a:fmtdef['ID']}#cmdArgs(a:fmtdef['needed_ftype'])
+function! auf#registry#BuildCmdBaseFromDef(fmtdef, confpath) abort
+    return auf#formatters#{a:fmtdef['ID']}#cmdArgs(a:fmtdef['needed_ftype'], a:confpath)
 endfunction
 
 function! auf#registry#BuildCmdFullFromDef(fmtdef, cmdbase, outpath, line0, line1) abort

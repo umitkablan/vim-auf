@@ -13,8 +13,8 @@ function! auf#formatters#autopep8#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#autopep8#cmdArgs(ftype) abort
-    if a:ftype
+function! auf#formatters#autopep8#cmdArgs(ftype, confpath) abort
+    if a:ftype || a:confpath
     endif
     let style = (&textwidth ? '--max-line-length=' . &textwidth : '')
     return style . ' <'

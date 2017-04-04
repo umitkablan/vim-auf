@@ -14,10 +14,10 @@ function! auf#formatters#astyle#define() abort
   return s:definition
 endfunction
 
-function! auf#formatters#astyle#cmdArgs(ftype) abort
+function! auf#formatters#astyle#cmdArgs(ftype, confpath) abort
   let options = ''
-  if filereadable('.astylerc')
-    let options = '--options=.astylerc'
+  if len(a:confpath)
+    let options = '--options=' . a:confpath
   elseif filereadable(expand('~/.astylerc')) || exists('$ARTISTIC_STYLE_OPTIONS')
   else
     if a:ftype ==# 'c' || a:ftype ==# 'cpp'
@@ -30,10 +30,6 @@ function! auf#formatters#astyle#cmdArgs(ftype) abort
     let options .= (&expandtab ? 's'.shiftwidth() : 't')
   endif
   return options . ' <'
-endfunction
-
-function! auf#formatters#astyle#addconfig(cmd, confpath) abort
-  return a:cmd . ' --options=' . a:confpath
 endfunction
 
 call auf#registry#RegisterFormatter(s:definition)

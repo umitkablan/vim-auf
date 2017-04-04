@@ -13,8 +13,8 @@ function! auf#formatters#standardjs#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#standardjs#cmdArgs(ftype) abort
-    if a:ftype
+function! auf#formatters#standardjs#cmdArgs(ftype, confpath) abort
+    if a:ftype || a:confpath
     endif
     return '--fix'
 endfunction

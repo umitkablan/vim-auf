@@ -13,8 +13,8 @@ function! auf#formatters#gofmt#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#gofmt#cmdArgs(ftype) abort
-    if a:ftype
+function! auf#formatters#gofmt#cmdArgs(ftype, confpath) abort
+    if a:ftype || a:confpath
     endif
     let style = ''
     if get(g:, 'auffmt_gofmt_tabs', 1)

@@ -3,6 +3,19 @@ if exists('g:loaded_auf_format_autoload') || !exists('g:loaded_auf_plugin')
 endif
 let g:loaded_auf_format_autoload = 1
 
+function! s:setCache(fmtdef, idx, confpath) abort
+    let [b:auffmt_definition, b:auffmt_current_idx] = [a:fmtdef, a:idx]
+    let cpath = a:confpath
+    if !len(cpath)
+        let cpath = auf#util#CheckProbeFileUpRecursive(expand('%:p:h'), get(a:fmtdef, 'probefiles', []))
+    endif
+    if !len(cpath)
+        let confvar = 'auffmt_' . a:fmtdef['ID'] . '_config'
+        let cpath = get(g:, confvar, '')
+    endif
+    let b:auf__formatprg_base = auf#registry#BuildCmdBaseFromDef(a:fmtdef, cpath)
+endfunction
+
 function! auf#format#GetCurrentFormatter() abort
     let [def, is_set] = [get(b:, 'auffmt_definition', {}), 0]
     if !empty(def) && exists('b:auffmt_current_idx')
@@ -11,10 +24,10 @@ function! auf#format#GetCurrentFormatter() abort
 
     let is_set = 1
     if g:auf_probe_formatter
-        let [i, def] = s:probeFormatter()
+        let [i, def, confpath] = s:probeFormatter()
         if !empty(def)
             call auf#util#logVerbose('GetCurrentFormatter: Probed ' . def['ID'] . ' formatter at ' . i)
-            let [b:auffmt_definition, b:auffmt_current_idx] = [def, i]
+            call s:setCache(def, i, confpath)
             return [def, is_set]
         endif
     endif
@@ -26,14 +39,14 @@ function! auf#format#GetCurrentFormatter() abort
         if empty(def)
             return [def, 0]
         endif
-        let [b:auffmt_definition, b:auffmt_current_idx] = [def, 0]
+        call s:setCache(def, 0, '')
     elseif type(fmt_list) == type([])
         for i in range(0, len(fmt_list)-1)
             let id = fmt_list[i]
             call auf#util#logVerbose('GetCurrentFormatter: Cheking format definitions for ID:' . id)
             let def = auf#registry#GetFormatterByID(id, &ft)
             if !empty(def)
-                let [b:auffmt_definition, b:auffmt_current_idx] = [def, i]
+                call s:setCache(def, i, '')
                 break
             endif
         endfor
@@ -77,10 +90,6 @@ function! auf#format#TryAllFormatters(bang, synmatch, ...) range abort
             call auf#format#Fallback(1, a:firstline, a:lastline)
         endif
         return 0
-    endif
-
-    if !exists('b:auffmt_definition')
-        let b:auffmt_definition = def
     endif
 
     let [coward, fmtidx, tot] = [0, b:auffmt_current_idx, auf#registry#FormattersCount(ftype)]
@@ -148,9 +157,6 @@ function! auf#format#Fallback(iserr, line1, line2) abort
 endfunction
 
 function! s:formatSource(line1, line2, fmtdef, inpath, outpath) abort
-    if !exists('b:auf__formatprg_base')
-        let b:auf__formatprg_base = auf#registry#BuildCmdBaseFromDef(a:fmtdef)
-    endif
     let [isoutf, cmd, isranged] = auf#registry#BuildCmdFullFromDef(a:fmtdef,
                 \ b:auf__formatprg_base.' "'.a:inpath.'"', a:outpath, a:line1, a:line2)
     call auf#util#logVerbose('formatSource: isOutF:' . isoutf . ' Command:' . cmd . ' isRanged:' . isranged)
@@ -626,7 +632,7 @@ augroup END
 function! s:probeFormatter() abort
     call auf#util#logVerbose('s:probeFormatter: Started')
     let varname = 'aufformatters_' . &ft
-    let [fmt_list, def, i] = [get(g:, varname, ''), {}, 0]
+    let [fmt_list, def, i, probefile] = [get(g:, varname, ''), {}, 0, '']
     if type(fmt_list) == type('')
         call auf#util#logVerbose('s:probeFormatter: Check probe files of all defined formatters')
         while 1
@@ -656,6 +662,6 @@ function! s:probeFormatter() abort
         endfor
     endif
     call auf#util#logVerbose('s:probeFormatter: Ended: i:' . i . ' def:' . get(def, 'ID', '_VOID_'))
-    return [empty(def) ? -1 : i, def]
+    return [empty(def) ? -1 : i, def, probefile]
 endfunction
 

@@ -13,8 +13,8 @@ function! auf#formatters#tsfmt#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#tsfmt#cmdArgs(ftype) abort
-    if a:ftype
+function! auf#formatters#tsfmt#cmdArgs(ftype, confpath) abort
+    if a:ftype || a:confpath
     endif
     return ''
 endfunction

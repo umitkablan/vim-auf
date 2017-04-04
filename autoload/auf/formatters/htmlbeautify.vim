@@ -13,8 +13,8 @@ function! auf#formatters#htmlbeautify#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#htmlbeautify#cmdArgs(ftype) abort
-    if a:ftype
+function! auf#formatters#htmlbeautify#cmdArgs(ftype, confpath) abort
+    if a:ftype || a:confpath
     endif
     let style = '-'.(&expandtab ? 's '.shiftwidth() : 't')
     return style . ' -f'

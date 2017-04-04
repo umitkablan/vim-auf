@@ -13,8 +13,8 @@ function! auf#formatters#goimports#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#goimports#cmdArgs(ftype) abort
-    if a:ftype
+function! auf#formatters#goimports#cmdArgs(ftype, confpath) abort
+    if a:ftype || a:confpath
     endif
     return ''
 endfunction

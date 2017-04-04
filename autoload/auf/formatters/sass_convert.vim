@@ -13,8 +13,8 @@ function! auf#formatters#sass_convert#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#sass_convert#cmdArgs(ftype) abort
-    if a:ftype
+function! auf#formatters#sass_convert#cmdArgs(ftype, confpath) abort
+    if a:ftype || a:confpath
     endif
     return '-F scss -T scss --indent ' . (&expandtab ? shiftwidth() : 't')
 endfunction
