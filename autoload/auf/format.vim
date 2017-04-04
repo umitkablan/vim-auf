@@ -542,22 +542,22 @@ function! auf#format#NextFormatter() abort
             return
         endif
         call auf#util#echoSuccessMsg('Selected formatter: #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
-    else
-        let n = auf#registry#FormattersCount(&ft)
-        if n < 2
-            call auf#util#echoSuccessMsg('++Selected formatter (same): #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
-            return
-        endif
-        let idx = (b:auffmt_current_idx + 1) % n
-        let def = auf#registry#GetFormatterByIndex(&ft, idx)
-        if empty(def)
-            call auf#util#echoErrorMsg('Cannot select next')
-            return
-        endif
-        let [b:auffmt_definition, b:current_formatter_index] = [def, idx]
-        unlet! b:auf__formatprg_base
-        call auf#util#echoSuccessMsg('++Selected formatter: #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
+        return
     endif
+
+    let n = auf#registry#FormattersCount(&ft)
+    if n < 2
+        call auf#util#echoSuccessMsg('++Selected formatter (same): #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
+        return
+    endif
+    let idx = (b:auffmt_current_idx + 1) % n
+    let def = auf#registry#GetFormatterByIndex(&ft, idx)
+    if empty(def)
+        call auf#util#echoErrorMsg('Cannot select next')
+        return
+    endif
+    call s:setCache(def, idx, '')
+    call auf#util#echoSuccessMsg('++Selected formatter: #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
 endfunction
 
 function! auf#format#PreviousFormatter() abort
@@ -568,24 +568,24 @@ function! auf#format#PreviousFormatter() abort
             return
         endif
         call auf#util#echoSuccessMsg('Selected formatter: #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
-    else
-        let n = auf#registry#FormattersCount(&ft)
-        if n < 2
-            call auf#util#echoSuccessMsg('--Selected formatter (same): #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
-            return
-        endif
-        let idx = b:auffmt_current_idx - 1
-        if idx < 0
-            let idx = n - 1
-        endif
-        let def = auf#registry#GetFormatterByIndex(&ft, idx)
-        if empty(def)
-            call auf#util#echoErrorMsg('Cannot select previous')
-            return
-        endif
-        let [b:auffmt_definition, b:current_formatter_index] = [def, idx]
-        unlet! b:auf__formatprg_base
+        return
     endif
+
+    let n = auf#registry#FormattersCount(&ft)
+    if n < 2
+        call auf#util#echoSuccessMsg('--Selected formatter (same): #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
+        return
+    endif
+    let idx = b:auffmt_current_idx - 1
+    if idx < 0
+        let idx = n - 1
+    endif
+    let def = auf#registry#GetFormatterByIndex(&ft, idx)
+    if empty(def)
+        call auf#util#echoErrorMsg('Cannot select previous')
+        return
+    endif
+    call s:setCache(def, idx, '')
     call auf#util#echoSuccessMsg('--Selected formatter: #' . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
 endfunction
 
