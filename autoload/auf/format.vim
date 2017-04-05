@@ -307,21 +307,22 @@ endfunction
 
 function! s:doFormatLines(ln1, ln2, synmatch) abort
     call auf#util#logVerbose('s:doFormatLines: ' . a:ln1 . '-' . a:ln2)
-    let drift = 0
+    let [res, drift] = [1, 0]
     if exists('b:auffmt_definition')
         let [coward, overwrite] = [1, 1]
         let [res, drift, resstr] = auf#format#TryFormatter(a:ln1, a:ln2, b:auffmt_definition, overwrite, coward, a:synmatch)
         call auf#util#logVerbose('s:doFormatLines: result:' . res . ' ~' . drift)
-        if res > 1
+        if len(resstr)
             if b:auf__highlight__
-                call auf#util#echoErrorMsg(b:auffmt_definition['ID'] . ' fail:' . res . ' ' . resstr)
+                if res > 1
+                    call auf#util#echoErrorMsg(b:auffmt_definition['ID'] . ' fail:' . res . ' ' . resstr)
+                else
+                    call auf#util#echoWarningMsg(b:auffmt_definition['ID'] . '> ' . resstr)
+                endif
             endif
-            return [0, 0]
-        elseif resstr !=# ''
-            if b:auf__highlight__
-                call auf#util#echoWarningMsg(b:auffmt_definition['ID'] . '> ' . resstr)
-            endif
-            return [0, 0]
+            let [res, drift] = [0, 0]
+        else
+            let res = 1
         endif
     else
         call auf#util#logVerbose('doFormatLines: formatter program could not be found')
@@ -330,7 +331,7 @@ function! s:doFormatLines(ln1, ln2, synmatch) abort
 
     let b:auf_newadded_lines =
                 \ auf#util#clearHighlightsInRange(a:synmatch, b:auf_newadded_lines, a:ln1, a:ln2)
-    return [1, drift]
+    return [res, drift]
 endfunction
 
 function! s:jitAddedLines(synmatch) abort
@@ -375,8 +376,6 @@ function! s:jitDiffedLines(synmatch) abort
     call writefile(getline(1, '$'), b:auf_shadowpath)
     let [issame, err, sherr] = auf#diff#diffFiles(g:auf_diffcmd, expand('%:.'), b:auf_shadowpath, b:auf_difpath)
     if issame
-        call auf#util#logVerbose('jitDiffedLines: no edit has detected - no diff')
-        return 0
     elseif err
         call auf#util#logVerbose('jitDiffedLines: diff error ' . err . '/'. sherr . ' diff current')
         return 2
