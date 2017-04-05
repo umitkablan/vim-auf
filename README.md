@@ -39,6 +39,8 @@ First you should install an external program that can format code of the program
 
 Since AUF should be backed by command line formatters, it will be active only in filetypes defined in `g:auf_filetypes [='*']`. It defaults to work on all types of regular files - don't be afraid it will retab/indent at worst and it helps. You can give comma separated values to that, `',c,cpp,java,html,'`; an empty string will disable Auf automation `''`.
 
+Auf will try all defined formatters (of the buffer filetype) until one succeeds and use it. If auto-inferring of the formatter is enabled (default enabled) `g:auf_probe_formatter [=1]` it will seek configuration file (e.g. .clang-format) in/above the directories of file and set it without try-running others. Still, if you want limited set of formatters to be tried/probed, you define `let g:aufformatters_<filetype> = ['fmt_0', 'fmt_1']` like, for example, `let g:aufformatters_cpp = ['clangformat', 'astyle']`.
+
 During typing if you encounter a bad style from formatter, you can undo and `:write!` with a bang easily to skip formatting and accept as is. Auf will not touch this line after it is written. This situation should occur rare - and don't forget to `:w!`.
 
 `g:auf_jitformat [=1]` controls whether JITing on-the-fly is enabled with precedence to buffer-local `b:auf_jitformat [default undefined]`. Use the buffer-local version to disable for certain filetypes/conditions you sketch.
