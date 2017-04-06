@@ -83,6 +83,7 @@ function! AufBufNewFile() abort
     call auf#util#logVerbose('AufBufNewFile: START')
     let b:auf__highlight__ = 1
     call AufBufReadPost()
+    call auf#util#logVerbose('AufBufNewFile: END')
 endfunction
 
 function! AufBufReadPost() abort
@@ -163,15 +164,15 @@ augroup END
 augroup Auf_Auto_Inserts
     autocmd!
     autocmd InsertEnter *
-        \ if (g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ",".&ft.",") != -1 |
+        \ if (g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ','.&ft.',') != -1 |
         \   call auf#format#InsertModeOn() |
         \ endif
     autocmd InsertLeave *
-        \ if (g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ",".&ft.",") != -1 |
+        \ if (g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ','.&ft.',') != -1 |
         \   call auf#format#InsertModeOff('AufChgLine', g:auf_changedline_pattern, 'AufErrLine') |
         \ endif
     autocmd CursorHold *
-        \ if (g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ",".&ft.",") != -1 |
+        \ if (g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ','.&ft.',') != -1 |
         \   call auf#format#CursorHoldInNormalMode('AufChgLine', g:auf_changedline_pattern, 'AufErrLine') |
         \ endif
 augroup END
@@ -179,24 +180,24 @@ augroup END
 augroup Auf_Auto_BufEvents
     autocmd!
     autocmd BufNewFile *
-        \ if (g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ",".&ft.",") != -1 |
+        \ if (g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ','.&ft.',') != -1 |
         \   call AufBufNewFile() |
         \ endif
     autocmd BufReadPost *
-        \ if (g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ",".&ft.",") != -1 |
+        \ if (g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ','.&ft.',') != -1 |
         \   call AufBufReadPost() |
         \ endif
     autocmd BufRead *
-        \ if ((g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ",".&ft.",") != -1) &&
+        \ if ((g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ','.&ft.',') != -1) &&
         \    g:auf_hijack_gq |
         \   setl formatexpr=AufFormatRange(v:lnum,v:lnum+v:count-1) |
         \ endif
     autocmd BufWritePre *
-        \ if (g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ",".&ft.",") != -1 |
+        \ if (g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ','.&ft.',') != -1 |
         \   call AufJit() |
         \ endif
     autocmd BufWritePost *
-        \ if ((g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ",".&ft.",") != -1) &&
+        \ if ((g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ','.&ft.',') != -1) &&
         \    g:auf_rescan_on_writepost |
         \   call auf#util#logVerbose('Auf: BufWritePost: Rescanning') |
         \   Auf |
