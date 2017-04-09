@@ -1,19 +1,19 @@
 auf -- formatter that will JIT format only your edits
 
-AUTHOR:  Ümit Kablan <umitkablan@gmail.com>                      *auf-author*
+AUTHOR:  Ümit Kablan <umitkablan@gmail.com>                       *auf-author*
 WEBSITE:  http://www.github.com/umitkablan/vim-auf
 LICENSE:  See LICENSE file
 NOTES:    This plugin is a fork of Chiel92/vim-autoformat repo at github - yet
           heavily modified to meet JIT formatting deemands and syntastic
           style formatter definitions instead of eval-based global variables.
 
-auf                                                                     *auf*
+auf                                                                      *auf*
 
 1. Introduction              |auf-introduction|
 2. Installation              |auf-installation|
 3. Usage                     |auf-usage|
-4. Configuration Options     |auf-config-options|
-5. Changelog                 |auf-changelog|
+4. Commands                  |auf-commands|
+5. Configuration Options     |auf-config-options|
 6. Misc                      |auf-misc|
 
 ==============================================================================
