@@ -1,0 +1,216 @@
+auf -- formatter that will JIT format only your edits
+
+AUTHOR:  Ümit Kablan <umitkablan@gmail.com>                      *auf-author*
+WEBSITE:  http://www.github.com/umitkablan/vim-auf
+LICENSE:  See LICENSE file
+NOTES:    This plugin is a fork of Chiel92/vim-autoformat repo at github - yet
+          heavily modified to meet JIT formatting deemands and syntastic
+          style formatter definitions instead of eval-based global variables.
+
+auf                                                                     *auf*
+
+1. Introduction              |auf-introduction|
+2. Installation              |auf-installation|
+3. Usage                     |auf-usage|
+4. Configuration Options     |auf-config-options|
+5. Changelog                 |auf-changelog|
+6. Misc                      |auf-misc|
+
+==============================================================================
+1. Introduction                                             *auf-introduction*
+
+Auf is an advanced formatter for Vim with the goal of giving user the ability
+to format while typing - only the lines edited without touching others. It is
+backed by command line formatters which are famous in their domain like
+clang-format, jsbeautify, or tidy - these are defined into the plugin similar
+to Syntastic fashion which gives you the ability to define your formatters
+inside similar autoload/formatters directory.
+
+Motivation behind formatting only touched lines lies in the fact that
+formatters are not perfect and human style is necessary. When you reformat all
+you will lose manual style. It is also helpful in professional domain where
+formatting guideline is manually enforced - some programmers will forget those
+rules and apply their own taste; if you have automatic formatter you won't
+want to mess up their lines otherwise it will make you responsible, to blame.
+
+By default Auf will highlight newly edited, "hot" lines (which needs format)
+and format them on your first save. Auf changes the lines before writing,
+BufWritePre, thus, not interfering with BufWritePost hooks (e.g. Syntastic).
+The "cold" lines are only highlighted when they contain formatting errors (the
+formatted line would differ) and it's only a warning; as Auf will work on your
+edits by default.
+
+Formatting only changed lines in front of your eyes will give oppurtunity to
+"manual" format where you dislike the automata and bypass formatter easily
+(write with bang). Having the ability to format code transparently doesn't
+mean it's disabled to format selected lines or whole file as many of current
+formatters do - it's just old-fashioned and should be rarely needed.
+
+I hope you like it!
+
+==============================================================================
+2. Installation                                             *auf-installation*
+
+Install in ~/.vim/plugin, or in ~\vimfiles\plugin if you're on Windows. This
+plugin should be fully pathogen/plug compatible if you want to install it this
+way and it's highly recommended so.
+
+==============================================================================
+3. Usage                                                           *auf-usage*
+
+Auf tries to stay away your way as much as possible and encourages automatic
+on-the-fly formatting in front of your eyes. Upon saving a buffer, AufJIT will
+find your edits and format them.
+
+When the formatter is not satisfactory for any reason, just undo, format
+manually, and |w!| buffer - it won't touch those lines afterwards. Automatic
+formatting is supported by configuration to change behaviour. Auf also defines
+commands for manual intervention.
+
+==============================================================================
+4. Commands                                                     *auf-commands*
+
+4.1 :[range]Auf[!] [filetype]                                           *:Auf*
+
+                  This command will format selected lines manually by the
+                  current filetype's chosen formatter or arbitrary [filetype].
+                  Bang (!) will replace correct lines with current and normal
+                  invocation only highlights the errors.
+
+4.2 :AufJIT [filetype]                                               *:AufJIT*
+
+                  Will compare current buffer to saved version and format only
+                  changed lines. This command, by default, is already called
+                  before writing.
+
+4.3 :AufClearHi                                                  *:AufClearHi*
+
+                  Clears highlighting of wrong formatted "cold" lines.
+
+4.4 :AufInfo                                                  *:AufInfo*
+
+                  Shows available formatters for current buffer.
+
+4.5 :AufCurrFormatter                                      *:AufCurrFormatter*
+
+                  Shows current formatter of buffer. Current formatter will
+                  be tried first on next formatting.
+
+4.6 :AufNextFormatter                                      *:AufNextFormatter*
+
+                  Select next formatter as current.
+
+4.7 :AufPrevFormatter                                      *:AufPrevFormatter*
+
+                  Select previous formatter as current.
+
+4.8 :AufShowDiff                                                *:AufShowDiff*
+
+                  Show diff of current and correctly formatted version in
+                  split window.
+
+
+==============================================================================
+5. Configuration Options                                  *auf-config-options*
+
+You can set the following options in your .vimrc to override the values used
+by |auf|. The defaults are shown.
+
+5.1 g:auf_autoindent                                        *g:auf_autoindent*
+
+                  Also autoindent lines.
+                  Default: 1
+
+5.2 g:auf_retab                                                  *g:auf_retab*
+
+Also retab lines.
+                  Default: 1
+
+5.3 g:auf_remove_trailing_spaces                *g:auf_remove_trailing_spaces*
+
+                  Also remove trailing whitespace.
+                  Default: 1
+
+5.4 g:auf_probe_formatter                              *g:auf_probe_formatter*
+
+                  Enable formatter probing depending on (possibly) dot config
+                  file above/in current directory of buffer.
+                  Default: 1
+
+5.5 g:auf_fallback_func                                  *g:auf_fallback_func*
+
+                  Name of callback function to invoke on formatter error.
+                  Default: ''
+
+5.6 g:auf_showdiff_synmatch                          *g:auf_showdiff_synmatch*
+
+                  Syntax name for "cold" wrong formatted lines.
+                  Default: 'Todo'
+
+5.7 g:auf_changedline_synmatch                    *g:auf_changedline_synmatch*
+
+                  Syntax name for newly edited lines.
+                  Default: 'ErrorMsg'
+
+5.8 g:auf_highlight_pattern                          *g:auf_highlight_pattern*
+
+                  The highlight pattern to light erronous lines.
+                  Default: '\(\%##LINENUM##l\)\zs\s\ze\S'
+
+5.9 g:auf_changedline_pattern                      *g:auf_changedline_pattern*
+
+                  The highlight pattern to light newly touched lines.
+                  Default: '\(\%##LINENUM##l\)\zs\s\ze\S'
+
+5.10 g:auf_highlight_on_bufenter                 *g:auf_highlight_on_bufenter*
+
+                  Show erronous lines even after first opening the buffer.
+                  Normally errors will highlight after first save.
+                  Default: 0
+
+5.11 g:auf_jitformat                                         *g:auf_jitformat*
+
+                  Enable JIT formatting changed lines on every save.
+                  Default: 1
+
+5.12 g:auf_hijack_gq                                         *g:auf_hijack_gq*
+
+                  Overide |formatexpr| to fire Auf on gq<move>.
+                  Default: 1
+
+5.13 g:auf_filetypes                                         *g:auf_filetypes*
+
+                  All filetypes to enable Auf, default is 'all'.
+                  Default: '*'
+
+5.14 g:auf_rescan_on_writepost                     *g:auf_rescan_on_writepost*
+
+                  Enable rescan of buffer after write - rescan for errors.
+                  Default: 1
+
+5.15 g:auf_verbosemode                                     *g:auf_verbosemode*
+
+                  Show/output verbose output.
+                  Default: 0
+
+5.16 g:auf_diffcmd                                             *g:auf_diffcmd*
+
+                  Name of diff command in the system.
+                  Default: 'diff'
+
+5.17 g:auf_filterdiffcmd                                 *g:auf_filterdiffcmd*
+
+                  Name of filterdiff command in the system.
+                  Default: 'filterdiff'
+
+5.18 g:auf_patchcmd                                           *g:auf_patchcmd*
+
+                  Name of patch command in the system.
+                  Default: 'patch'
+
+==============================================================================
+6. Misc                                                          *auf-misc*
+
+6.1 Tips and tricks
+
+vim:tw=78:ts=8:ft=help:norl:
