@@ -28,6 +28,18 @@ endif
 
 let g:auf_diffcmd .= ' -u '
 
+function! s:gq(ln1, ln2) abort
+    let tmpe = &l:formatexpr
+    setl formatexpr =
+    let dif = a:ln2 - a:ln1
+    if dif > 0
+        exec 'norm! ' . a:ln1 . 'Ggq' . dif . 'j'
+    else
+        exec 'norm! gqgq'
+    endif
+    let &l:formatexpr = tmpe
+endfunction
+
 function! AufFormatRange(line1, line2) abort
     call auf#util#logVerbose('AufFormatRange: ' . a:line1 . '-' . a:line2)
     let [def, is_set] = auf#format#GetCurrentFormatter()
@@ -36,6 +48,7 @@ function! AufFormatRange(line1, line2) abort
         endif
         call auf#util#echoErrorMsg('gq: no available formatter: Fallbacking..')
         call auf#format#Fallback(1, a:line1, a:line2)
+        call s:gq(a:line1, a:line2)
         return
     endif
     let [overwrite, coward] = [1, 0]
@@ -43,6 +56,7 @@ function! AufFormatRange(line1, line2) abort
                 \ overwrite, coward, 'AufErrLine')
     if res > 1
         call auf#util#echoErrorMsg('gq error: ' . resstr)
+        call s:gq(a:line1, a:line2)
     else
         call auf#util#echoSuccessMsg('gq fine:' . resstr . ' ~' . drift)
     endif
