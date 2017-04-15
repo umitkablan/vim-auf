@@ -10,6 +10,14 @@ if !exists('g:auf_retab')
     let g:auf_retab = 1
 endif
 
+if !exists('g:auf_highlight_longlines')
+    let g:auf_highlight_longlines = 1
+endif
+
+if !exists('g:auf_highlight_longlines_syntax')
+    let g:auf_highlight_longlines_syntax = 'DiffChange'
+endif
+
 if !exists('g:auf_remove_trailing_spaces')
     let g:auf_remove_trailing_spaces = 1
 endif
@@ -88,3 +96,9 @@ endif
 if !exists('g:auf_patchcmd')
     let g:auf_patchcmd = 'patch'
 endif
+
+" TODO:
+" * Highlight long lines methods?
+" * When ranged :Auf is executed, highlight the lines in range wout touching
+"    other lines' highlighting since file might contain different filetypes
+" * Use conceal to mark wrong formatted lines

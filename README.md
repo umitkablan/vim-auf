@@ -1,6 +1,6 @@
 # vim-auf
 
-## JIT format code with AUF on the fly and *only your changes*
+## JIT format code with AUF on the fly and *only your changes* with ultimate Auf!
 
 While working in the professional domain you'll encounter coding guidelines and many code that is not aligned with this guideline; especially if it is forced manually by people or there are 2+ conflicting tastes / modules - we all have different tastes anyways. (Correct way to do such a thing is to give enough tooling to the programmers - a formatter that will automatically format code no matter how s/he types). There is also a sad news that some formatters will uglify some expressions, especially when the language you are using has many concepts ranging from macros to templates and user-defined operators (people could combine such features in crazily intelligent ways and resulting usage would be hard to reason or classify it into a formatting rule) - we should live in such an environment where we have human-styles as well as an automated hand intermixed.
 
@@ -13,6 +13,8 @@ This plugin makes use of external formatter programs which are designed in UNIX 
 While AUF introduces JIT formatting which will format only your edits, you still can reformat *all* file easily `:Auf!`(not preferred for our case). In order to still warn you about those wrong-format lines it uses line highlighting which is also configurable (`g:auf_showdiff_synmatch g:auf_highlight_pattern g:auf_changedline_synmatch g:auf_changedline_pattern`) and slides as you edit. Those wrong-format lines will be shown once you start editing (i.e. get out of the insert mode) and it won't distract you during insert mode.
 
 When no formatter exists (or none is installed) for a certain filetype, vim-auf falls back by default to indenting, (using vim's auto indent functionality), retabbing and removing trailing whitespace working on touched lines only.
+
+Auf also can highlight lines longer than configured textwidth of the buffer - eliminating your vimrc settings/adding sensible defaults.
 
 ## How to install
 
@@ -74,6 +76,15 @@ To disable or re-enable these option for specific buffers, use the buffer local 
 ```vim
 autocmd FileType vim,tex let [b:auf_autoindent, b:auf_retab] = [0,0]
 ```
+Auf is capable of highlighting lines longer than `&textwidth`. With `g:auf_highlight_longlines` configuration you can disable or select a style of highlighting long lines (of course if textwidth is defined and greater than zero):
+```vim
+" 0-> disable
+" 1-> draw vertical line at textwidth
+" 2-> mark longer parts with 'g:auf_highlight_longlines_syntax'
+let g:auf_highlight_longlines = 1 " default
+```
+If `g:auf_highlight_longlines` value is `2` then you can set which syntax name to use with `g:auf_highlight_longlines_syntax [= 'DiffChange']` configuration.
+
 You can, of course, manually autoindent, retab or remove trailing whitespace with the following respective commands:
 ```vim
 <line_num>G=<movement>

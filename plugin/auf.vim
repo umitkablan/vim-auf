@@ -119,6 +119,15 @@ function! AufBufReadPost() abort
     else
         %call auf#format#TryAllFormatters(0, '')
     endif
+    if &tw
+        if g:auf_highlight_longlines == 1
+            let &colorcolumn = &tw
+        elseif g:auf_highlight_longlines == 2
+            let w:auf__longlines_hl_id__ = matchadd(
+                        \ g:auf_highlight_longlines_syntax,
+                        \ '\%>'. (&textwidth+1) .  'v.\+', -1)
+        endif
+    endif
     call auf#util#logVerbose('AufBufReadPost: END')
 endfunction
 

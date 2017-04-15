@@ -208,6 +208,20 @@ Also retab lines.
                   Name of patch command in the system.
                   Default: 'patch'
 
+5.19 g:auf_highlight_longlines                     *g:auf_highlight_longlines*
+
+                  Highlight lines longer than &textwidth. There are 2 styles:
+                    1 - Draw a vertical line at &textwidth
+                    2 - Highlight excess characters with
+                        g:auf_highlight_longlines_syntax
+                  Default: 1
+
+5.20 g:auf_highlight_longlines_syntax     *g:auf_highlight_longlines_syntax*
+
+                  If g:auf_highlight_longlines value is 2, then use this
+                  syntax name to highlight:
+                  Default: 'DiffChange'
+
 ==============================================================================
 6. Misc                                                             *auf-misc*
 
