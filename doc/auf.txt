@@ -37,16 +37,14 @@ By default Auf will highlight newly edited, "hot" lines (which needs format)
 and format them on your first save. Auf changes the lines before writing,
 BufWritePre, thus, not interfering with BufWritePost hooks (e.g. Syntastic).
 The "cold" lines are only highlighted when they contain formatting errors (the
-formatted line would differ) and it's only a warning; as Auf will work on your
+formatted line would differ) and it's only a warning; as Auf will JIT your
 edits by default.
 
 Formatting only changed lines in front of your eyes will give oppurtunity to
-"manual" format where you dislike the automata and bypass formatter easily
+manual format where you dislike the automata and bypass formatter easily
 (write with bang). Having the ability to format code transparently doesn't
 mean it's disabled to format selected lines or whole file as many of current
 formatters do - it's just old-fashioned and should be rarely needed.
-
-I hope you like it!
 
 ==============================================================================
 2. Installation                                             *auf-installation*
@@ -59,8 +57,8 @@ way and it's highly recommended so.
 3. Usage                                                           *auf-usage*
 
 Auf tries to stay away your way as much as possible and encourages automatic
-on-the-fly formatting in front of your eyes. Upon saving a buffer, AufJIT will
-find your edits and format them.
+on-the-fly formatting in front of your eyes. Upon saving a buffer, |:AufJIT|
+will find your edits and format them.
 
 When the formatter is not satisfactory for any reason, just undo, format
 manually, and |w!| buffer - it won't touch those lines afterwards. Automatic
@@ -87,7 +85,7 @@ commands for manual intervention.
 
                   Clears highlighting of wrong formatted "cold" lines.
 
-4.4 :AufInfo                                                  *:AufInfo*
+4.4 :AufInfo                                                        *:AufInfo*
 
                   Shows available formatters for current buffer.
 
@@ -140,6 +138,8 @@ Also retab lines.
 5.5 g:auf_fallback_func                                  *g:auf_fallback_func*
 
                   Name of callback function to invoke on formatter error.
+                  Could be useful to invoke other plugins' commands or any
+                  arbitrary operation.
                   Default: ''
 
 5.6 g:auf_showdiff_synmatch                          *g:auf_showdiff_synmatch*
@@ -209,7 +209,7 @@ Also retab lines.
                   Default: 'patch'
 
 ==============================================================================
-6. Misc                                                          *auf-misc*
+6. Misc                                                             *auf-misc*
 
 6.1 Tips and tricks
 
