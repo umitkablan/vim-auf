@@ -158,7 +158,7 @@ endfunction
 
 function! s:formatSource(line1, line2, fmtdef, inpath, outpath) abort
     let [isoutf, cmd, isranged] = auf#registry#BuildCmdFullFromDef(a:fmtdef,
-                \ b:auf__formatprg_base.' "'.a:inpath.'"', a:outpath, a:line1, a:line2)
+                \ b:auf__formatprg_base.' '.shellescape(a:inpath), a:outpath, a:line1, a:line2)
     call auf#util#logVerbose('formatSource: isOutF:' . isoutf . ' Command:' . cmd . ' isRanged:' . isranged)
     if !isoutf
         let out = auf#util#execWithStdout(cmd)
