@@ -98,7 +98,6 @@ if !exists('g:auf_patchcmd')
 endif
 
 " TODO:
-" * Highlight long lines methods?
 " * When ranged :Auf is executed, highlight the lines in range wout touching
 "    other lines' highlighting since file might contain different filetypes
 " * Use conceal to mark wrong formatted lines
