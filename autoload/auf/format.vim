@@ -92,7 +92,9 @@ function! auf#format#TryAllFormatters(bang, synmatch, ...) range abort
         return 0
     endif
 
-    let [coward, fmtidx, tot] = [0, b:auffmt_current_idx, auf#registry#FormattersCount(ftype)]
+    let [coward, current_idx, fmtidx, tot] = [
+                \ 0, b:auffmt_current_idx, b:auffmt_current_idx,
+                \ auf#registry#FormattersCount(ftype)]
     if b:auffmt_definition != {}
         if s:tryFmtDefinition(a:firstline, a:lastline, b:auffmt_definition, overwrite, coward, a:synmatch)
             return 1
@@ -107,18 +109,19 @@ function! auf#format#TryAllFormatters(bang, synmatch, ...) range abort
     while 1
         let def = auf#registry#GetFormatterByIndex(ftype, fmtidx)
         if empty(def)
-            if b:auffmt_current_idx == fmtidx
+            if current_idx == fmtidx
                 call auf#util#echoErrorMsg('Tried all definitions and no suitable #' . fmtidx)
                 break
             endif
         endif
+        call s:setCache(def, fmtidx, '')
         call auf#util#logVerbose('TryAllFormatters: Trying definition in @' . def['ID'])
         if s:tryFmtDefinition(a:firstline, a:lastline, def, overwrite, coward, a:synmatch)
             let b:auffmt_definition = def
             return 1
         else
             let fmtidx = (fmtidx + 1) % tot
-            if fmtidx == b:auffmt_current_idx
+            if fmtidx == current_idx
                 break
             endif
         endif
