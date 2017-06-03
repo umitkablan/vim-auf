@@ -254,9 +254,15 @@ function! auf#format#evaluateFormattedToOrig(line1, line2, fmtdef, curfile, form
                     \ a:difpath, 'evaluateFormattedToOrig: ========')
     endif
 
-    call auf#util#clearAllHighlights(b:auf_highlight_lines_hlids)
+    " call auf#util#clearAllHighlights(b:auf_highlight_lines_hlids)
     if !a:overwrite
-        let b:auf_highlight_lines_hlids = auf#util#highlightLines(auf#diff#parseChangedLines(a:difpath), a:synmatch)
+        " let b:auf_highlight_lines_hlids = auf#util#highlightLines(auf#diff#parseChangedLines(a:difpath), a:synmatch)
+        let b:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(
+                    \ a:synmatch, b:auf_highlight_lines_hlids,
+                    \ a:line1, a:line2)
+        let b:auf_highlight_lines_hlids = auf#util#highlightLinesRanged(
+                    \ b:auf_highlight_lines_hlids,
+                    \ auf#diff#parseChangedLines(a:difpath), a:synmatch)
         return [1, 0, 0]
     endif
 

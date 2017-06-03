@@ -384,3 +384,25 @@ function! auf#util#highlightLines(hlines, synmatch) abort
     return ret
 endfunction
 
+function! auf#util#highlightLinesRanged(hlids, hlines, synmatch) abort
+    call auf#util#logVerbose('highlightLinesRanged: "' . a:synmatch . '" @' . len(a:hlids) . '/' . len(a:hlines))
+    if len(a:hlines) < 1
+        call auf#util#logVerbose('highlightLinesRanged: Returns due to' .
+                    \ ' empty highlight lines')
+        return a:hlids
+    endif
+    let [lbefore, lafter, first, last] = [[], [], a:hlines[0][0], a:hlines[len(a:hlines)-1][0]]
+    for hll in a:hlids
+        if hll[0] < first
+            let lbefore += [hll]
+        elseif hll[0] > last
+            let lafter += [hll]
+        else
+            call auf#util#logVerbose('highlightLinesRanged: line:' . hll[0] . ' should be between range ' . first . '-' . last)
+        endif
+    endfor
+    let ret = lbefore + auf#util#highlightLines(a:hlines, a:synmatch) + lafter
+    call auf#util#logVerbose('highlightLinesRanged: DONE @' . len(ret))
+    return ret
+endfunction
+
