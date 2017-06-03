@@ -260,6 +260,8 @@ function! auf#format#evaluateFormattedToOrig(line1, line2, fmtdef, curfile, form
         return [1, 0, 0]
     endif
 
+    call feedkeys("\<C-G>u", 'n')
+
     let [hunks, drift] = auf#format#evalApplyDif(a:line1, a:difpath, a:coward)
     if hunks == -1
         return [4, 0, 0]
