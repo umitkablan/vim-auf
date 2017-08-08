@@ -18,7 +18,7 @@ endfunction
 
 function! auf#diff#parseHunks(difpath) abort
     let flines = readfile(a:difpath)
-    let [prevnr, curnr, ret, addedlines, rmlines] = [0, 0, [], [], []]
+    let [prevnr, curnr, ret, addedlines, rmlines] = [-1, 0, [], [], []]
     for line in flines
         if line ==# ''
             continue
@@ -28,11 +28,11 @@ function! auf#diff#parseHunks(difpath) abort
             let commaidx = stridx(line, ',', plusidx)
             if plusidx < 0 || commaidx < 0
                 call auf#util#logVerbose('findHunks: !!plus/comma is not found in the diff line!!')
-                let [prevnr, curnr, addedlines, rmlines] = [0, 0, [], []]
+                let [prevnr, curnr, addedlines, rmlines] = [-1, 0, [], []]
                 continue
             endif
             let curnr = str2nr(line[plusidx+1:commaidx])
-        elseif prevnr > 0
+        elseif prevnr > -1
             if line[0] ==# '-'
                 let prevnr += 1
                 let rmlines += [line[1:]]
@@ -41,7 +41,11 @@ function! auf#diff#parseHunks(difpath) abort
                 let addedlines += [line[1:]]
             elseif line[0] ==# ' '
                 if len(rmlines) > 0 || len(addedlines) > 0
-                    let ret += [[(prevnr-len(rmlines)), addedlines, rmlines]]
+                    let prev = prevnr - len(rmlines)
+                    if prev < 1
+                        let prev = 1
+                    endif
+                    let ret += [[prev, addedlines, rmlines]]
                     let [addedlines, rmlines] = [[], []]
                 endif
                 let [prevnr, curnr] = [prevnr+1, curnr+1]
@@ -49,7 +53,11 @@ function! auf#diff#parseHunks(difpath) abort
         endif
     endfor
     if len(rmlines) > 0 || len(addedlines) > 0
-        let ret += [[(prevnr-len(rmlines)), addedlines, rmlines]]
+        let prev = prevnr - len(rmlines)
+        if prev < 1
+            let prev = 1
+        endif
+        let ret += [[prev, addedlines, rmlines]]
     endif
     return ret
 endfunction
