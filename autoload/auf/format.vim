@@ -192,7 +192,6 @@ function! s:checkAllRmLinesEmpty(n, rmlines)
             let emp = 0
             break
         endif
-        let i += 1
     endfor
     return emp
 endfunction
@@ -293,7 +292,7 @@ function! auf#format#evaluateFormattedToOrig(line1, line2, fmtdef, curfile,
         return [1, 0, 0]
     endif
 
-    call feedkeys("\<C-G>u", 'n')
+    " call feedkeys("\<C-G>u", 'n')
 
     let [hunks, drift] = auf#format#evalApplyDif(a:line1, a:difpath, a:coward)
     if hunks == -1
@@ -301,6 +300,8 @@ function! auf#format#evaluateFormattedToOrig(line1, line2, fmtdef, curfile,
     endif
     let b:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(a:synmatch,
                 \ b:auf_highlight_lines_hlids, a:line1, a:line2)
+    let b:auf_newadded_lines = auf#util#clearHighlightsInRange(
+                \ a:synmatch, b:auf_newadded_lines, a:line1, a:line2)
     if drift != 0
         call auf#util#driftHighlightsAfterLine(b:auf_highlight_lines_hlids,
                     \ a:line1, drift, '', '')
@@ -321,7 +322,7 @@ function! auf#format#TryFormatter(line1, line2, fmtdef, overwrite, coward, synma
         call writefile(getline(1, '$'), b:auf_shadowpath)
     endif
     let formattedf = tempname()
-    call auf#util#logVerbose('TryFormatter: origTmp:' . formattedf . ' formTmp:'
+    call auf#util#logVerbose('TryFormatter: origTmp:' . b:auf_shadowpath . ' formTmp:'
                 \ . formattedf)
 
     let resstr = ''
@@ -479,7 +480,7 @@ function! auf#format#justInTimeFormat(synmatch)
             keepjumps silent execute 'normal! ' . (c-col('.')) . 'l'
         endif
     endtry
-    return 0
+    call auf#util#logVerbose('justInTimeFormat: DONE')
 endfunction
 
 function! auf#format#InsertModeOn()
