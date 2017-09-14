@@ -13,8 +13,8 @@ function! auf#formatters#xojs#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#xojs#cmdArgs(ftype) abort
-    if a:ftype
+function! auf#formatters#xojs#cmdArgs(ftype, confpath) abort
+    if a:ftype || a:confpath
     endif
     return '--fix'
 endfunction

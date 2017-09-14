@@ -15,8 +15,8 @@ function! auf#formatters#yapf#define() abort
     return s:definition
 endfunction
 
-function! auf#formatters#yapf#cmdArgs(ftype) abort
-    if a:ftype
+function! auf#formatters#yapf#cmdArgs(ftype, confpath) abort
+    if a:ftype || a:confpath
     endif
     let style = '--style="{based_on_style:' .
                 \ (exists('g:auffmt_yapf_style') ? g:auffmt_yapf_style : 'pep8') . ',' .
