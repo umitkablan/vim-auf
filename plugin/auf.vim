@@ -160,6 +160,12 @@ command! AufNextFormatter call auf#format#NextFormatter()
 command! AufPrevFormatter call auf#format#PreviousFormatter()
 command! AufCurrFormatter call auf#format#CurrentFormatter()
 command! AufInfo call AufInfo()
+command! -nargs=0 AufDisable
+    \ let b:auf_disable=1 |
+    \ call auf#util#clearAllHighlights(b:auf_highlight_lines_hlids) |
+    \ call auf#util#clearAllHighlights(b:auf_newadded_lines) |
+    \ let b:auf_newadded_lines = []
+command! -nargs=0 AufEnable unlet! b:auf_disable
 
 command! AufShowDiff call auf#format#ShowDiff()
 command! AufClearHi
@@ -177,18 +183,23 @@ augroup Auf_Auto_Syntax
     autocmd Syntax execute s:AufChgLineSynCmd
 augroup END
 
+function! s:isAufFiletype() abort
+    return (g:auf_filetypes ==# '*' && &buftype ==# '')
+            \ || stridx(g:auf_filetypes, ','.&ft.',') != -1
+endfunction
+
 augroup Auf_Auto_Inserts
     autocmd!
     autocmd InsertEnter *
-        \ if (g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ','.&ft.',') != -1 |
+        \ if !exists('b:auf_disable') && s:isAufFiletype() |
         \   call auf#format#InsertModeOn() |
         \ endif
     autocmd InsertLeave *
-        \ if (g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ','.&ft.',') != -1 |
+        \ if !exists('b:auf_disable') && s:isAufFiletype() |
         \   call auf#format#InsertModeOff('AufChgLine', g:auf_changedline_pattern, 'AufErrLine') |
         \ endif
     autocmd CursorHold *
-        \ if (g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ','.&ft.',') != -1 |
+        \ if !exists('b:auf_disable') && s:isAufFiletype() |
         \   call auf#format#CursorHoldInNormalMode('AufChgLine', g:auf_changedline_pattern, 'AufErrLine') |
         \ endif
 augroup END
@@ -196,25 +207,23 @@ augroup END
 augroup Auf_Auto_BufEvents
     autocmd!
     autocmd BufNewFile *
-        \ if (g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ','.&ft.',') != -1 |
+        \ if !exists('b:auf_disable') && s:isAufFiletype() |
         \   call AufBufNewFile() |
         \ endif
     autocmd BufReadPost *
-        \ if (g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ','.&ft.',') != -1 |
+        \ if !exists('b:auf_disable') && s:isAufFiletype() |
         \   call AufBufReadPost() |
         \ endif
     autocmd BufRead *
-        \ if ((g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ','.&ft.',') != -1) &&
-        \    g:auf_hijack_gq |
+        \ if s:isAufFiletype() && g:auf_hijack_gq |
         \   setl formatexpr=AufFormatRange(v:lnum,v:lnum+v:count-1) |
         \ endif
     autocmd BufWritePre *
-        \ if (g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ','.&ft.',') != -1 |
+        \ if !exists('b:auf_disable') && s:isAufFiletype() |
         \   call AufJit() |
         \ endif
     autocmd BufWritePost *
-        \ if ((g:auf_filetypes ==# '*' && &buftype ==# '') || stridx(g:auf_filetypes, ','.&ft.',') != -1) &&
-        \    g:auf_rescan_on_writepost |
+        \ if !exists('b:auf_disable') && s:isAufFiletype() && g:auf_rescan_on_writepost |
         \   call auf#util#logVerbose('Auf: BufWritePost: Rescanning') |
         \   Auf |
         \ endif
