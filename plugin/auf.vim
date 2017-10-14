@@ -65,6 +65,12 @@ endfunction
 
 function! AufJit() abort
     try
+        if !&modified
+            call auf#util#clearAllHighlights(b:auf_newadded_lines)
+            let b:auf_newadded_lines = []
+            return
+        endif
+
         let jit = 0
         if !g:auf_jitformat
             call auf#util#echoErrorMsg('Jit> JITing is disabled GLOBALLY')
@@ -80,13 +86,8 @@ function! AufJit() abort
             call auf#util#clearAllHighlights(b:auf_newadded_lines)
             let b:auf_newadded_lines = []
         else
-            if &modified
-                let b:auf__highlight__ = 1
-                call auf#format#justInTimeFormat('AufErrLine')
-            else
-                call auf#util#clearAllHighlights(b:auf_newadded_lines)
-                let b:auf_newadded_lines = []
-            endif
+            let b:auf__highlight__ = 1
+            call auf#format#justInTimeFormat('AufErrLine')
         endif
     catch /.*/
         call auf#util#echoErrorMsg('Exception: ' . v:exception)
