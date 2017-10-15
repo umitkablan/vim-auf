@@ -315,10 +315,10 @@ function! auf#format#TryFormatter(line1, line2, fmtdef, overwrite, coward, synma
     call auf#util#logVerbose('TryFormatter: ' . a:line1 . ',' . a:line2 . ' '
                 \ . a:fmtdef['ID'] . ' ow:' . a:overwrite . ' SynMatch:' . a:synmatch)
     if !exists('b:auf_difpath')
-        let b:auf_difpath = tempname()
+        let b:auf_difpath = expand('%:.') . '.aufdiff'
     endif
     if !exists('b:auf_shadowpath')
-        let b:auf_shadowpath = tempname()
+        let b:auf_shadowpath = expand('%:.') . '.aufshadow'
         call writefile(getline(1, '$'), b:auf_shadowpath)
     endif
     let formattedf = tempname()
@@ -487,7 +487,7 @@ function! auf#format#InsertModeOn()
     call auf#util#logVerbose('InsertModeOn: Start')
     call auf#util#clearAllHighlights(b:auf_highlight_lines_hlids)
     if !exists('b:auf_shadowpath')
-        let b:auf_shadowpath = tempname()
+        let b:auf_shadowpath = expand('%:.') . '.aufshadow0'
         " Nonetheless writefile doesn't work when you get into insert via o
         " (start on new line) - it gives *getline* with newline NOT before
         let flpath = expand('%:.')
@@ -553,7 +553,10 @@ endfunction
 function! auf#format#InsertModeOff(synmatch_chg, lnregexp_chg, synmatch_err)
     call auf#util#logVerbose('InsertModeOff: Start')
     let b:auf_linecnt_last = line('$')
-    let tmpcurfile = tempname()
+    let tmpcurfile = expand('%:.') . '.aufshadow2'
+    if tmpcurfile ==# b:auf_shadowpath
+        let tmpcurfile = expand('%:.') . '.aufshadow3'
+    endif
     try
         call writefile(getline(1, '$'), tmpcurfile)
         call s:driftHighlights(a:synmatch_chg, a:lnregexp_chg, a:synmatch_err,
@@ -580,7 +583,7 @@ function! auf#format#CursorHoldInNormalMode(synmatch_chg, lnregexp_chg, synmatch
         return
     endif
     if !exists('b:auf_shadowpath')
-        let b:auf_shadowpath = tempname()
+        let b:auf_shadowpath = expand('%:.') . '.aufshadow1'
         call system('cp ' . expand('%:.') . ' ' . b:auf_shadowpath)
     endif
     if b:auf_linecnt_last == line('$')
@@ -667,20 +670,16 @@ function! auf#format#CurrentFormatter()
 endfunction
 
 function! auf#format#BufDeleted(bufnr)
-    let l:nr = str2nr(a:bufnr)
-    if bufexists(l:nr) && !buflisted(l:nr)
-        return
+    let path = getbufvar(a:bufnr, 'auf_shadowpath', '')
+    if path !=# ''
+        call delete(path)
     endif
-    let l:difpath = getbufvar(l:nr, 'auf_difpath')
-    if l:difpath !=# ''
-        call delete(l:difpath)
+    call setbufvar(a:bufnr, 'auf_shadowpath', '')
+    let path = getbufvar(a:bufnr, 'auf_difpath', '')
+    if path !=# ''
+        call delete(path)
     endif
-    call setbufvar(l:nr, 'auf_difpath', '')
-    let shadowpath = getbufvar(l:nr, 'auf_shadowpath')
-    if shadowpath !=# ''
-        call delete(shadowpath)
-    endif
-    call setbufvar(l:nr, 'auf_shadowpath', '')
+    call setbufvar(a:bufnr, 'auf_difpath', '')
 endfunction
 
 function! auf#format#ShowDiff()
@@ -692,7 +691,7 @@ endfunction
 
 augroup AUF_BufDel
     autocmd!
-    autocmd BufDelete * call auf#format#BufDeleted(expand('<abuf>'))
+    autocmd BufUnload * call auf#format#BufDeleted(bufnr(expand('<afile>')))
 augroup END
 
 function! s:probeFormatter()
