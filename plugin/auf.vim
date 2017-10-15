@@ -113,7 +113,7 @@ function! AufBufReadPost() abort
         let b:auf__highlight__ = g:auf_highlight_on_bufenter
     endif
     if !exists('b:auf_difpath')
-        let b:auf_difpath = tempname()
+        let b:auf_difpath = expand('%:p') . '.aufdiff0'
     endif
     if b:auf__highlight__
         %call auf#format#TryAllFormatters(0, 'AufErrLine')
