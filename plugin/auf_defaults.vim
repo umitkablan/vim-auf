@@ -97,6 +97,10 @@ if !exists('g:auf_patchcmd')
     let g:auf_patchcmd = 'patch'
 endif
 
+if !exists('g:auf_tempnames_prefix')
+    let g:auf_tempnames_prefix = '/.__'
+endif
+
 " TODO:
 " * When ranged :Auf is executed, highlight the lines in range wout touching
 "    other lines' highlighting since file might contain different filetypes
