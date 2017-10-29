@@ -24,7 +24,7 @@ function! auf#util#logVerbose(line) abort
     try
         if auf#util#get_verbose()
             execute 'redir >> ' . g:auf_verbose_logfile
-            silent echomsg expand('%') . strftime("%Y-%m-%d %T: ") . ': ' . a:line
+            silent echomsg expand('%') . strftime(" %Y-%m-%d %T: ") . a:line
             silent! redir END
         endif
     catch /.*/
