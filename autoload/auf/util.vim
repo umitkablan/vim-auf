@@ -106,18 +106,7 @@ function! auf#util#execSystem(cmd) abort
     let [out, err] = [system(a:cmd), join(readfile(errfile))]
     let &shellredir=sr
     call delete(errfile)
-    return [out, err]
-endfunction
-
-function! auf#util#execWithStderr(cmd) abort
-    let sr = &shellredir
-    if !s:is_win
-        set shellredir=>%s\ 1>/dev/tty
-    endif
-    call auf#util#logVerbose('execWithStderr: CMD:' . a:cmd)
-    let err = system(a:cmd)
-    let &shellredir=sr
-    return err
+    return [out, err, v:shell_error]
 endfunction
 
 function! auf#util#parseFormatPrg(formatprg, inputf, outputf, line1, line2) abort

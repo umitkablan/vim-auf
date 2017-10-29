@@ -170,20 +170,6 @@ function! auf#format#Fallback(iserr, line1, line2)
     endif
 endfunction
 
-function! s:formatSource(line1, line2, fmtdef, inpath, outpath)
-    let [isoutf, cmd, isranged] = auf#registry#BuildCmdFullFromDef(a:fmtdef,
-                \ b:auf__formatprg_base.' '.shellescape(a:inpath), a:outpath,
-                \ a:line1, a:line2)
-    call auf#util#logVerbose('formatSource: isOutF:' . isoutf . ' isRanged:' . isranged)
-    if !isoutf
-        let [out, err] = auf#util#execSystem(cmd)
-        call writefile(split(out, '\n'), a:outpath)
-    else
-        let out = auf#util#execWithStderr(cmd)
-    endif
-    return [v:shell_error == 0, isranged, v:shell_error]
-endfunction
-
 function! s:checkAllRmLinesEmpty(n, rmlines)
     let [rmcnt, emp] = [len(a:rmlines), 1]
     for i in range(0, a:n-1)
@@ -245,33 +231,40 @@ function! auf#format#evaluateFormattedToOrig(line1, line2, fmtdef, curfile,
         call auf#format#Fallback(0, a:line1, a:line2)
     endif
 
-    let [res, is_formatter_ranged, sherr] = s:formatSource(a:line1, a:line2,
-                \ a:fmtdef, a:curfile, a:formattedf)
+    let [isoutf, cmd, isranged] = auf#registry#BuildCmdFullFromDef(a:fmtdef,
+                \ b:auf__formatprg_base.' '.shellescape(a:curfile), a:formattedf,
+                \ a:line1, a:line2)
+    call auf#util#logVerbose('formatSource: isOutF:' . isoutf . ' isRanged:' . isranged)
+    let [out, err, sherr] = auf#util#execSystem(cmd)
+    if !isoutf
+        call writefile(split(out, '\n'), a:formattedf)
+    endif
+
     call auf#util#logVerbose('evaluateFormattedToOrig: sourceFormetted shErr:'
-                \ . sherr)
-    if !res
-        return [2, sherr, 0]
+                \ . sherr . ' err:' . err)
+    if sherr != 0
+        return [2, sherr, 0, err]
     endif
 
     let isfull = auf#util#isFullSelected(a:line1, a:line2)
     let [issame, err, sherr] = auf#diff#diffFiles(g:auf_diffcmd, a:curfile,
                 \ a:formattedf, a:difpath)
     call auf#util#logVerbose('evaluateFormattedToOrig: isFull:' . isfull
-                \ . ' isSame:' . issame . ' isRangedFormat:' . is_formatter_ranged
-                \ . ' shErr:' . sherr)
+                \ . ' isSame:' . issame . ' isRanged:' . isranged
+                \ . ' shErr:' . sherr . ' err:' . err)
     if issame
         call auf#util#logVerbose('evaluateFormattedToOrig: no difference')
         let b:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(
                     \ a:synmatch, b:auf_highlight_lines_hlids,
                     \ a:line1, a:line2)
-        return [0, 0, 0]
+        return [0, 0, 0, err]
     elseif err
-        return [3, sherr, 0]
+        return [3, sherr, 0, err]
     endif
     call auf#util#logVerbose_fileContent('evaluateFormattedToOrig: difference'
                 \ . ' detected:' . a:difpath, a:difpath,
                 \ 'evaluateFormattedToOrig: ========')
-    if !is_formatter_ranged && !isfull
+    if !isranged && !isfull
         call auf#diff#filterPatchLinesRanged(g:auf_filterdiffcmd,
                     \ a:line1, a:line2, a:curfile, a:difpath)
         call auf#util#logVerbose_fileContent('evaluateFormattedToOrig:' .
@@ -288,14 +281,14 @@ function! auf#format#evaluateFormattedToOrig(line1, line2, fmtdef, curfile,
         let b:auf_highlight_lines_hlids = auf#util#highlightLinesRanged(
                     \ b:auf_highlight_lines_hlids,
                     \ auf#diff#parseChangedLines(a:difpath), a:synmatch)
-        return [1, 0, 0]
+        return [1, 0, 0, err]
     endif
 
     " call feedkeys("\<C-G>u", 'n')
 
     let [hunks, drift] = auf#format#evalApplyDif(a:line1, a:difpath, a:coward)
     if hunks == -1
-        return [4, 0, 0]
+        return [4, 0, 0, err]
     endif
     let b:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(a:synmatch,
                 \ b:auf_highlight_lines_hlids, a:line1, a:line2)
@@ -307,7 +300,7 @@ function! auf#format#evaluateFormattedToOrig(line1, line2, fmtdef, curfile,
     endif
 
     call auf#util#highlights_On(b:auf_highlight_lines_hlids, a:synmatch)
-    return [1, 0, drift]
+    return [1, 0, drift, err]
 endfunction
 
 function! auf#format#TryFormatter(line1, line2, fmtdef, overwrite, coward, synmatch)
@@ -325,15 +318,15 @@ function! auf#format#TryFormatter(line1, line2, fmtdef, overwrite, coward, synma
                 \ . formattedf)
 
     let resstr = ''
-    let [res, sherr, drift] = auf#format#evaluateFormattedToOrig(a:line1, a:line2,
+    let [res, sherr, drift, err] = auf#format#evaluateFormattedToOrig(a:line1, a:line2,
                 \ a:fmtdef, b:auf_shadowpath, formattedf, b:auf_difpath,
                 \ a:synmatch, a:overwrite, a:coward)
     call auf#util#logVerbose('TryFormatter: res:' . res . ' ShErr:' . sherr)
     if res == 0 "No diff found
     elseif res == 2 "Format program error
-        let resstr = 'formatter failed(' . sherr . ')'
+        let resstr = 'formatter failed(' . sherr . '): ' . err
     elseif res == 3 "Diff program error
-        let resstr = 'diff failed(' . sherr . ')'
+        let resstr = 'diff failed(' . sherr . '): ' . err
     elseif res == 4 "Refuse to format - coward mode on
         let [resstr, res] = ['cowardly refusing - it touches more lines than edited', 1]
     else
