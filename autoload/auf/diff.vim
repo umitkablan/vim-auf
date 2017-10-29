@@ -96,7 +96,7 @@ endfunction
 
 function! auf#diff#diffFiles(diffcmd, origf, modiff, difpath) abort
     call auf#util#logVerbose('diffFiles: orig:' . a:origf . ' tmp:' . a:modiff)
-    let out = auf#util#execWithStdout(
+    let [out, err] = auf#util#execSystem(
                 \ a:diffcmd . ' ' . shellescape(a:origf) . ' ' . shellescape(a:modiff))
     if v:shell_error == 0 " files are the same
         return [1, 0, v:shell_error]
@@ -111,7 +111,7 @@ endfunction
 function! auf#diff#filterPatchLinesRanged(filterdifcmd, line1, line2, origf, difpath) abort
     let cmd = a:filterdifcmd . ' -i ' . shellescape(a:origf) . ' --lines=' . a:line1 . '-' . a:line2 . ' ' . shellescape(a:difpath)
     call auf#util#logVerbose('filterPatchLinesRanged: filter-diff Command:' . cmd)
-    let out = auf#util#execWithStdout(cmd)
+    let [out, err] = auf#util#execSystem(cmd)
     call writefile(split(out, '\n'), a:difpath)
 endfunction
 
@@ -119,7 +119,7 @@ function! auf#diff#applyHunkInPatch(filterdifcmd, patchcmd, origf, difpath, line
     call auf#diff#filterPatchLinesRanged(a:filterdifcmd, a:line1, a:line2, a:origf, a:difpath)
     let cmd = a:patchcmd . ' < ' . shellescape(a:difpath)
     call auf#util#logVerbose('applyHunkInPatch: patch Command:' . cmd)
-    let out = auf#util#execWithStdout(cmd)
+    let [out, err] = auf#util#execSystem(cmd)
     if len(out)
     endif
     return [0, v:shell_error]

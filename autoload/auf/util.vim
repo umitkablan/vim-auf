@@ -97,15 +97,16 @@ function! auf#util#isFullSelected(line1, line2) abort
     return a:line1 == 1 && a:line2 == line('$')
 endfunction
 
-function! auf#util#execWithStdout(cmd) abort
-    let sr = &shellredir
+function! auf#util#execSystem(cmd) abort
+    let [sr, errfile] = [&shellredir, '.__vim-auf__util.ERR']
     if !s:is_win
-        set shellredir=>%s\ 2>/dev/null
+        set shellredir=>%s\ 2>.__vim-auf__util.ERR
     endif
-    call auf#util#logVerbose('execWithStdout: CMD:' . a:cmd)
-    let out = system(a:cmd)
+    call auf#util#logVerbose('execSystem: CMD:' . a:cmd)
+    let [out, err] = [system(a:cmd), join(readfile(errfile))]
     let &shellredir=sr
-    return out
+    call delete(errfile)
+    return [out, err]
 endfunction
 
 function! auf#util#execWithStderr(cmd) abort

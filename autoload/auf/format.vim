@@ -176,7 +176,7 @@ function! s:formatSource(line1, line2, fmtdef, inpath, outpath)
                 \ a:line1, a:line2)
     call auf#util#logVerbose('formatSource: isOutF:' . isoutf . ' isRanged:' . isranged)
     if !isoutf
-        let out = auf#util#execWithStdout(cmd)
+        let [out, err] = auf#util#execSystem(cmd)
         call writefile(split(out, '\n'), a:outpath)
     else
         let out = auf#util#execWithStderr(cmd)
