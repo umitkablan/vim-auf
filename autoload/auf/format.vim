@@ -227,10 +227,6 @@ endfunction
 
 function! auf#format#evaluateFormattedToOrig(line1, line2, fmtdef, curfile,
             \ formattedf, difpath, synmatch, overwrite, coward)
-    if a:overwrite
-        call auf#format#Fallback(0, a:line1, a:line2)
-    endif
-
     let [isoutf, cmd, isranged] = auf#registry#BuildCmdFullFromDef(a:fmtdef,
                 \ b:auf__formatprg_base.' '.shellescape(a:curfile), a:formattedf,
                 \ a:line1, a:line2)
