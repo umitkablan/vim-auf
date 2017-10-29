@@ -95,9 +95,9 @@ function! auf#diff#parseChangedLines(diffpath) abort
 endfunction
 
 function! auf#diff#diffFiles(diffcmd, origf, modiff, difpath) abort
-    let cmd = a:diffcmd . ' ' . shellescape(a:origf) . ' ' . shellescape(a:modiff)
-    call auf#util#logVerbose('diffFiles: command> ' . cmd)
-    let out = auf#util#execWithStdout(cmd)
+    call auf#util#logVerbose('diffFiles: orig:' . a:origf . ' tmp:' . a:modiff)
+    let out = auf#util#execWithStdout(
+                \ a:diffcmd . ' ' . shellescape(a:origf) . ' ' . shellescape(a:modiff))
     if v:shell_error == 0 " files are the same
         return [1, 0, v:shell_error]
     elseif v:shell_error == 1 " files are different

@@ -174,8 +174,7 @@ function! s:formatSource(line1, line2, fmtdef, inpath, outpath)
     let [isoutf, cmd, isranged] = auf#registry#BuildCmdFullFromDef(a:fmtdef,
                 \ b:auf__formatprg_base.' '.shellescape(a:inpath), a:outpath,
                 \ a:line1, a:line2)
-    call auf#util#logVerbose('formatSource: isOutF:' . isoutf . ' Command:'
-                \ . cmd . ' isRanged:' . isranged)
+    call auf#util#logVerbose('formatSource: isOutF:' . isoutf . ' isRanged:' . isranged)
     if !isoutf
         let out = auf#util#execWithStdout(cmd)
         call writefile(split(out, '\n'), a:outpath)
@@ -421,38 +420,43 @@ endfunction
 
 function! s:jitDiffedLines(synmatch)
     call writefile(getline(1, '$'), b:auf_shadowpath)
-    let [issame, err, sherr] = auf#diff#diffFiles(g:auf_diffcmd, expand('%:.'),
-                \ b:auf_shadowpath, b:auf_difpath)
-    if issame
-    elseif err
-        call auf#util#logVerbose('jitDiffedLines: diff error '
-                    \ . err . '/'. sherr . ' diff current')
+    let [tot_drift, res, msg] = [0, 1, '']
+    if !filereadable(expand('%:p'))
+        let [res, drift] = s:doFormatLines(1, line('$'), a:synmatch)
+        let msg .= '1-$:' . '~' . drift . ' /'
+    else
+        let [issame, err, sherr] = auf#diff#diffFiles(g:auf_diffcmd, expand('%:p'),
+                    \ b:auf_shadowpath, b:auf_difpath)
+        if issame
+        elseif err
+            call auf#util#logVerbose('jitDiffedLines: diff error '
+                        \ . err . '/'. sherr . ' diff current')
             return 2
         endif
-    call auf#util#logVerbose_fileContent('jitDiffedLines: diff done file:'
-                \ . b:auf_difpath, b:auf_difpath, 'jitDiffedLines: ========')
-    let [tot_drift, res, msg] = [0, 1, '']
-    for [linenr, addlines, rmlines] in auf#diff#parseHunks(b:auf_difpath)
-        let [prevcnt, curcnt] = [len(rmlines), len(addlines)]
-        if prevcnt == 0 && curcnt == 0
-            call auf#util#echoErrorMsg('jitDiffedLines: invalid hunk-lines:'
-                        \ . linenr . '-' . prevcnt . ',' . curcnt)
-            continue
-        endif
-        if curcnt > 0
-            let [ln0, ln1] = [linenr+tot_drift, linenr+curcnt-1+tot_drift]
-            call auf#util#logVerbose('jitDiffedLines: hunk-lines:' . ln0 . '-' . ln1)
-            let [res, drift] = s:doFormatLines(ln0, ln1, a:synmatch)
-            if !res
-                break
+        call auf#util#logVerbose_fileContent('jitDiffedLines: diff done file:'
+                    \ . b:auf_difpath, b:auf_difpath, 'jitDiffedLines: ========')
+        for [linenr, addlines, rmlines] in auf#diff#parseHunks(b:auf_difpath)
+            let [prevcnt, curcnt] = [len(rmlines), len(addlines)]
+            if prevcnt == 0 && curcnt == 0
+                call auf#util#echoErrorMsg('jitDiffedLines: invalid hunk-lines:'
+                            \ . linenr . '-' . prevcnt . ',' . curcnt)
+                continue
             endif
-            let msg .= '' . ln0 . ':' . curcnt . '~' . drift . ' /'
-            if res > 1
-                break
+            if curcnt > 0
+                let [ln0, ln1] = [linenr+tot_drift, linenr+curcnt-1+tot_drift]
+                call auf#util#logVerbose('jitDiffedLines: hunk-lines:' . ln0 . '-' . ln1)
+                let [res, drift] = s:doFormatLines(ln0, ln1, a:synmatch)
+                if !res
+                    break
+                endif
+                let msg .= '' . ln0 . ':' . curcnt . '~' . drift . ' /'
+                if res > 1
+                    break
+                endif
+                let tot_drift += drift
             endif
-            let tot_drift += drift
-        endif
-    endfor
+        endfor
+    endif
     if res
         let msg .= '#' . tot_drift
         if exists('b:auffmt_definition')
