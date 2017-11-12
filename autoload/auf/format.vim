@@ -58,9 +58,9 @@ function! auf#format#GetCurrentFormatter()
     return [def, is_set]
 endfunction
 
-function! s:tryFmtDefinition(line1, line2, fmtdef, overwrite, coward, synmatch)
-    let [res, drift, resstr] = auf#format#TryFormatter(a:line1, a:line2,
-                \ a:fmtdef, a:overwrite, a:coward, a:synmatch)
+function! s:tryOneFormatter(line1, line2, fmtdef, overwrite, coward, synmatch)
+    let [res, drift, resstr] = auf#format#FormatSource(a:line1, a:line2,
+                                \ a:fmtdef, a:overwrite, a:coward, a:synmatch)
     if res > 1
         if b:auf__highlight__
             call auf#util#echoErrorMsg('Formatter "' . a:fmtdef['ID'] . '": ' . resstr)
@@ -100,7 +100,7 @@ function! auf#format#TryAllFormatters(bang, synmatch, ...) range
                 \ 0, b:auffmt_current_idx, b:auffmt_current_idx,
                 \ auf#registry#FormattersCount(ftype)]
     if b:auffmt_definition != {}
-        if s:tryFmtDefinition(a:firstline, a:lastline, b:auffmt_definition,
+        if s:tryOneFormatter(a:firstline, a:lastline, b:auffmt_definition,
                     \ overwrite, coward, a:synmatch)
             return 1
         endif
@@ -122,7 +122,7 @@ function! auf#format#TryAllFormatters(bang, synmatch, ...) range
         call s:setCache(def, fmtidx, '')
         call auf#util#logVerbose('TryAllFormatters: Trying definition in @'
                     \ . def['ID'])
-        if s:tryFmtDefinition(a:firstline, a:lastline, def, overwrite, coward,
+        if s:tryOneFormatter(a:firstline, a:lastline, def, overwrite, coward,
                     \ a:synmatch)
             let b:auffmt_definition = def
             return 1
@@ -222,15 +222,14 @@ function! auf#format#evalApplyDif(line1, difpath, coward)
     return [hunks, tot_drift]
 endfunction
 
-function! auf#format#evaluateFormattedToOrig(line1, line2, fmtdef, curfile,
+function! auf#format#doFormatSource(line1, line2, fmtdef, curfile,
             \ formattedf, difpath, synmatch, overwrite, coward)
     let [isoutf, cmd, isranged] = auf#registry#BuildCmdFullFromDef(a:fmtdef,
                 \ b:auf__formatprg_base.' '.shellescape(a:curfile), a:formattedf,
                 \ a:line1, a:line2)
-    call auf#util#logVerbose('formatSource: isOutF:' . isoutf . ' isRanged:' . isranged)
+    call auf#util#logVerbose('doFormatSource: isOutF:' . isoutf . ' isRanged:' . isranged)
     let [out, err, sherr] = auf#util#execSystem(cmd)
-    call auf#util#logVerbose('evaluateFormattedToOrig: sourceFormetted shErr:'
-                \ . sherr . ' err:' . err)
+    call auf#util#logVerbose('doFormatSource: shErr:' . sherr . ' err:' . err)
     if sherr != 0
         return [2, sherr, 0, err]
     endif
@@ -241,11 +240,11 @@ function! auf#format#evaluateFormattedToOrig(line1, line2, fmtdef, curfile,
     let isfull = auf#util#isFullSelected(a:line1, a:line2)
     let [issame, err, sherr] = auf#diff#diffFiles(g:auf_diffcmd, a:curfile,
                 \ a:formattedf, a:difpath)
-    call auf#util#logVerbose('evaluateFormattedToOrig: isFull:' . isfull
+    call auf#util#logVerbose('doFormatSource: isFull:' . isfull
                 \ . ' isSame:' . issame . ' isRanged:' . isranged
                 \ . ' shErr:' . sherr . ' err:' . err)
     if issame
-        call auf#util#logVerbose('evaluateFormattedToOrig: no difference')
+        call auf#util#logVerbose('doFormatSource: no difference')
         let b:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(
                     \ a:synmatch, b:auf_highlight_lines_hlids,
                     \ a:line1, a:line2)
@@ -253,15 +252,15 @@ function! auf#format#evaluateFormattedToOrig(line1, line2, fmtdef, curfile,
     elseif err
         return [3, sherr, 0, err]
     endif
-    call auf#util#logVerbose_fileContent('evaluateFormattedToOrig: difference'
-        \ . ' detected:' . a:difpath, a:difpath, 'evaluateFormattedToOrig: ========')
+    call auf#util#logVerbose_fileContent('doFormatSource: difference'
+                \ . ' detected:' . a:difpath, a:difpath, 'doFormatSource: ========')
     if !isranged && !isfull
         let [err, sherr] = auf#diff#filterPatchLinesRanged(g:auf_filterdiffcmd,
                     \ a:line1, a:line2, a:curfile, a:difpath)
-        call auf#util#logVerbose_fileContent('evaluateFormattedToOrig:' .
+        call auf#util#logVerbose_fileContent('doFormatSource:' .
                     \ 'err: ' . err . ' shErr: ' . sherr .
                     \ ' difference after filter:' . a:difpath,
-                    \ a:difpath, 'evaluateFormattedToOrig: ========')
+                    \ a:difpath, 'doFormatSource: ========')
         if sherr != 0
             return [2, sherr, 0, err]
         endif
@@ -317,22 +316,22 @@ function! s:populateShadowIfAbsent() abort
     endif
 endfunction
 
-function! auf#format#TryFormatter(line1, line2, fmtdef, overwrite, coward, synmatch)
-    call auf#util#logVerbose('TryFormatter: ' . a:line1 . ',' . a:line2 . ' '
+function! auf#format#FormatSource(line1, line2, fmtdef, overwrite, coward, synmatch)
+    call auf#util#logVerbose('FormatSource: ' . a:line1 . ',' . a:line2 . ' '
                 \ . a:fmtdef['ID'] . ' ow:' . a:overwrite . ' SynMatch:' . a:synmatch)
     if !exists('b:auf_difpath')
         let b:auf_difpath = expand('%:p:h') . g:auf_tempnames_prefix . expand('%:t') . '.aufdiff'
     endif
     call s:populateShadowIfAbsent()
     let formattedf = tempname()
-    call auf#util#logVerbose('TryFormatter: origTmp:' . b:auf_shadowpath .
+    call auf#util#logVerbose('FormatSource: origTmp:' . b:auf_shadowpath .
                 \ ' formTmp:' . formattedf)
 
     let resstr = ''
-    let [res, sherr, drift, err] = auf#format#evaluateFormattedToOrig(a:line1, a:line2,
+    let [res, sherr, drift, err] = auf#format#doFormatSource(a:line1, a:line2,
                 \ a:fmtdef, b:auf_shadowpath, formattedf, b:auf_difpath,
                 \ a:synmatch, a:overwrite, a:coward)
-    call auf#util#logVerbose('TryFormatter: res:' . res . ' ShErr:' . sherr)
+    call auf#util#logVerbose('FormatSource: res:' . res . ' ShErr:' . sherr)
     if res == 0 "No diff found
     elseif res == 2 "Format program error
         let resstr = 'formatter failed(' . sherr . '): ' . err
@@ -355,7 +354,7 @@ function! s:doFormatLines(ln1, ln2, synmatch)
     let [res, drift] = [1, 0]
     if exists('b:auffmt_definition')
         let [coward, overwrite] = [1, 1]
-        let [res, drift, resstr] = auf#format#TryFormatter(a:ln1, a:ln2,
+        let [res, drift, resstr] = auf#format#FormatSource(a:ln1, a:ln2,
                     \ b:auffmt_definition, overwrite, coward, a:synmatch)
         call auf#util#logVerbose('s:doFormatLines: result:' . res . ' ~' . drift)
         if len(resstr)
