@@ -115,18 +115,14 @@ function! AufBufReadPost() abort
     if !exists('b:auf_difpath')
         let b:auf_difpath = expand('%:p:h') . g:auf_tempnames_prefix . expand('%:t') . '.aufdiff0'
     endif
-    if b:auf__highlight__
-        %call auf#format#TryAllFormatters(0, 'AufErrLine')
-    else
-        %call auf#format#TryAllFormatters(0, '')
-    endif
-    if &tw
+
+    %call auf#format#TryAllFormatters(0, b:auf__highlight__ ? 'AufErrLine' : '')
+    if &textwidth
         if g:auf_highlight_longlines == 1
-            let &colorcolumn = &tw
+            let &colorcolumn = &textwidth
         elseif g:auf_highlight_longlines == 2
             let w:auf__longlines_hl_id__ = matchadd(
-                        \ g:auf_highlight_longlines_syntax,
-                        \ '\%>'. (&textwidth+1) .  'v.\+', -1)
+                \ g:auf_highlight_longlines_syntax, '\%>'.(&tw+1).'v.\+', -1)
         endif
     endif
     call auf#util#logVerbose('AufBufReadPost: END')

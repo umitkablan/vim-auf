@@ -63,20 +63,17 @@ function! s:tryFmtDefinition(line1, line2, fmtdef, overwrite, coward, synmatch)
                 \ a:fmtdef, a:overwrite, a:coward, a:synmatch)
     if res > 1
         if b:auf__highlight__
-            call auf#util#echoErrorMsg('Formatter "' . a:fmtdef['ID'] . '": '
-                        \ . resstr)
+            call auf#util#echoErrorMsg('Formatter "' . a:fmtdef['ID'] . '": ' . resstr)
         endif
         return 0
     elseif res == 0
         if b:auf__highlight__
-            call auf#util#echoSuccessMsg(a:fmtdef['ID'] . ' Format PASSED ~'
-                        \ . drift)
+            call auf#util#echoSuccessMsg(a:fmtdef['ID'] . ' Format PASSED ~' . drift)
         endif
         return 1
     elseif res == 1
         if b:auf__highlight__
-            call auf#util#echoWarningMsg(a:fmtdef['ID'] . ' ~' . drift . ' '
-                        \ . resstr)
+            call auf#util#echoWarningMsg(a:fmtdef['ID'] . ' ~' . drift . ' ' . resstr)
         endif
         return 1
     endif
@@ -232,14 +229,13 @@ function! auf#format#evaluateFormattedToOrig(line1, line2, fmtdef, curfile,
                 \ a:line1, a:line2)
     call auf#util#logVerbose('formatSource: isOutF:' . isoutf . ' isRanged:' . isranged)
     let [out, err, sherr] = auf#util#execSystem(cmd)
-    if !isoutf
-        call writefile(split(out, '\n'), a:formattedf)
-    endif
-
     call auf#util#logVerbose('evaluateFormattedToOrig: sourceFormetted shErr:'
                 \ . sherr . ' err:' . err)
     if sherr != 0
         return [2, sherr, 0, err]
+    endif
+    if !isoutf
+        call writefile(split(out, '\n'), a:formattedf)
     endif
 
     let isfull = auf#util#isFullSelected(a:line1, a:line2)
@@ -258,14 +254,17 @@ function! auf#format#evaluateFormattedToOrig(line1, line2, fmtdef, curfile,
         return [3, sherr, 0, err]
     endif
     call auf#util#logVerbose_fileContent('evaluateFormattedToOrig: difference'
-                \ . ' detected:' . a:difpath, a:difpath,
-                \ 'evaluateFormattedToOrig: ========')
+        \ . ' detected:' . a:difpath, a:difpath, 'evaluateFormattedToOrig: ========')
     if !isranged && !isfull
-        call auf#diff#filterPatchLinesRanged(g:auf_filterdiffcmd,
+        let [err, sherr] = auf#diff#filterPatchLinesRanged(g:auf_filterdiffcmd,
                     \ a:line1, a:line2, a:curfile, a:difpath)
         call auf#util#logVerbose_fileContent('evaluateFormattedToOrig:' .
+                    \ 'err: ' . err . ' shErr: ' . sherr .
                     \ ' difference after filter:' . a:difpath,
                     \ a:difpath, 'evaluateFormattedToOrig: ========')
+        if sherr != 0
+            return [2, sherr, 0, err]
+        endif
     endif
 
     " call auf#util#clearAllHighlights(b:auf_highlight_lines_hlids)
@@ -288,8 +287,8 @@ function! auf#format#evaluateFormattedToOrig(line1, line2, fmtdef, curfile,
     endif
     let b:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(a:synmatch,
                 \ b:auf_highlight_lines_hlids, a:line1, a:line2)
-    let b:auf_newadded_lines = auf#util#clearHighlightsInRange(
-                \ a:synmatch, b:auf_newadded_lines, a:line1, a:line2)
+    let b:auf_newadded_lines = auf#util#clearHighlightsInRange(a:synmatch,
+                \ b:auf_newadded_lines, a:line1, a:line2)
     if drift != 0
         call auf#util#driftHighlightsAfterLine(b:auf_highlight_lines_hlids,
                     \ a:line1, drift, '', '')
@@ -299,19 +298,35 @@ function! auf#format#evaluateFormattedToOrig(line1, line2, fmtdef, curfile,
     return [1, 0, drift, err]
 endfunction
 
+function! s:populateShadowIfAbsent() abort
+    if exists('b:auf_shadowpath')
+        return
+    endif
+
+    let b:auf_shadowpath = expand('%:p:h') . g:auf_tempnames_prefix . expand('%:t') . '.aufshadow0'
+    " Nonetheless writefile doesn't work when you get into insert via o
+    " (start on new line) - it gives *getline* with newline NOT before
+    let flpath = expand('%:.')
+    " when buffer/file is created brand new, there is no readable file in
+    " the filesystem; also tempname() doesn't create file
+    if filereadable(flpath)
+        call system('cp ' . flpath . ' ' . b:auf_shadowpath)
+        " call writefile(getline(1, '$'), b:auf_shadowpath)
+    else
+        call writefile([], b:auf_shadowpath)
+    endif
+endfunction
+
 function! auf#format#TryFormatter(line1, line2, fmtdef, overwrite, coward, synmatch)
     call auf#util#logVerbose('TryFormatter: ' . a:line1 . ',' . a:line2 . ' '
                 \ . a:fmtdef['ID'] . ' ow:' . a:overwrite . ' SynMatch:' . a:synmatch)
     if !exists('b:auf_difpath')
         let b:auf_difpath = expand('%:p:h') . g:auf_tempnames_prefix . expand('%:t') . '.aufdiff'
     endif
-    if !exists('b:auf_shadowpath')
-        let b:auf_shadowpath = expand('%:p:h') . g:auf_tempnames_prefix . expand('%:t') . '.aufshadow'
-        call writefile(getline(1, '$'), b:auf_shadowpath)
-    endif
+    call s:populateShadowIfAbsent()
     let formattedf = tempname()
-    call auf#util#logVerbose('TryFormatter: origTmp:' . b:auf_shadowpath . ' formTmp:'
-                \ . formattedf)
+    call auf#util#logVerbose('TryFormatter: origTmp:' . b:auf_shadowpath .
+                \ ' formTmp:' . formattedf)
 
     let resstr = ''
     let [res, sherr, drift, err] = auf#format#evaluateFormattedToOrig(a:line1, a:line2,
@@ -479,20 +494,7 @@ endfunction
 function! auf#format#InsertModeOn()
     call auf#util#logVerbose('InsertModeOn: Start')
     call auf#util#clearAllHighlights(b:auf_highlight_lines_hlids)
-    if !exists('b:auf_shadowpath')
-        let b:auf_shadowpath = expand('%:p:h') . g:auf_tempnames_prefix . expand('%:t') . '.aufshadow0'
-        " Nonetheless writefile doesn't work when you get into insert via o
-        " (start on new line) - it gives *getline* with newline NOT before
-        let flpath = expand('%:.')
-        " when buffer/file is created brand new, there is no readable file in
-        " the filesystem; also tempname() doesn't create file
-        if filereadable(flpath)
-            call system('cp ' . flpath . ' ' . b:auf_shadowpath)
-            " call writefile(getline(1, '$'), b:auf_shadowpath)
-        else
-            call writefile([], b:auf_shadowpath)
-        endif
-    endif
+    call s:populateShadowIfAbsent()
     call auf#util#logVerbose('InsertModeOn: End')
 endfunction
 
@@ -575,14 +577,11 @@ function! auf#format#CursorHoldInNormalMode(synmatch_chg, lnregexp_chg, synmatch
         call auf#util#logVerbose('CursorHoldInNormalMode: NoModif End')
         return
     endif
-    if !exists('b:auf_shadowpath')
-        let b:auf_shadowpath = expand('%:p:h') . g:auf_tempnames_prefix . expand('%:t') . '.aufshadow1'
-        call system('cp ' . expand('%:.') . ' ' . b:auf_shadowpath)
-    endif
     if b:auf_linecnt_last == line('$')
         call auf#util#logVerbose('CursorHoldInNormalMode: NoLineDiff End')
         return
     endif
+    call s:populateShadowIfAbsent()
     call auf#util#clearAllHighlights(b:auf_highlight_lines_hlids)
     call auf#format#InsertModeOff(a:synmatch_chg, a:lnregexp_chg, a:synmatch_err)
     call auf#util#logVerbose('CursorHoldInNormalMode: End')
