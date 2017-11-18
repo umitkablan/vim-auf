@@ -5,7 +5,7 @@ let g:loaded_auffmt_jsbeautify_definition = 1
 
 let s:definition = {
       \ 'ID'        : 'jsbeautify',
-      \ 'executable': 'js-beautify',
+      \ 'executable': 'jsbeautify',
       \ 'filetypes' : ['javascript', 'json'],
       \ 'probefiles': ['.jsbeautifyrc']
       \ }
