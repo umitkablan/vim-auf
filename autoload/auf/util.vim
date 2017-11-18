@@ -24,7 +24,7 @@ function! auf#util#logVerbose(line) abort
     try
         if auf#util#get_verbose()
             execute 'redir >> ' . g:auf_verbose_logfile
-            silent echomsg expand('%') . strftime(" %Y-%m-%d %T: ") . a:line
+            silent echomsg expand('%') . strftime(' %Y-%m-%d %T: ') . a:line
             silent! redir END
         endif
     catch /.*/
@@ -189,11 +189,15 @@ endfunction
 "execute 'keepjumps! ...' ?
 
 function! auf#util#replaceLines(linenr, linecnt, lines) abort
+    if a:lines
+    endif
     silent execute '' . a:linenr . ',' . (a:linenr + a:linecnt - 1) . 'delete _'
     silent execute '' . (a:linenr - 1) . 'put=a:lines'
 endfunction
 
 function! auf#util#addLines(linenr, lines) abort
+    if a:lines
+    endif
     silent execute '' . (a:linenr - 1) . 'put=a:lines'
 endfunction
 
