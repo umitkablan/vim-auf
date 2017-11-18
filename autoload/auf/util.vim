@@ -186,23 +186,21 @@ function! auf#util#CheckProbeFileUpRecursive(dirpath, files) abort
     return ''
 endfunction
 
-"execute 'keepjumps! ...' ?
-
 function! auf#util#replaceLines(linenr, linecnt, lines) abort
     if a:lines
     endif
-    silent execute '' . a:linenr . ',' . (a:linenr + a:linecnt - 1) . 'delete _'
-    silent execute '' . (a:linenr - 1) . 'put=a:lines'
+    silent execute 'keepjumps ' . a:linenr . ',' . (a:linenr + a:linecnt - 1) . 'delete _'
+    silent execute 'keepjumps ' . (a:linenr - 1) . 'put=a:lines'
 endfunction
 
 function! auf#util#addLines(linenr, lines) abort
     if a:lines
     endif
-    silent execute '' . (a:linenr - 1) . 'put=a:lines'
+    silent execute 'keepjumps ' . (a:linenr - 1) . 'put=a:lines'
 endfunction
 
 function! auf#util#removeLines(linenr, linecnt) abort
-    silent execute '' . a:linenr . ',' . (a:linenr + a:linecnt - 1) . 'delete _'
+    silent execute 'keepjumps ' . a:linenr . ',' . (a:linenr + a:linecnt - 1) . 'delete _'
 endfunction
 
 function! auf#util#rewriteCurBuffer(newpath) abort
@@ -213,7 +211,9 @@ function! auf#util#rewriteCurBuffer(newpath) abort
     let tmpundofile = tempname()
     execute 'wundo! ' . tmpundofile
     try
-        silent execute '%delete _|0read ' . a:newpath . '|$delete _'
+        silent execute 'keepjumps %delete _'
+        silent execute 'keepjumps 0read ' . a:newpath
+        silent execute 'keepjumps $delete _'
         let linecnt1 = line('$')
     finally
         call setpos('.', pos)
