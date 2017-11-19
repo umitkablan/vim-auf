@@ -3,7 +3,7 @@ if exists('g:loaded_auf_format_autoload') || !exists('g:loaded_auf_plugin')
 endif
 let g:loaded_auf_format_autoload = 1
 
-function! s:setCache(fmtdef, idx, confpath)
+function! s:setCache(fmtdef, idx, confpath) abort
     let [b:auffmt_definition, b:auffmt_current_idx] = [a:fmtdef, a:idx]
     let cpath = a:confpath
     if !len(cpath)
@@ -17,7 +17,7 @@ function! s:setCache(fmtdef, idx, confpath)
     let b:auf__formatprg_base = auf#registry#BuildCmdBaseFromDef(a:fmtdef, cpath)
 endfunction
 
-function! auf#format#GetCurrentFormatter()
+function! auf#format#GetCurrentFormatter() abort
     let [def, is_set] = [get(b:, 'auffmt_definition', {}), 0]
     if !empty(def) && exists('b:auffmt_current_idx')
         return [def, is_set]
@@ -58,7 +58,7 @@ function! auf#format#GetCurrentFormatter()
     return [def, is_set]
 endfunction
 
-function! s:tryOneFormatter(line1, line2, fmtdef, overwrite, coward, synmatch)
+function! s:tryOneFormatter(line1, line2, fmtdef, overwrite, coward, synmatch) abort
     let [res, drift, resstr] = auf#format#FormatSource(a:line1, a:line2,
                                 \ a:fmtdef, a:overwrite, a:coward, a:synmatch)
     if res > 1
@@ -82,7 +82,7 @@ endfunction
 
 " Try all formatters, starting with the currently selected one, until one
 " works. If none works, autoindent the buffer.
-function! auf#format#TryAllFormatters(bang, synmatch, ...) range
+function! auf#format#TryAllFormatters(bang, synmatch, ...) range abort
     let [overwrite, ftype] = [a:bang, &ft] " a:0 ? a:1 : &filetype
     let [def, is_set] = auf#format#GetCurrentFormatter()
     if empty(def)
@@ -142,7 +142,7 @@ function! auf#format#TryAllFormatters(bang, synmatch, ...) range
     return 0
 endfunction
 
-function! auf#format#Fallback(iserr, line1, line2)
+function! auf#format#Fallback(iserr, line1, line2) abort
     if exists('b:auf_remove_trailing_spaces') ? b:auf_remove_trailing_spaces
                 \ : g:auf_remove_trailing_spaces
         call auf#util#logVerbose('Fallback: Removing trailing whitespace...')
@@ -167,7 +167,7 @@ function! auf#format#Fallback(iserr, line1, line2)
     endif
 endfunction
 
-function! s:checkAllRmLinesEmpty(n, rmlines)
+function! s:checkAllRmLinesEmpty(n, rmlines) abort
     let [rmcnt, emp] = [len(a:rmlines), 1]
     for i in range(0, a:n-1)
         if rmcnt > i && len(a:rmlines[i]) > 0
@@ -178,7 +178,7 @@ function! s:checkAllRmLinesEmpty(n, rmlines)
     return emp
 endfunction
 
-function! auf#format#evalApplyDif(line1, difpath, coward)
+function! auf#format#evalApplyDif(line1, difpath, coward) abort
     let [hunks, tot_drift] = [0, 0]
     for [linenr, addlines, rmlines] in auf#diff#parseHunks(a:difpath)
         let [prevcnt, curcnt] = [len(rmlines), len(addlines)]
@@ -223,7 +223,7 @@ function! auf#format#evalApplyDif(line1, difpath, coward)
 endfunction
 
 function! auf#format#doFormatSource(line1, line2, fmtdef, curfile,
-            \ formattedf, difpath, synmatch, overwrite, coward)
+            \ formattedf, difpath, synmatch, overwrite, coward) abort
     let [isoutf, cmd, isranged] = auf#registry#BuildCmdFullFromDef(a:fmtdef,
                 \ b:auf__formatprg_base.' '.shellescape(a:curfile), a:formattedf,
                 \ a:line1, a:line2)
@@ -316,7 +316,7 @@ function! s:populateShadowIfAbsent() abort
     endif
 endfunction
 
-function! auf#format#FormatSource(line1, line2, fmtdef, overwrite, coward, synmatch)
+function! auf#format#FormatSource(line1, line2, fmtdef, overwrite, coward, synmatch) abort
     call auf#util#logVerbose('FormatSource: ' . a:line1 . ',' . a:line2 . ' '
                 \ . a:fmtdef['ID'] . ' ow:' . a:overwrite . ' SynMatch:' . a:synmatch)
     if !exists('b:auf_difpath')
@@ -349,7 +349,7 @@ function! auf#format#FormatSource(line1, line2, fmtdef, overwrite, coward, synma
     return [res, drift, resstr]
 endfunction
 
-function! s:formatOrFallback(ln1, ln2, synmatch)
+function! s:formatOrFallback(ln1, ln2, synmatch) abort
     call auf#util#logVerbose('s:formatOrFallback: ' . a:ln1 . '-' . a:ln2)
     let [res, drift] = [1, 0]
     if exists('b:auffmt_definition')
@@ -381,7 +381,7 @@ function! s:formatOrFallback(ln1, ln2, synmatch)
     return [res, drift]
 endfunction
 
-function! s:jitAddedLines(synmatch)
+function! s:jitAddedLines(synmatch) abort
     if !len(b:auf_newadded_lines)
         return 0
     endif
@@ -421,7 +421,7 @@ function! s:jitAddedLines(synmatch)
     endif
 endfunction
 
-function! s:jitDiffedLines(synmatch)
+function! s:jitDiffedLines(synmatch) abort
     call writefile(getline(1, '$'), b:auf_shadowpath)
     let [tot_drift, res, msg] = [0, 1, '']
     if !filereadable(expand('%:p'))
@@ -470,7 +470,7 @@ function! s:jitDiffedLines(synmatch)
     endif
 endfunction
 
-function! auf#format#justInTimeFormat(synmatch)
+function! auf#format#justInTimeFormat(synmatch) abort
     call auf#util#logVerbose('justInTimeFormat: trying..')
     let [l, c] = [line('.'), col('.')]
     try
@@ -490,7 +490,7 @@ function! auf#format#justInTimeFormat(synmatch)
     call auf#util#logVerbose('justInTimeFormat: DONE')
 endfunction
 
-function! auf#format#InsertModeOn()
+function! auf#format#InsertModeOn() abort
     call auf#util#logVerbose('InsertModeOn: Start')
     call auf#util#clearAllHighlights(b:auf_highlight_lines_hlids)
     call s:populateShadowIfAbsent()
@@ -498,7 +498,7 @@ function! auf#format#InsertModeOn()
 endfunction
 
 function! s:driftHighlights(synmatch_chg, lnregexp_chg, synmatch_err, oldf,
-            \ newf, difpath)
+            \ newf, difpath) abort
     let [issame, err, sherr] = auf#diff#diffFiles(g:auf_diffcmd, a:oldf,
                 \ a:newf, a:difpath)
         if issame
@@ -544,7 +544,7 @@ function! s:driftHighlights(synmatch_chg, lnregexp_chg, synmatch_err, oldf,
     endfor
 endfunction
 
-function! auf#format#InsertModeOff(synmatch_chg, lnregexp_chg, synmatch_err)
+function! auf#format#InsertModeOff(synmatch_chg, lnregexp_chg, synmatch_err) abort
     call auf#util#logVerbose('InsertModeOff: Start')
     let b:auf_linecnt_last = line('$')
     let tmpcurfile = expand('%:p:h') . g:auf_tempnames_prefix . expand('%:t') . '.aufshadow2'
@@ -567,7 +567,7 @@ function! auf#format#InsertModeOff(synmatch_chg, lnregexp_chg, synmatch_err)
     call auf#util#logVerbose('InsertModeOff: End')
 endfunction
 
-function! auf#format#CursorHoldInNormalMode(synmatch_chg, lnregexp_chg, synmatch_err)
+function! auf#format#CursorHoldInNormalMode(synmatch_chg, lnregexp_chg, synmatch_err) abort
     call auf#util#logVerbose('CursorHoldInNormalMode: Start')
     if !&modified
         if !exists('b:auf_linecnt_last')
@@ -587,7 +587,7 @@ function! auf#format#CursorHoldInNormalMode(synmatch_chg, lnregexp_chg, synmatch
 endfunction
 
 " Functions for iterating through list of available formatters
-function! auf#format#NextFormatter()
+function! auf#format#NextFormatter() abort
     let [def, is_set] = auf#format#GetCurrentFormatter()
     if is_set
         if empty(def)
@@ -616,7 +616,7 @@ function! auf#format#NextFormatter()
                 \ . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
 endfunction
 
-function! auf#format#PreviousFormatter()
+function! auf#format#PreviousFormatter() abort
     let [def, is_set] = auf#format#GetCurrentFormatter()
     if is_set
         if empty(def)
@@ -648,7 +648,7 @@ function! auf#format#PreviousFormatter()
                 \ . b:auffmt_current_idx . ': ' . b:auffmt_definition['ID'])
 endfunction
 
-function! auf#format#CurrentFormatter()
+function! auf#format#CurrentFormatter() abort
     let [def, is_set] = auf#format#GetCurrentFormatter()
     if empty(def)
         call auf#util#echoErrorMsg('No formatter could be found for:' . &ft)
@@ -660,7 +660,7 @@ function! auf#format#CurrentFormatter()
                 \ . ': ' . def['ID'])
 endfunction
 
-function! auf#format#BufDeleted(bufnr)
+function! auf#format#BufDeleted(bufnr) abort
     let path = getbufvar(a:bufnr, 'auf_shadowpath', '')
     if path !=# ''
         call delete(path)
@@ -673,7 +673,7 @@ function! auf#format#BufDeleted(bufnr)
     " call setbufvar(a:bufnr, 'auf_difpath', '')
 endfunction
 
-function! auf#format#ShowDiff()
+function! auf#format#ShowDiff() abort
     if exists('b:auf_difpath')
         exec 'sp ' . b:auf_difpath
         setl buftype=nofile ft=diff bufhidden=wipe ro nobuflisted noswapfile nowrap
@@ -686,7 +686,7 @@ augroup AUF_BufDel
     autocmd BufUnload * call auf#format#BufDeleted(bufnr(expand('<afile>')))
 augroup END
 
-function! s:probeFormatter()
+function! s:probeFormatter() abort
     call auf#util#logVerbose('s:probeFormatter: Started')
     let varname = 'aufformatters_' . &ft
     let [fmt_list, def, i, probefile] = [get(g:, varname, ''), {}, 0, '']
