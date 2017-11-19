@@ -146,17 +146,17 @@ function! auf#format#Fallback(iserr, line1, line2)
     if exists('b:auf_remove_trailing_spaces') ? b:auf_remove_trailing_spaces
                 \ : g:auf_remove_trailing_spaces
         call auf#util#logVerbose('Fallback: Removing trailing whitespace...')
-        keepjumps execute a:line1 . ',' . a:line2 . 'substitute/\s\+$//e'
+        execute 'keepjumps ' a:line1 . ',' . a:line2 . 'substitute/\s\+$//e'
         call histdel('search', -1)
     endif
     if exists('b:auf_retab') ? b:auf_retab == 1 : g:auf_retab == 1
         call auf#util#logVerbose('Fallback: Retabbing...')
-        keepjumps execute '' . a:line1 ',' . a:line2 . 'retab'
+        execute 'keepjumps ' . a:line1 ',' . a:line2 . 'retab'
     endif
     if exists('b:auf_autoindent') ? b:auf_autoindent : g:auf_autoindent
         call auf#util#logVerbose('Fallback: Autoindenting...')
         let dif = a:line2 - a:line1
-        keepjumps execute 'normal ' . a:line1 . 'G=' . (dif > 0 ? (dif.'j') : '=')
+        execute 'keepjumps normal ' . a:line1 . 'G=' . (dif > 0 ? (dif.'j') : '=')
     endif
     if a:iserr && g:auf_fallback_func !=# ''
         call auf#util#logVerbose('Fallback: Calling fallback function defined by user...')
@@ -482,9 +482,9 @@ function! auf#format#justInTimeFormat(synmatch)
     catch /.*/
         call auf#util#echoErrorMsg('Exception: ' . v:exception)
     finally
-        keepjumps silent execute 'normal! ' . l . 'gg'
+        silent execute 'keepjumps normal! ' . l . 'gg'
         if c-col('.') > 0
-            keepjumps silent execute 'normal! ' . (c-col('.')) . 'l'
+            silent execute 'keepjumps normal! ' . (c-col('.')) . 'l'
         endif
     endtry
     call auf#util#logVerbose('justInTimeFormat: DONE')
