@@ -187,14 +187,14 @@ function! auf#util#CheckProbeFileUpRecursive(dirpath, files) abort
 endfunction
 
 function! auf#util#replaceLines(linenr, linecnt, lines) abort
-    if a:lines
+    if empty(a:lines)
     endif
     silent execute 'keepjumps ' . a:linenr . ',' . (a:linenr + a:linecnt - 1) . 'delete _'
     silent execute 'keepjumps ' . (a:linenr - 1) . 'put=a:lines'
 endfunction
 
 function! auf#util#addLines(linenr, lines) abort
-    if a:lines
+    if empty(a:lines)
     endif
     silent execute 'keepjumps ' . (a:linenr - 1) . 'put=a:lines'
 endfunction
