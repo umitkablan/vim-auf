@@ -349,14 +349,14 @@ function! auf#format#FormatSource(line1, line2, fmtdef, overwrite, coward, synma
     return [res, drift, resstr]
 endfunction
 
-function! s:doFormatLines(ln1, ln2, synmatch)
-    call auf#util#logVerbose('s:doFormatLines: ' . a:ln1 . '-' . a:ln2)
+function! s:formatOrFallback(ln1, ln2, synmatch)
+    call auf#util#logVerbose('s:formatOrFallback: ' . a:ln1 . '-' . a:ln2)
     let [res, drift] = [1, 0]
     if exists('b:auffmt_definition')
         let [coward, overwrite] = [1, 1]
         let [res, drift, resstr] = auf#format#FormatSource(a:ln1, a:ln2,
                     \ b:auffmt_definition, overwrite, coward, a:synmatch)
-        call auf#util#logVerbose('s:doFormatLines: result:' . res . ' ~' . drift)
+        call auf#util#logVerbose('s:formatOrFallback: result:' . res . ' ~' . drift)
         if len(resstr)
             if b:auf__highlight__
                 if res > 1
@@ -372,7 +372,7 @@ function! s:doFormatLines(ln1, ln2, synmatch)
             let res = 1
         endif
     else
-        call auf#util#logVerbose('doFormatLines: formatter program could not be found')
+        call auf#util#logVerbose('formatOrFallback: formatter program could not be found')
         call auf#format#Fallback(1, a:ln1, a:ln2)
     endif
 
@@ -393,7 +393,7 @@ function! s:jitAddedLines(synmatch)
             let lines += [linenr]
         else
             let ln0 = lines[0]
-            let [res, drift] = s:doFormatLines(ln0+tot_drift,
+            let [res, drift] = s:formatOrFallback(ln0+tot_drift,
                         \ ln0+curcnt-1+tot_drift, a:synmatch)
             if !res
                 break
@@ -404,7 +404,7 @@ function! s:jitAddedLines(synmatch)
     endfor
     if len(lines) && res
         let [ln0, curcnt] = [lines[0], len(lines)]
-        let [res, drift] = s:doFormatLines(ln0+tot_drift,
+        let [res, drift] = s:formatOrFallback(ln0+tot_drift,
                     \ ln0+curcnt-1+tot_drift, a:synmatch)
         if res
             let msg .= '' . ln0 . ':' . curcnt . '~' . drift . ' /'
@@ -425,7 +425,7 @@ function! s:jitDiffedLines(synmatch)
     call writefile(getline(1, '$'), b:auf_shadowpath)
     let [tot_drift, res, msg] = [0, 1, '']
     if !filereadable(expand('%:p'))
-        let [res, drift] = s:doFormatLines(1, line('$'), a:synmatch)
+        let [res, drift] = s:formatOrFallback(1, line('$'), a:synmatch)
         let msg .= '1-$:' . '~' . drift . ' /'
     else
         let [issame, err, sherr] = auf#diff#diffFiles(g:auf_diffcmd, expand('%:p'),
@@ -448,7 +448,7 @@ function! s:jitDiffedLines(synmatch)
             if curcnt > 0
                 let [ln0, ln1] = [linenr+tot_drift, linenr+curcnt-1+tot_drift]
                 call auf#util#logVerbose('jitDiffedLines: hunk-lines:' . ln0 . '-' . ln1)
-                let [res, drift] = s:doFormatLines(ln0, ln1, a:synmatch)
+                let [res, drift] = s:formatOrFallback(ln0, ln1, a:synmatch)
                 if !res
                     break
                 endif
