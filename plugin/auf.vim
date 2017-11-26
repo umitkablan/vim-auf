@@ -30,12 +30,12 @@ let g:auf_diffcmd .= ' -u '
 
 function! s:gq(ln1, ln2) abort
     let tmpe = &l:formatexpr
-    setl formatexpr =
+    setl formatexpr=
     let dif = a:ln2 - a:ln1
     if dif > 0
-        exec 'norm! ' . a:ln1 . 'Ggq' . dif . 'j'
+        exec 'keepjumps! norm! ' . a:ln1 . 'Ggq' . dif . 'j'
     else
-        exec 'norm! gqgq'
+        exec 'keepjumps! norm! ' . a:ln1 . 'Ggqgq'
     endif
     let &l:formatexpr = tmpe
 endfunction
@@ -49,16 +49,16 @@ function! AufFormatRange(line1, line2) abort
         call auf#util#echoErrorMsg('gq: no available formatter: Fallbacking..')
         call auf#format#Fallback(1, a:line1, a:line2)
         call s:gq(a:line1, a:line2)
-        return
-    endif
-    let [overwrite, coward] = [1, 0]
-    let [res, drift, resstr] = auf#format#TryFormatter(a:line1, a:line2, def,
-                \ overwrite, coward, 'AufErrLine')
-    if res > 1
-        call auf#util#echoErrorMsg('gq error: ' . resstr)
-        call s:gq(a:line1, a:line2)
     else
-        call auf#util#echoSuccessMsg('gq fine:' . resstr . ' ~' . drift)
+        let [overwrite, coward] = [1, 0]
+        let [res, drift, resstr] = auf#format#TryFormatter(a:line1, a:line2, def,
+                    \ overwrite, coward, 'AufErrLine')
+        if res > 1
+            call auf#util#echoErrorMsg('gq Fallbacking: ' . resstr)
+            call s:gq(a:line1, a:line2)
+        else
+            call auf#util#echoSuccessMsg('gq fine:' . resstr . ' ~' . drift)
+        endif
     endif
     call auf#util#logVerbose('AufFormatRange: DONE')
 endfunction
@@ -116,7 +116,9 @@ function! AufBufReadPost() abort
         let b:auf_difpath = expand('%:p:h') . g:auf_tempnames_prefix . expand('%:t') . '.aufdiff0'
     endif
 
-    %call auf#format#TryAllFormatters(0, b:auf__highlight__ ? 'AufErrLine' : '')
+    if b:auf__highlight__
+        %call auf#format#TryAllFormatters(0, 'AufErrLine')
+    endif
     if &textwidth
         if g:auf_highlight_longlines == 1
             let &colorcolumn = &textwidth
