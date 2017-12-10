@@ -178,12 +178,12 @@ function! s:checkAllRmLinesEmpty(n, rmlines) abort
     return emp
 endfunction
 
-function! auf#format#evalApplyDif(line1, difpath, coward) abort
+function! auf#format#applyDiff(line1, difpath, coward) abort
     let [hunks, tot_drift] = [0, 0]
     for [linenr, addlines, rmlines] in auf#diff#parseHunks(a:difpath)
         let [prevcnt, curcnt] = [len(rmlines), len(addlines)]
         if prevcnt == 0 && curcnt == 0
-            call auf#util#echoErrorMsg('evalApplyDif: diff line:' . linenr
+            call auf#util#echoErrorMsg('applyDiff: diff line:' . linenr
                         \ . ' has zero change!')
             continue
         endif
@@ -191,7 +191,7 @@ function! auf#format#evalApplyDif(line1, difpath, coward) abort
             if linenr < a:line1
                 " if all those to-be-removed lines are empty then no need to be coward
                 if !s:checkAllRmLinesEmpty(a:line1-linenr, rmlines)
-                    call auf#util#logVerbose('evalApplyDif: COWARD ' . linenr
+                    call auf#util#logVerbose('applyDiff: COWARD ' . linenr
                                 \ . ' - ' . a:line1 . '-' . linenr)
                     continue
                 endif
@@ -201,15 +201,15 @@ function! auf#format#evalApplyDif(line1, difpath, coward) abort
         endif
         let linenr += tot_drift
         if prevcnt > 0 && curcnt > 0
-            call auf#util#logVerbose('evalApplyDif: *replace* ' . linenr . ','
+            call auf#util#logVerbose('applyDiff: *replace* ' . linenr . ','
                         \ . prevcnt . ',' . curcnt)
             call auf#util#replaceLines(linenr, prevcnt, addlines)
         elseif prevcnt > 0
-            call auf#util#logVerbose('evalApplyDif: *remove* ' . linenr . ','
+            call auf#util#logVerbose('applyDiff: *remove* ' . linenr . ','
                         \ . prevcnt . ',' . curcnt)
             call auf#util#removeLines(linenr, prevcnt)
         else
-            call auf#util#logVerbose('evalApplyDif: *addline* ' . linenr . ','
+            call auf#util#logVerbose('applyDiff: *addline* ' . linenr . ','
                         \ . prevcnt . ',' . curcnt)
             call auf#util#addLines(linenr, addlines)
         endif
@@ -280,7 +280,7 @@ function! auf#format#doFormatSource(line1, line2, fmtdef, curfile,
 
     " call feedkeys("\<C-G>u", 'n')
 
-    let [hunks, drift] = auf#format#evalApplyDif(a:line1, a:difpath, a:coward)
+    let [hunks, drift] = auf#format#applyDiff(a:line1, a:difpath, a:coward)
     if hunks == -1
         return [4, 0, 0, err]
     endif
