@@ -28,7 +28,7 @@ endif
 
 let g:auf_diffcmd .= ' -u '
 
-function! s:gq(ln1, ln2) abort
+function! s:gq_vim_internal(ln1, ln2) abort
     let tmpe = &l:formatexpr
     setl formatexpr=
     let dif = a:ln2 - a:ln1
@@ -48,14 +48,14 @@ function! AufFormatRange(line1, line2) abort
         endif
         call auf#util#echoErrorMsg('gq: no available formatter: Fallbacking..')
         call auf#format#Fallback(1, a:line1, a:line2)
-        call s:gq(a:line1, a:line2)
+        call s:gq_vim_internal(a:line1, a:line2)
     else
         let [overwrite, coward] = [1, 0]
         let [res, drift, resstr] = auf#format#TryFormatter(a:line1, a:line2, def,
                     \ overwrite, coward, 'AufErrLine')
         if res > 1
             call auf#util#echoErrorMsg('gq Fallbacking: ' . resstr)
-            call s:gq(a:line1, a:line2)
+            call s:gq_vim_internal(a:line1, a:line2)
         else
             call auf#util#echoSuccessMsg('gq fine:' . resstr . ' ~' . drift)
         endif
