@@ -146,17 +146,17 @@ function! auf#format#Fallback(iserr, line1, line2) abort
     if exists('b:auf_remove_trailing_spaces') ? b:auf_remove_trailing_spaces
                 \ : g:auf_remove_trailing_spaces
         call auf#util#logVerbose('Fallback: Removing trailing whitespace...')
-        execute 'keepjumps ' a:line1 . ',' . a:line2 . 'substitute/\s\+$//e'
+        execute 'keepjumps! ' a:line1 . ',' . a:line2 . 'substitute/\s\+$//e'
         call histdel('search', -1)
     endif
     if exists('b:auf_retab') ? b:auf_retab == 1 : g:auf_retab == 1
         call auf#util#logVerbose('Fallback: Retabbing...')
-        execute 'keepjumps ' . a:line1 ',' . a:line2 . 'retab'
+        execute 'keepjumps! ' . a:line1 ',' . a:line2 . 'retab'
     endif
     if exists('b:auf_autoindent') ? b:auf_autoindent : g:auf_autoindent
         call auf#util#logVerbose('Fallback: Autoindenting...')
         let dif = a:line2 - a:line1
-        execute 'keepjumps normal ' . a:line1 . 'G=' . (dif > 0 ? (dif.'j') : '=')
+        execute 'keepjumps! norm! ' . a:line1 . 'G=' . (dif > 0 ? (dif.'j') : '=')
     endif
     if a:iserr && g:auf_fallback_func !=# ''
         call auf#util#logVerbose('Fallback: Calling fallback function defined by user...')

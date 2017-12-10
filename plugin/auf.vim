@@ -32,11 +32,7 @@ function! s:gq_vim_internal(ln1, ln2) abort
     let tmpe = &l:formatexpr
     setl formatexpr=
     let dif = a:ln2 - a:ln1
-    if dif > 0
-        exec 'keepjumps! norm! ' . a:ln1 . 'Ggq' . dif . 'j'
-    else
-        exec 'keepjumps! norm! ' . a:ln1 . 'Ggqgq'
-    endif
+    execute 'keepjumps! norm! ' . a:ln1 . 'Ggq' . (dif>0 ? (dif.'j') : 'gq')
     let &l:formatexpr = tmpe
 endfunction
 
