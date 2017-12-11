@@ -58,7 +58,7 @@ function! auf#format#GetCurrentFormatter() abort
     return [def, is_set]
 endfunction
 
-function! s:tryOneFormatter(line1, line2, fmtdef, overwrite, coward, synmatch) abort
+function! auf#format#TryOneFormatter(line1, line2, fmtdef, overwrite, coward, synmatch) abort
     let [res, drift, resstr] = auf#format#FormatSource(a:line1, a:line2,
                                 \ a:fmtdef, a:overwrite, a:coward, a:synmatch)
     if res > 1
@@ -100,7 +100,7 @@ function! auf#format#TryAllFormatters(bang, synmatch, ...) range abort
                 \ 0, b:auffmt_current_idx, b:auffmt_current_idx,
                 \ auf#registry#FormattersCount(ftype)]
     if b:auffmt_definition != {}
-        if s:tryOneFormatter(a:firstline, a:lastline, b:auffmt_definition,
+        if auf#format#TryOneFormatter(a:firstline, a:lastline, b:auffmt_definition,
                     \ overwrite, coward, a:synmatch)
             return 1
         endif
@@ -122,7 +122,7 @@ function! auf#format#TryAllFormatters(bang, synmatch, ...) range abort
         call s:setCache(def, fmtidx, '')
         call auf#util#logVerbose('TryAllFormatters: Trying definition in @'
                     \ . def['ID'])
-        if s:tryOneFormatter(a:firstline, a:lastline, def, overwrite, coward,
+        if auf#format#TryOneFormatter(a:firstline, a:lastline, def, overwrite, coward,
                     \ a:synmatch)
             let b:auffmt_definition = def
             return 1

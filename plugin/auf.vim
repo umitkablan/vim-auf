@@ -47,7 +47,7 @@ function! AufFormatRange(line1, line2) abort
         call s:gq_vim_internal(a:line1, a:line2)
     else
         let [overwrite, coward] = [1, 0]
-        let [res, drift, resstr] = auf#format#TryFormatter(a:line1, a:line2, def,
+        let [res, drift, resstr] = auf#format#TryOneFormatter(a:line1, a:line2, def,
                     \ overwrite, coward, 'AufErrLine')
         if res > 1
             call auf#util#echoErrorMsg('gq Fallbacking: ' . resstr)
