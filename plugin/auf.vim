@@ -174,8 +174,9 @@ augroup Auf_Auto_Syntax
 augroup END
 
 function! s:isAufFiletype() abort
-    return (g:auf_filetypes ==# '*' && &buftype ==# '')
-            \ || stridx(g:auf_filetypes, ','.&ft.',') != -1
+    return (&readonly == 0 &&
+        \  (g:auf_filetypes ==# '*' && &buftype ==# '')
+        \   || stridx(g:auf_filetypes, ','.&ft.',') != -1)
 endfunction
 
 augroup Auf_Auto_Inserts
