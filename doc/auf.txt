@@ -183,11 +183,6 @@ Also retab lines.
                   All filetypes to enable Auf, default is 'all'.
                   Default: '*'
 
-5.14 g:auf_rescan_on_writepost                     *g:auf_rescan_on_writepost*
-
-                  Enable rescan of buffer after write - rescan for errors.
-                  Default: 1
-
 5.15 g:auf_verbosemode                                     *g:auf_verbosemode*
 
                   Show/output verbose output.

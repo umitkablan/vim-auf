@@ -77,10 +77,6 @@ if !exists('g:auf_filetypes')
     let g:auf_filetypes = '*'
 endif
 
-if !exists('g:auf_rescan_on_writepost')
-    let g:auf_rescan_on_writepost = 1
-endif
-
 if !exists('g:auf_verbosemode')
     let g:auf_verbosemode = 0
 endif

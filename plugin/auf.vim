@@ -106,10 +106,11 @@ function! AufBufReadPost() abort
     if !exists('b:auf_difpath')
         let b:auf_difpath = expand('%:p:h') . g:auf_tempnames_prefix . expand('%:t') . '.aufdiff0'
     endif
-
-    if b:auf__highlight__
-        %call auf#format#TryAllFormatters(0, 'AufErrLine')
+    if !exists('b:auf_err_lnnr_list')
+        let b:auf_err_lnnr_list = []
     endif
+    let b:auf_changedtick_last = b:changedtick
+
     if &textwidth
         if g:auf_highlight_longlines == 1
             let &colorcolumn = &textwidth
@@ -118,6 +119,11 @@ function! AufBufReadPost() abort
                 \ g:auf_highlight_longlines_syntax, '\%>'.(&tw+1).'v.\+', -1)
         endif
     endif
+
+    let ww = winsaveview()
+    %call auf#format#TryAllFormatters(0, b:auf__highlight__ ? 'AufErrLine': '')
+    call winrestview(ww)
+
     call auf#util#logVerbose('AufBufReadPost: END')
 endfunction
 
@@ -214,9 +220,8 @@ augroup Auf_Auto_BufEvents
         \   call AufJit() |
         \ endif
     autocmd BufWritePost *
-        \ if !exists('b:auf_disable') && s:isAufFiletype() && g:auf_rescan_on_writepost |
-        \   call auf#util#logVerbose('Auf: BufWritePost: Rescanning') |
-        \   Auf |
+        \ if !exists('b:auf_disable') && s:isAufFiletype() |
+        \   call AufBufReadPost() |
         \ endif
 augroup END
 

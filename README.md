@@ -62,10 +62,8 @@ Likely, `g:auf_changedline_synmatch [='ErrorMsg']` is the error Syntax to use fo
     " Highlight all white-space within
     let g:auf_changedline_pattern = '\(\%##LINENUM##l\)\s'
 ```
-As highlighting style is configurable by patterns as above, these lines will float as you type - back and forth and settle after write. After write, actually, no full-recheck needs to be done. But, by default, code is rescanned fully just in case. To disable full-recheck after every write disable `g:auf_rescan_on_writepost [=1]` by setting it to 0 (default 1).
-```vim
-let g:auf_rescan_on_writepost = 0
-```
+As highlighting style is configurable by patterns as above, these lines will float as you type - back and forth and settle after write.
+
 Remember that when no formatter program exists for a certain filetype, AUF falls back by default to indenting, retabbing and removing trailing whitespace - of course _only_ the lines you touched. This will fix at least the most basic things, according to Vim's indentfile for that filetype. To disable the fallback to Vim's indent file, retabbing and removing trailing whitespace, set the following variables to 0 which default to 1 and gives precedence to their `b:` variables:
 ```vim
 let g:auf_autoindent = 0
