@@ -511,8 +511,8 @@ function! s:driftHighlights(synmatch_chg, lnregexp_chg, synmatch_err, oldf,
         endif
         if drift != 0
             call auf#util#driftHighlightsAfterLine(b:auf_highlight_lines_hlids,
-                        \ linenr+1, drift, '', '')
-            call auf#util#driftHighlightsAfterLine(b:auf_newadded_lines, linenr+1,
+                        \ linenr, drift, '', '')
+            call auf#util#driftHighlightsAfterLine(b:auf_newadded_lines, linenr,
                         \ drift, a:synmatch_chg, g:auf_changedline_pattern)
         endif
         if curcnt > 0
