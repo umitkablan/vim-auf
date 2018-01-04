@@ -260,7 +260,7 @@ function! auf#format#doFormatSource(line1, line2, fmtdef, curfile,
         let [err, sherr] = auf#diff#filterPatchLinesRanged(g:auf_filterdiffcmd,
                     \ a:line1, a:line2, a:curfile, a:difpath)
         call auf#util#logVerbose_fileContent('doFormatSource:' .
-                    \ 'err: ' . err . ' shErr: ' . sherr .
+                    \ 'err:' . err . ' shErr:' . sherr .
                     \ ' difference after filter:' . a:difpath,
                     \ a:difpath, 'doFormatSource: ========')
         if sherr != 0
@@ -575,6 +575,10 @@ endfunction
 
 function! auf#format#CursorHoldInNormalMode(synmatch_chg, lnregexp_chg, synmatch_err) abort
     call auf#util#logVerbose('CursorHoldInNormalMode: Start')
+    if expand('%') ==# ''
+        call auf#util#logVerbose('CursorHoldInNormalMode: NoBufferYet End')
+        return
+    endif
     if b:changedtick == b:auf_changedtick_last
         call auf#util#logVerbose('CursorHoldInNormalMode: NoChange End')
         return
