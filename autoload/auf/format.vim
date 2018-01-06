@@ -491,6 +491,7 @@ function! s:driftHighlights(synmatch_chg, lnregexp_chg, synmatch_err, oldf,
     call auf#util#logVerbose_fileContent('s:driftHighlights: diff done file:'
                 \ . b:auf_difpath, b:auf_difpath, 's:driftHighlights: ========')
     let b:auf__highlight__ = 1
+    let prevdrifts_tot = 0
     for [linenr, addlines, rmlines] in auf#diff#parseHunks(a:difpath)
         let [prevcnt, curcnt] = [len(rmlines), len(addlines)]
         if prevcnt == 0 && curcnt == 0
@@ -505,21 +506,18 @@ function! s:driftHighlights(synmatch_chg, lnregexp_chg, synmatch_err, oldf,
             let b:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(
                         \ a:synmatch_err, b:auf_highlight_lines_hlids,
                         \ linenr, linenr + prevcnt - 1)
-            let b:auf_newadded_lines = auf#util#clearHighlightsInRange(
-                        \ a:synmatch_chg, b:auf_newadded_lines,
-                        \ linenr, linenr + prevcnt - 1)
         endif
         if drift != 0
             call auf#util#driftHighlightsAfterLine(b:auf_highlight_lines_hlids,
                         \ linenr, drift, '', '')
-            call auf#util#driftHighlightsAfterLine(b:auf_newadded_lines, linenr,
-                        \ drift, a:synmatch_chg, g:auf_changedline_pattern)
         endif
         if curcnt > 0
+            let linenr += prevdrifts_tot
             let b:auf_newadded_lines = auf#util#addHighlightNewLines(
                         \ b:auf_newadded_lines, linenr, linenr+curcnt-1,
                         \ a:synmatch_chg, a:lnregexp_chg)
         endif
+        let prevdrifts_tot += drift
     endfor
 endfunction
 
