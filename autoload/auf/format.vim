@@ -475,32 +475,32 @@ function! auf#format#justInTimeFormat(synmatch) abort
     call auf#util#logVerbose('justInTimeFormat: DONE')
 endfunction
 
-function! s:driftHighlights(synmatch_chg, lnregexp_chg, synmatch_err, oldf,
+function! s:driftHighlights_FileEdited(synmatch_chg, lnregexp_chg, synmatch_err, oldf,
             \ newf, difpath) abort
     call auf#util#clearAllHighlights(b:auf_newadded_lines)
     let b:auf_newadded_lines = []
     let [issame, err, sherr] = auf#diff#diffFiles(g:auf_diffcmd, a:oldf,
                 \ a:newf, a:difpath)
         if issame
-        call auf#util#logVerbose('s:driftHighlights: no edit has detected - no diff')
+        call auf#util#logVerbose('s:driftHighlights_FileEdited: no edit has detected - no diff')
         return 0
     elseif err
-        call auf#util#echoErrorMsg('s:driftHighlights: diff error ' . err . '/'. sherr)
+        call auf#util#echoErrorMsg('s:driftHighlights_FileEdited: diff error ' . err . '/'. sherr)
         return 2
     endif
-    call auf#util#logVerbose_fileContent('s:driftHighlights: diff done file:'
-                \ . b:auf_difpath, b:auf_difpath, 's:driftHighlights: ========')
+    call auf#util#logVerbose_fileContent('s:driftHighlights_FileEdited: diff done file:'
+                \ . b:auf_difpath, b:auf_difpath, 's:driftHighlights_FileEdited: ========')
     let b:auf__highlight__ = 1
     let prevdrifts_tot = 0
     for [linenr, addlines, rmlines] in auf#diff#parseHunks(a:difpath)
         let [prevcnt, curcnt] = [len(rmlines), len(addlines)]
         if prevcnt == 0 && curcnt == 0
-            call auf#util#echoErrorMsg('s:driftHighlights: invalid hunk-lines:'
+            call auf#util#echoErrorMsg('s:driftHighlights_FileEdited: invalid hunk-lines:'
                         \ . linenr . '-' . prevcnt . ',' . curcnt)
                 continue
             endif
         let drift = curcnt - prevcnt
-        call auf#util#logVerbose('s:driftHighlights: line:' . linenr . ' cur:'
+        call auf#util#logVerbose('s:driftHighlights_FileEdited: line:' . linenr . ' cur:'
                     \ . curcnt . ' prevcnt:' . prevcnt . ' drift:' . drift)
         if prevcnt > 0
             let b:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(
@@ -533,7 +533,7 @@ function! s:relightHighlights(synmatch_chg, lnregexp_chg, synmatch_err, oldf,
     for i in b:auf_err_lnnr_list
         let b:auf_highlight_lines_hlids += [[i,0]]
     endfor
-    call s:driftHighlights(a:synmatch_chg, a:lnregexp_chg, a:synmatch_err,
+    call s:driftHighlights_FileEdited(a:synmatch_chg, a:lnregexp_chg, a:synmatch_err,
                         \ a:oldf, a:newf, a:difpath)
     call auf#util#highlights_On(b:auf_highlight_lines_hlids, a:synmatch_err)
 endfunction
