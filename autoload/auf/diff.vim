@@ -32,24 +32,27 @@ function! auf#diff#parseHunks(difpath) abort
                 continue
             endif
             let curnr = str2nr(line[plusidx+1:commaidx])
-        elseif prevnr > -1
-            if line[0] ==# '-'
-                let prevnr += 1
-                let rmlines += [line[1:]]
-            elseif line[0] ==# '+'
-                let curnr += 1
-                let addedlines += [line[1:]]
-            elseif line[0] ==# ' '
-                if len(rmlines) > 0 || len(addedlines) > 0
-                    let prev = prevnr - len(rmlines)
-                    if prev < 1
-                        let prev = 1
-                    endif
-                    let ret += [[prev, addedlines, rmlines]]
-                    let [addedlines, rmlines] = [[], []]
+            continue
+        elseif prevnr < 0
+            continue
+        endif
+
+        if line[0] ==# '-'
+            let prevnr += 1
+            let rmlines += [line[1:]]
+        elseif line[0] ==# '+'
+            let curnr += 1
+            let addedlines += [line[1:]]
+        elseif line[0] ==# ' '
+            if len(rmlines) > 0 || len(addedlines) > 0
+                let prev = prevnr - len(rmlines)
+                if prev < 1
+                    let prev = 1
                 endif
-                let [prevnr, curnr] = [prevnr+1, curnr+1]
+                let ret += [[prev, addedlines, rmlines]]
+                let [addedlines, rmlines] = [[], []]
             endif
+            let [prevnr, curnr] = [prevnr+1, curnr+1]
         endif
     endfor
     if len(rmlines) > 0 || len(addedlines) > 0

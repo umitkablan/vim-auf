@@ -194,8 +194,6 @@ function! auf#format#applyDiff(line1, difpath, coward) abort
                                 \ . ' - ' . a:line1 . '-' . linenr)
                     continue
                 endif
-            elseif linenr > a:line1
-                break
             endif
         endif
         let linenr += tot_drift
