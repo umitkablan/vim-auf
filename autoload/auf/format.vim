@@ -443,9 +443,9 @@ function! s:jitDiffedLines(synmatch, shadowpath) abort
     if res
         let msg .= '#' . tot_drift
         if exists('b:auffmt_definition')
-            call auf#util#echoSuccessMsg(b:auffmt_definition['ID'] . '> ' . msg)
+            call auf#util#echoSuccessMsg(b:auffmt_definition['ID'] . ' JIT> ' . msg)
         else
-            call auf#util#echoWarningMsg('Fallback> ' . msg)
+            call auf#util#echoWarningMsg('Fallback JIT> ' . msg)
         endif
     endif
 endfunction
