@@ -431,14 +431,15 @@ function! s:jitDiffedLines(synmatch, shadowpath) abort
             if curcnt > 0
                 let [ln0, ln1] = [linenr+tot_drift, linenr+curcnt-1+tot_drift]
                 call auf#util#logVerbose('jitDiffedLines: hunk-lines:' . ln0 . '-' . ln1)
-                let [res, drift] = s:formatOrFallback(ln0, ln1, a:synmatch)
+                let [res, drift_] = s:formatOrFallback(ln0, ln1, a:synmatch)
                 if !res
                     break
                 endif
-                let msg .= '' . ln0 . ':' . curcnt . '~' . drift . ' /'
+                let msg .= '' . ln0 . ':' . curcnt . '~' . drift_ . ' /'
                 if res > 1
                     break
                 endif
+                let drift += drift_
             endif
             let tot_drift += drift
         endfor
