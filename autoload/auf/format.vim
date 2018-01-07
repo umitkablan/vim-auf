@@ -477,6 +477,9 @@ function! s:driftHighlights_FileEdited(synmatch_chg, lnregexp_chg, synmatch_err,
             \ newf, difpath) abort
     call auf#util#clearAllHighlights(b:auf_newadded_lines)
     let b:auf_newadded_lines = []
+    if !filereadable(a:oldf)
+        return 0
+    endif
     let [issame, err, sherr] = auf#diff#diffFiles(g:auf_diffcmd, a:oldf,
                 \ a:newf, a:difpath)
         if issame
