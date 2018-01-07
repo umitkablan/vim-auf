@@ -180,6 +180,7 @@ endfunction
 function! auf#format#applyDiff(line1, difpath, coward) abort
     let [hunks, tot_drift] = [0, 0]
     for [linenr, addlines, rmlines] in auf#diff#parseHunks(a:difpath)
+        call auf#util#logVerbose('applyDiff: ln:' . linenr . ' +:' . len(addlines) . ' -:' . len(rmlines))
         let [prevcnt, curcnt] = [len(rmlines), len(addlines)]
         if prevcnt == 0 && curcnt == 0
             call auf#util#echoErrorMsg('applyDiff: diff line:' . linenr
@@ -419,12 +420,14 @@ function! s:jitDiffedLines(synmatch, shadowpath) abort
         call auf#util#logVerbose_fileContent('jitDiffedLines: diff done file:'
                     \ . b:auf_difpath, b:auf_difpath, 'jitDiffedLines: ========')
         for [linenr, addlines, rmlines] in auf#diff#parseHunks(b:auf_difpath)
+            call auf#util#logVerbose('s:jitDiffedLines: ln:' . linenr . ' +:' . len(addlines) . ' -:' . len(rmlines))
             let [prevcnt, curcnt] = [len(rmlines), len(addlines)]
             if prevcnt == 0 && curcnt == 0
                 call auf#util#echoErrorMsg('jitDiffedLines: invalid hunk-lines:'
                             \ . linenr . '-' . prevcnt . ',' . curcnt)
                 continue
             endif
+            let drift = curcnt - prevcnt
             if curcnt > 0
                 let [ln0, ln1] = [linenr+tot_drift, linenr+curcnt-1+tot_drift]
                 call auf#util#logVerbose('jitDiffedLines: hunk-lines:' . ln0 . '-' . ln1)
@@ -436,8 +439,8 @@ function! s:jitDiffedLines(synmatch, shadowpath) abort
                 if res > 1
                     break
                 endif
-                let tot_drift += drift
             endif
+            let tot_drift += drift
         endfor
     endif
     if res
@@ -494,12 +497,13 @@ function! s:driftHighlights_FileEdited(synmatch_chg, lnregexp_chg, synmatch_err,
     let b:auf__highlight__ = 1
     let prevdrifts_tot = 0
     for [linenr, addlines, rmlines] in auf#diff#parseHunks(a:difpath)
+        call auf#util#logVerbose('s:driftHighlights_FileEdited: ln:' . linenr . ' +:' . len(addlines) . ' -:' . len(rmlines))
         let [prevcnt, curcnt] = [len(rmlines), len(addlines)]
         if prevcnt == 0 && curcnt == 0
             call auf#util#echoErrorMsg('s:driftHighlights_FileEdited: invalid hunk-lines:'
                         \ . linenr . '-' . prevcnt . ',' . curcnt)
                 continue
-            endif
+        endif
         let drift = curcnt - prevcnt
         call auf#util#logVerbose('s:driftHighlights_FileEdited: line:' . linenr . ' cur:'
                     \ . curcnt . ' prevcnt:' . prevcnt . ' drift:' . drift)
