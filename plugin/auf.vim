@@ -113,7 +113,7 @@ function! AufBufReadPost() abort
 
     if &textwidth
         if g:auf_highlight_longlines == 1
-            let &colorcolumn = &textwidth
+            let &l:colorcolumn = &textwidth
         elseif g:auf_highlight_longlines == 2
             let w:auf__longlines_hl_id__ = matchadd(
                 \ g:auf_highlight_longlines_syntax, '\%>'.(&tw+1).'v.\+', -1)
