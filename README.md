@@ -16,6 +16,16 @@ When no formatter exists (or none is installed) for a certain filetype, vim-auf 
 
 Auf also can highlight lines longer than configured textwidth of the buffer - eliminating your vimrc settings/adding sensible defaults.
 
+## Features in a Nutshell
+ - Works with basic command line formatters (clang-format, js-beautify etc.)
+ - Format only touched lines after a save - JITing.
+ - Avoid formatting with a bang `:w!` - accept as is.
+ - Configurable and sufficient highlighting - changed (to be formatted) lines, wrong-format lines.
+ - Already defined popular formatters for different filetypes.
+ - Pure VimScript.
+ - Automatic formatter selection based on formatter dot-files in project directory - use those settings.
+ - Vim settings (buffer or global) are respected and defined into formatter parameters.
+
 ## How to install
 
 This plugin is supported by Vim 7.4+ and is pure Vimscript i.e. has no `+python`, `+eval` or other feature dependency than Vimscript and supporting command line programs.
