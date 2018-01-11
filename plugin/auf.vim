@@ -94,8 +94,8 @@ endfunction
 
 function! AufBufReadPost() abort
     call auf#util#logVerbose('AufBufReadPost: START')
-    if !exists('b:auf_highlight_lines_hlids')
-        let b:auf_highlight_lines_hlids = []
+    if !exists('w:auf_highlight_lines_hlids')
+        let w:auf_highlight_lines_hlids = []
     endif
     if !exists('b:auf_newadded_lines')
         let b:auf_newadded_lines = []
@@ -158,14 +158,14 @@ command! AufCurrFormatter call auf#format#CurrentFormatter()
 command! AufInfo call AufInfo()
 command! -nargs=0 AufDisable
     \ let b:auf_disable=1 |
-    \ call auf#util#clearAllHighlights(b:auf_highlight_lines_hlids) |
+    \ call auf#util#clearAllHighlights(w:auf_highlight_lines_hlids) |
     \ call auf#util#clearAllHighlights(b:auf_newadded_lines) |
     \ let b:auf_newadded_lines = []
 command! -nargs=0 AufEnable unlet! b:auf_disable
 
 command! AufShowDiff call auf#format#ShowDiff()
 command! AufClearHi
-    \ call auf#util#clearAllHighlights(b:auf_highlight_lines_hlids) |
+    \ call auf#util#clearAllHighlights(w:auf_highlight_lines_hlids) |
     \ let b:auf__highlight__ = 0
 
 let s:AufErrLineSynCmd = 'highlight def link AufErrLine ' . g:auf_showdiff_synmatch
@@ -221,6 +221,11 @@ augroup Auf_Auto_BufEvents
         \ endif
     autocmd BufWritePost *
         \ if !exists('b:auf_disable') && s:isAufFiletype() |
+        \   call AufBufReadPost() |
+        \ endif
+    autocmd BufWinEnter *
+        \ if !exists('b:auf_disable') && s:isAufFiletype() |
+        \   call auf#util#logVerbose('BufWinEnter''ed..') |
         \   call AufBufReadPost() |
         \ endif
 augroup END

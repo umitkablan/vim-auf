@@ -246,8 +246,8 @@ function! auf#format#doFormatSource(line1, line2, fmtdef, curfile,
             let b:auf_err_lnnr_list = []
         endif
         call auf#util#logVerbose('doFormatSource: no difference')
-        let b:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(
-                    \ a:synmatch, b:auf_highlight_lines_hlids,
+        let w:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(
+                    \ a:synmatch, w:auf_highlight_lines_hlids,
                     \ a:line1, a:line2)
         return [0, 0, 0, err]
     elseif err
@@ -267,18 +267,18 @@ function! auf#format#doFormatSource(line1, line2, fmtdef, curfile,
         endif
     endif
 
-    " call auf#util#clearAllHighlights(b:auf_highlight_lines_hlids)
+    " call auf#util#clearAllHighlights(w:auf_highlight_lines_hlids)
     if !a:overwrite
-        " let b:auf_highlight_lines_hlids = auf#util#highlightLines(auf#diff#parseChangedLines(a:difpath), a:synmatch)
+        " let w:auf_highlight_lines_hlids = auf#util#highlightLines(auf#diff#parseChangedLines(a:difpath), a:synmatch)
         let errlines = auf#diff#parseChangedLines(a:difpath)
         if isfull
             let b:auf_err_lnnr_list = errlines
         endif
-        let b:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(
-                    \ a:synmatch, b:auf_highlight_lines_hlids,
+        let w:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(
+                    \ a:synmatch, w:auf_highlight_lines_hlids,
                     \ a:line1, a:line2)
-        let b:auf_highlight_lines_hlids = auf#util#highlightLinesRanged(
-                        \ b:auf_highlight_lines_hlids, errlines, a:synmatch)
+        let w:auf_highlight_lines_hlids = auf#util#highlightLinesRanged(
+                        \ w:auf_highlight_lines_hlids, errlines, a:synmatch)
         return [1, 0, 0, err]
     endif
 
@@ -288,16 +288,16 @@ function! auf#format#doFormatSource(line1, line2, fmtdef, curfile,
     if hunks == -1
         return [4, 0, 0, err]
     endif
-    let b:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(a:synmatch,
-                \ b:auf_highlight_lines_hlids, a:line1, a:line2)
+    let w:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(a:synmatch,
+                \ w:auf_highlight_lines_hlids, a:line1, a:line2)
     let b:auf_newadded_lines = auf#util#clearHighlightsInRange(a:synmatch,
                 \ b:auf_newadded_lines, a:line1, a:line2)
     if drift != 0
-        call auf#util#driftHighlightsAfterLine(b:auf_highlight_lines_hlids,
+        call auf#util#driftHighlightsAfterLine(w:auf_highlight_lines_hlids,
                     \ a:line1, drift, '', '')
     endif
 
-    call auf#util#highlights_On(b:auf_highlight_lines_hlids, a:synmatch)
+    call auf#util#highlights_On(w:auf_highlight_lines_hlids, a:synmatch)
     return [1, 0, drift, err]
 endfunction
 
@@ -465,7 +465,7 @@ function! auf#format#justInTimeFormat(synmatch) abort
         call writefile(getline(1, '$'), shadowpath)
         call s:jitDiffedLines(a:synmatch, shadowpath) " call s:jitAddedLines(a:synmatch)
         call delete(shadowpath)
-        call auf#util#highlights_On(b:auf_highlight_lines_hlids, a:synmatch)
+        call auf#util#highlights_On(w:auf_highlight_lines_hlids, a:synmatch)
     catch /.*/
         call auf#util#echoErrorMsg('Exception: ' . v:exception)
     finally
@@ -509,12 +509,12 @@ function! s:driftHighlights_FileEdited(synmatch_chg, lnregexp_chg, synmatch_err,
         call auf#util#logVerbose('s:driftHighlights_FileEdited: line:' . linenr . ' cur:'
                     \ . curcnt . ' prevcnt:' . prevcnt . ' drift:' . drift)
         if prevcnt > 0
-            let b:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(
-                        \ a:synmatch_err, b:auf_highlight_lines_hlids,
+            let w:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(
+                        \ a:synmatch_err, w:auf_highlight_lines_hlids,
                         \ linenr, linenr + prevcnt - 1)
         endif
         if drift != 0
-            call auf#util#driftHighlightsAfterLine(b:auf_highlight_lines_hlids,
+            call auf#util#driftHighlightsAfterLine(w:auf_highlight_lines_hlids,
                         \ linenr, drift, '', '')
         endif
         if curcnt > 0
@@ -528,8 +528,8 @@ function! s:driftHighlights_FileEdited(synmatch_chg, lnregexp_chg, synmatch_err,
 endfunction
 
 function! s:offClearHighlights() abort
-    call auf#util#clearAllHighlights(b:auf_highlight_lines_hlids)
-    let b:auf_highlight_lines_hlids = []
+    call auf#util#clearAllHighlights(w:auf_highlight_lines_hlids)
+    let w:auf_highlight_lines_hlids = []
     call auf#util#clearAllHighlights(b:auf_newadded_lines)
     let b:auf_newadded_lines = []
 endfunction
@@ -537,11 +537,11 @@ endfunction
 function! s:relightHighlights(synmatch_chg, lnregexp_chg, synmatch_err, oldf,
             \ newf, difpath) abort
     for i in b:auf_err_lnnr_list
-        let b:auf_highlight_lines_hlids += [[i,0]]
+        let w:auf_highlight_lines_hlids += [[i,0]]
     endfor
     call s:driftHighlights_FileEdited(a:synmatch_chg, a:lnregexp_chg, a:synmatch_err,
                         \ a:oldf, a:newf, a:difpath)
-    call auf#util#highlights_On(b:auf_highlight_lines_hlids, a:synmatch_err)
+    call auf#util#highlights_On(w:auf_highlight_lines_hlids, a:synmatch_err)
 endfunction
 
 function! auf#format#InsertModeOn() abort
@@ -554,7 +554,7 @@ function! auf#format#InsertModeOff(synmatch_chg, lnregexp_chg, synmatch_err) abo
     call auf#util#logVerbose('InsertModeOff: Start')
     if b:changedtick == b:auf_changedtick_last
         if b:auf__highlight__
-            call auf#util#highlights_On(b:auf_highlight_lines_hlids, a:synmatch_err)
+            call auf#util#highlights_On(w:auf_highlight_lines_hlids, a:synmatch_err)
         endif
         call auf#util#logVerbose('InsertModeOff: NoChange End')
         return
@@ -572,7 +572,7 @@ function! auf#format#InsertModeOff(synmatch_chg, lnregexp_chg, synmatch_err) abo
         call delete(tmpcurfile)
     endtry
     if b:auf__highlight__
-        call auf#util#highlights_On(b:auf_highlight_lines_hlids, a:synmatch_err)
+        call auf#util#highlights_On(w:auf_highlight_lines_hlids, a:synmatch_err)
     endif
     call auf#util#logVerbose('InsertModeOff: End')
 endfunction
