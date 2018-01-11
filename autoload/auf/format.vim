@@ -328,6 +328,7 @@ function! auf#format#FormatSource(line1, line2, fmtdef, overwrite, coward, synma
 
     call delete(formattedf)
     call delete(shadowpath)
+    call auf#util#logVerbose('FormatSource: res:' . res . ' drift:' . drift . ' resstr:' . resstr)
     return [res, drift, resstr]
 endfunction
 
@@ -338,7 +339,6 @@ function! s:formatOrFallback(ln1, ln2, synmatch) abort
         let [coward, overwrite] = [1, 1]
         let [res, drift, resstr] = auf#format#FormatSource(a:ln1, a:ln2,
                     \ b:auffmt_definition, overwrite, coward, a:synmatch)
-        call auf#util#logVerbose('s:formatOrFallback: result:' . res . ' ~' . drift)
         if len(resstr)
             if b:auf__highlight__
                 if res > 1
@@ -360,6 +360,7 @@ function! s:formatOrFallback(ln1, ln2, synmatch) abort
 
     let b:auf_newadded_lines = auf#util#clearHighlightsInRange(
                 \ a:synmatch, b:auf_newadded_lines, a:ln1, a:ln2)
+    call auf#util#logVerbose('s:formatOrFallback: result:' . res . ' ~' . drift)
     return [res, drift]
 endfunction
 
@@ -432,13 +433,7 @@ function! s:jitDiffedLines(synmatch, shadowpath) abort
                 let [ln0, ln1] = [linenr+tot_drift, linenr+curcnt-1+tot_drift]
                 call auf#util#logVerbose('jitDiffedLines: hunk-lines:' . ln0 . '-' . ln1)
                 let [res, drift_] = s:formatOrFallback(ln0, ln1, a:synmatch)
-                if !res
-                    break
-                endif
-                let msg .= '' . ln0 . ':' . curcnt . '~' . drift_ . ' /'
-                if res > 1
-                    break
-                endif
+                let msg .= '' . ln0 . ':' . curcnt . '~' . drift_ . '@' . res . ' /'
                 let drift += drift_
             endif
             let tot_drift += drift
