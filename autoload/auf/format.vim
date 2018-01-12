@@ -295,6 +295,8 @@ function! auf#format#doFormatSource(line1, line2, fmtdef, curfile,
     if drift != 0
         call auf#util#driftHighlightsAfterLine(w:auf_highlight_lines_hlids,
                     \ a:line1, drift, '', '')
+        call auf#util#driftHighlightsAfterLine(b:auf_newadded_lines,
+                    \ a:line1, drift, '', '')
     endif
 
     call auf#util#highlights_On(w:auf_highlight_lines_hlids, a:synmatch)
