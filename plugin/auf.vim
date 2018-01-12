@@ -92,6 +92,21 @@ function! AufBufNewFile() abort
     call auf#util#logVerbose('AufBufNewFile: END')
 endfunction
 
+function! AufBufWinEnter() abort
+    call auf#util#logVerbose('AufBufWinEnter: START')
+    call auf#util#clearAllHighlights(w:auf_highlight_lines_hlids)
+    let w:auf_highlight_lines_hlids = []
+    if ! b:auf__highlight__
+        call auf#util#logVerbose('AufBufWinEnter: NoHL END')
+        return
+    endif
+    for i in b:auf_err_lnnr_list
+        let w:auf_highlight_lines_hlids += [[i,0]]
+    endfor
+    call auf#util#highlights_On(w:auf_highlight_lines_hlids, 'AufErrLine')
+    call auf#util#logVerbose('AufBufWinEnter: END')
+endfunction
+
 function! AufBufReadPost() abort
     call auf#util#logVerbose('AufBufReadPost: START')
     if !exists('w:auf_highlight_lines_hlids')
@@ -225,8 +240,7 @@ augroup Auf_Auto_BufEvents
         \ endif
     autocmd BufWinEnter *
         \ if !exists('b:auf_disable') && s:isAufFiletype() |
-        \   call auf#util#logVerbose('BufWinEnter''ed..') |
-        \   call AufBufReadPost() |
+        \   call AufBufWinEnter() |
         \ endif
 augroup END
 
