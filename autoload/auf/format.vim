@@ -8,7 +8,7 @@ function! s:setCache(fmtdef, idx, confpath) abort
     let cpath = a:confpath
     if !len(cpath)
         let cpath = auf#util#CheckProbeFileUpRecursive(expand('%:p:h'),
-                    \ get(a:fmtdef, 'probefiles', []))
+                                            \ get(a:fmtdef, 'probefiles', []))
     endif
     if !len(cpath)
         let confvar = 'auffmt_' . a:fmtdef['ID'] . '_config'
@@ -28,7 +28,7 @@ function! auf#format#GetCurrentFormatter() abort
         let [i, def, confpath] = s:probeFormatter()
         if !empty(def)
             call auf#util#logVerbose('GetCurrentFormatter: Probed ' . def['ID']
-                        \ . ' formatter at ' . i)
+                                                    \ . ' formatter at ' . i)
             call s:setCache(def, i, confpath)
             return [def, is_set]
         endif
@@ -180,11 +180,12 @@ endfunction
 function! auf#format#applyDiff(line1, difpath, coward) abort
     let [hunks, tot_drift] = [0, 0]
     for [linenr, addlines, rmlines] in auf#diff#parseHunks(a:difpath)
-        call auf#util#logVerbose('applyDiff: ln:' . linenr . ' +:' . len(addlines) . ' -:' . len(rmlines))
+        call auf#util#logVerbose('applyDiff: ln:' . linenr . ' +:'
+                                    \ . len(addlines) . ' -:' . len(rmlines))
         let [prevcnt, curcnt] = [len(rmlines), len(addlines)]
         if prevcnt == 0 && curcnt == 0
             call auf#util#echoErrorMsg('applyDiff: diff line:' . linenr
-                        \ . ' has zero change!')
+                                                    \ . ' has zero change!')
             continue
         endif
         if a:coward
@@ -192,7 +193,7 @@ function! auf#format#applyDiff(line1, difpath, coward) abort
                 " if all those to-be-removed lines are empty then no need to be coward
                 if !s:checkAllRmLinesEmpty(a:line1-linenr, rmlines)
                     call auf#util#logVerbose('applyDiff: COWARD ' . linenr
-                                \ . ' - ' . a:line1 . '-' . linenr)
+                                        \ . ' - ' . a:line1 . '-' . linenr)
                     continue
                 endif
             endif
@@ -200,15 +201,15 @@ function! auf#format#applyDiff(line1, difpath, coward) abort
         let linenr += tot_drift
         if prevcnt > 0 && curcnt > 0
             call auf#util#logVerbose('applyDiff: *replace* ' . linenr . ','
-                        \ . prevcnt . ',' . curcnt)
+                                                \ . prevcnt . ',' . curcnt)
             call auf#util#replaceLines(linenr, prevcnt, addlines)
         elseif prevcnt > 0
             call auf#util#logVerbose('applyDiff: *remove* ' . linenr . ','
-                        \ . prevcnt . ',' . curcnt)
+                                                \ . prevcnt . ',' . curcnt)
             call auf#util#removeLines(linenr, prevcnt)
         else
             call auf#util#logVerbose('applyDiff: *addline* ' . linenr . ','
-                        \ . prevcnt . ',' . curcnt)
+                                                \ . prevcnt . ',' . curcnt)
             call auf#util#addLines(linenr, addlines)
         endif
         let tot_drift += (curcnt - prevcnt)
@@ -237,18 +238,17 @@ function! auf#format#doFormatSource(line1, line2, fmtdef, curfile,
 
     let isfull = auf#util#isFullSelected(a:line1, a:line2)
     let [issame, err, sherr] = auf#diff#diffFiles(g:auf_diffcmd, a:curfile,
-                \ a:formattedf, a:difpath)
+                                                    \ a:formattedf, a:difpath)
     call auf#util#logVerbose('doFormatSource: isFull:' . isfull
-                \ . ' isSame:' . issame . ' isRanged:' . isranged
-                \ . ' shErr:' . sherr . ' err:' . err)
+                            \ . ' isSame:' . issame . ' isRanged:' . isranged
+                            \ . ' shErr:' . sherr . ' err:' . err)
     if issame
         if isfull
             let b:auf_err_lnnr_list = []
         endif
         call auf#util#logVerbose('doFormatSource: no difference')
         let w:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(
-                    \ a:synmatch, w:auf_highlight_lines_hlids,
-                    \ a:line1, a:line2)
+                    \ a:synmatch, w:auf_highlight_lines_hlids, a:line1, a:line2)
         return [0, 0, 0, err]
     elseif err
         return [3, sherr, 0, err]
@@ -257,11 +257,11 @@ function! auf#format#doFormatSource(line1, line2, fmtdef, curfile,
                 \ . ' detected:' . a:difpath, a:difpath, 'doFormatSource: ========')
     if !isranged && !isfull
         let [err, sherr] = auf#diff#filterPatchLinesRanged(g:auf_filterdiffcmd,
-                    \ a:line1, a:line2, a:curfile, a:difpath)
+                                    \ a:line1, a:line2, a:curfile, a:difpath)
         call auf#util#logVerbose_fileContent('doFormatSource:' .
-                    \ 'err:' . err . ' shErr:' . sherr .
-                    \ ' difference after filter:' . a:difpath,
-                    \ a:difpath, 'doFormatSource: ========')
+                                    \ 'err:' . err . ' shErr:' . sherr .
+                                    \ ' difference after filter:' . a:difpath,
+                                    \ a:difpath, 'doFormatSource: ========')
         if sherr != 0
             return [2, sherr, 0, err]
         endif
@@ -275,8 +275,8 @@ function! auf#format#doFormatSource(line1, line2, fmtdef, curfile,
             let b:auf_err_lnnr_list = errlines
         endif
         let w:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(
-                    \ a:synmatch, w:auf_highlight_lines_hlids,
-                    \ a:line1, a:line2)
+                                    \ a:synmatch, w:auf_highlight_lines_hlids,
+                                    \ a:line1, a:line2)
         let w:auf_highlight_lines_hlids = auf#util#highlightLinesRanged(
                         \ w:auf_highlight_lines_hlids, errlines, a:synmatch)
         return [1, 0, 0, err]
@@ -294,9 +294,9 @@ function! auf#format#doFormatSource(line1, line2, fmtdef, curfile,
                 \ b:auf_newadded_lines, a:line1, a:line2)
     if drift != 0
         call auf#util#driftHighlightsAfterLine(w:auf_highlight_lines_hlids,
-                    \ a:line1, drift, '', '')
+                                                    \ a:line1, drift, '', '')
         call auf#util#driftHighlightsAfterLine(b:auf_newadded_lines,
-                    \ a:line1, drift, '', '')
+                                                    \ a:line1, drift, '', '')
     endif
 
     call auf#util#highlights_On(w:auf_highlight_lines_hlids, a:synmatch)
@@ -330,7 +330,8 @@ function! auf#format#FormatSource(line1, line2, fmtdef, overwrite, coward, synma
 
     call delete(formattedf)
     call delete(shadowpath)
-    call auf#util#logVerbose('FormatSource: res:' . res . ' drift:' . drift . ' resstr:' . resstr)
+    call auf#util#logVerbose('FormatSource: res:' . res . ' drift:' . drift
+                                                    \ . ' resstr:' . resstr)
     return [res, drift, resstr]
 endfunction
 
@@ -340,15 +341,15 @@ function! s:formatOrFallback(ln1, ln2, synmatch) abort
     if exists('b:auffmt_definition')
         let [coward, overwrite] = [1, 1]
         let [res, drift, resstr] = auf#format#FormatSource(a:ln1, a:ln2,
-                    \ b:auffmt_definition, overwrite, coward, a:synmatch)
+                        \ b:auffmt_definition, overwrite, coward, a:synmatch)
         if len(resstr)
             if b:auf__highlight__
                 if res > 1
                     call auf#util#echoErrorMsg(b:auffmt_definition['ID']
-                                \ . ' fail:' . res . ' ' . resstr)
+                                            \ . ' fail:' . res . ' ' . resstr)
                 else
                     call auf#util#echoWarningMsg(b:auffmt_definition['ID']
-                                \ . '> ' . resstr)
+                                                            \ . '> ' . resstr)
                 endif
             endif
             let [res, drift] = [0, 0]
@@ -417,17 +418,18 @@ function! s:jitDiffedLines(synmatch, shadowpath) abort
         if issame
         elseif err
             call auf#util#logVerbose('jitDiffedLines: diff error '
-                        \ . err . '/'. sherr . ' diff current')
+                                        \ . err . '/'. sherr . ' diff current')
             return 2
         endif
         call auf#util#logVerbose_fileContent('jitDiffedLines: diff done file:'
                     \ . b:auf_difpath, b:auf_difpath, 'jitDiffedLines: ========')
         for [linenr, addlines, rmlines] in auf#diff#parseHunks(b:auf_difpath)
-            call auf#util#logVerbose('s:jitDiffedLines: ln:' . linenr . ' +:' . len(addlines) . ' -:' . len(rmlines))
+            call auf#util#logVerbose('s:jitDiffedLines: ln:' . linenr . ' +:'
+                                    \ . len(addlines) . ' -:' . len(rmlines))
             let [prevcnt, curcnt] = [len(rmlines), len(addlines)]
             if prevcnt == 0 && curcnt == 0
                 call auf#util#echoErrorMsg('jitDiffedLines: invalid hunk-lines:'
-                            \ . linenr . '-' . prevcnt . ',' . curcnt)
+                                    \ . linenr . '-' . prevcnt . ',' . curcnt)
                 continue
             endif
             let drift = curcnt - prevcnt
@@ -495,11 +497,12 @@ function! s:driftHighlights_FileEdited(synmatch_chg, lnregexp_chg, synmatch_err,
     let b:auf__highlight__ = 1
     let prevdrifts_tot = 0
     for [linenr, addlines, rmlines] in auf#diff#parseHunks(a:difpath)
-        call auf#util#logVerbose('s:driftHighlights_FileEdited: ln:' . linenr . ' +:' . len(addlines) . ' -:' . len(rmlines))
+        call auf#util#logVerbose('s:driftHighlights_FileEdited: ln:' . linenr
+                            \ . ' +:' . len(addlines) . ' -:' . len(rmlines))
         let [prevcnt, curcnt] = [len(rmlines), len(addlines)]
         if prevcnt == 0 && curcnt == 0
             call auf#util#echoErrorMsg('s:driftHighlights_FileEdited: invalid hunk-lines:'
-                        \ . linenr . '-' . prevcnt . ',' . curcnt)
+                                    \ . linenr . '-' . prevcnt . ',' . curcnt)
                 continue
         endif
         let drift = curcnt - prevcnt
@@ -507,18 +510,18 @@ function! s:driftHighlights_FileEdited(synmatch_chg, lnregexp_chg, synmatch_err,
                     \ . curcnt . ' prevcnt:' . prevcnt . ' drift:' . drift)
         if prevcnt > 0
             let w:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(
-                        \ a:synmatch_err, w:auf_highlight_lines_hlids,
-                        \ linenr, linenr + prevcnt - 1)
+                                \ a:synmatch_err, w:auf_highlight_lines_hlids,
+                                \ linenr, linenr + prevcnt - 1)
         endif
         if drift != 0
             call auf#util#driftHighlightsAfterLine(w:auf_highlight_lines_hlids,
-                        \ linenr, drift, '', '')
+                                                    \ linenr, drift, '', '')
         endif
         if curcnt > 0
             let linenr += prevdrifts_tot
             let b:auf_newadded_lines = auf#util#addHighlightNewLines(
-                        \ b:auf_newadded_lines, linenr, linenr+curcnt-1,
-                        \ a:synmatch_chg, a:lnregexp_chg)
+                            \ b:auf_newadded_lines, linenr, linenr+curcnt-1,
+                            \ a:synmatch_chg, a:lnregexp_chg)
         endif
         let prevdrifts_tot += drift
     endfor
@@ -532,12 +535,12 @@ function! s:offClearHighlights() abort
 endfunction
 
 function! s:relightHighlights(synmatch_chg, lnregexp_chg, synmatch_err, oldf,
-            \ newf, difpath) abort
+                                                        \ newf, difpath) abort
     for i in b:auf_err_lnnr_list
         let w:auf_highlight_lines_hlids += [[i,0]]
     endfor
     call s:driftHighlights_FileEdited(a:synmatch_chg, a:lnregexp_chg, a:synmatch_err,
-                        \ a:oldf, a:newf, a:difpath)
+                                                \ a:oldf, a:newf, a:difpath)
     call auf#util#highlights_On(w:auf_highlight_lines_hlids, a:synmatch_err)
 endfunction
 
