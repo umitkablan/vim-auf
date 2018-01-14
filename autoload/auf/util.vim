@@ -74,14 +74,17 @@ endfunction
 endif
 
 function! auf#util#echoSuccessMsg(line) abort
+    call auf#util#logVerbose('auf#util#echoSuccessMsg: ' . a:line)
     let s:dispMsgs += [['DiffAdd', 'Auf> ' . a:line]]
 endfunction
 
 function! auf#util#echoWarningMsg(line) abort
+    call auf#util#logVerbose('auf#util#echoWarningMsg: ' . a:line)
     let s:dispMsgs += [['WarningMsg', 'Auf>' . a:line]]
 endfunction
 
 function! auf#util#echoErrorMsg(line) abort
+    call auf#util#logVerbose('auf#util#echoErrorMsg: ' . a:line)
     let s:dispMsgs += [['ErrorMsg', 'Auf> ' . a:line]]
 endfunction
 
@@ -262,20 +265,19 @@ function! s:hlClear(hlid) abort
     return 0
 endfunction
 
-function! auf#util#clearAllHighlights(hlids) abort
-    call auf#util#logVerbose('clearAllHiglights: @' . len(a:hlids))
-    " execute 'syn clear ' . a:synmatch
-    let i = 0
-    while i < len(a:hlids)
-        let hlid = a:hlids[i][1]
-        let a:hlids[i][1] = s:hlClear(hlid)
-        let i += 1
-    endwhile
-    call auf#util#logVerbose('clearAllHiglights: DONE @' . len(a:hlids))
+function! auf#util#cleanAllHLIDs(dictt, varname) abort
+    let hlids = get(a:dictt, a:varname, [])
+    for [ln, hlid] in hlids
+        call s:hlClear(hlid)
+        if ln
+        endif
+    endfor
+    let a:dictt[a:varname] = []
 endfunction
 
-function! auf#util#clearHighlightsInRange(synmatch, hlids, line1, line2) abort
-    call auf#util#logVerbose('clearHighlightsInRange: ' . a:line1 . '-' . a:line2 . ' @' . len(a:hlids))
+function! auf#util#clearHighlightsInRange(synmatch, hlids, ln1, ln2) abort
+    call auf#util#logVerbose('clearHighlightsInRange: ' . a:ln1 . '-' . a:ln2
+                                \ . ' syn:' . a:synmatch . ' @' . len(a:hlids))
     let ret = []
     if len(a:hlids) < 1
         return ret
@@ -284,7 +286,7 @@ function! auf#util#clearHighlightsInRange(synmatch, hlids, line1, line2) abort
         call s:hlClear(2)
         for ll in a:hlids
             let hl = ll[0]
-            if hl < a:line1 || hl > a:line2
+            if hl < a:ln1 || hl > a:ln2
                 let hlid = s:hlLine(a:synmatch, hl, g:auf_highlight_pattern)
                 let ret += [[hl, hlid]]
             endif
@@ -292,7 +294,7 @@ function! auf#util#clearHighlightsInRange(synmatch, hlids, line1, line2) abort
     else
         for ll in a:hlids
             let [hl, hlid] = [ll[0], ll[1]]
-            if hl < a:line1 || hl > a:line2
+            if hl < a:ln1 || hl > a:ln2
                 let ret += [[hl, hlid]]
                 continue
             endif
@@ -304,7 +306,8 @@ function! auf#util#clearHighlightsInRange(synmatch, hlids, line1, line2) abort
 endfunction
 
 function! auf#util#addHighlightNewLines(hlids, line1, line2, synmatch, lnregexp) abort
-    call auf#util#logVerbose('addHighlightNewLines: ' . a:line1 . '-' . a:line2 . ' @' . len(a:hlids))
+    call auf#util#logVerbose('addHighlightNewLines: ' . a:line1 . '-' . a:line2
+                                                    \ . ' @' . len(a:hlids))
     let [ret, ln1, ln2, i] = [[], a:line1, a:line2+1, 0]
     while i < len(a:hlids)
         let hll = a:hlids[i]
@@ -331,8 +334,9 @@ function! auf#util#addHighlightNewLines(hlids, line1, line2, synmatch, lnregexp)
 endfunction
 
 function! auf#util#driftHighlightsAfterLine(hlids, linenr, drift, synmatch, hlpattern) abort
-    call auf#util#logVerbose('driftHighlightsAfterLine: line:' . a:linenr . ' drift:' . a:drift . ' @' . len(a:hlids))
-    let i = 0
+    call auf#util#logVerbose('driftHighlightsAfterLine: line:' . a:linenr
+                                \ . ' drift:' . a:drift . ' @' . len(a:hlids))
+    let [i, ret] = [0, []]
     while i < len(a:hlids)
         let [hline, hlid] = a:hlids[i]
         if hline >= a:linenr
@@ -342,10 +346,12 @@ function! auf#util#driftHighlightsAfterLine(hlids, linenr, drift, synmatch, hlpa
                 let hlid = s:hlLine(a:synmatch, hline, a:hlpattern)
             endif
             let a:hlids[i] = [hline, hlid]
+            let ret += [hline]
         endif
         let i += 1
     endwhile
     call auf#util#logVerbose('driftHighlightsAfterLine: DONE @' . len(a:hlids))
+    return ret
 endfunction
 
 function! auf#util#highlights_On(hlids, synmatch) abort
@@ -364,6 +370,18 @@ function! auf#util#highlights_On(hlids, synmatch) abort
     call auf#util#logVerbose('highlights_On: DONE @' . len(a:hlids))
 endfunction
 
+function! auf#util#highlights_Off(hlids) abort
+    call auf#util#logVerbose('highlights_Off: @' . len(a:hlids))
+    " execute 'syn clear ' . a:synmatch
+    let i = 0
+    while i < len(a:hlids)
+        let hlid = a:hlids[i][1]
+        let a:hlids[i][1] = s:hlClear(hlid)
+        let i += 1
+    endwhile
+    call auf#util#logVerbose('highlights_Off: DONE @' . len(a:hlids))
+endfunction
+
 function! auf#util#highlightLines(hlines, synmatch) abort
     call auf#util#logVerbose('highlightLines: "' . a:synmatch . '" @' . len(a:hlines))
     let ret = []
@@ -376,7 +394,8 @@ function! auf#util#highlightLines(hlines, synmatch) abort
 endfunction
 
 function! auf#util#highlightLinesRanged(hlids, hlines, synmatch) abort
-    call auf#util#logVerbose('highlightLinesRanged: "' . a:synmatch . '" @' . len(a:hlids) . '/' . len(a:hlines))
+    call auf#util#logVerbose('highlightLinesRanged: syn:' . a:synmatch . ' @'
+                                    \ . len(a:hlids) . '/' . len(a:hlines))
     if len(a:hlines) < 1
         call auf#util#logVerbose('highlightLinesRanged: Returns due to' .
                     \ ' empty highlight lines')
@@ -389,7 +408,8 @@ function! auf#util#highlightLinesRanged(hlids, hlines, synmatch) abort
         elseif hll[0] > last
             let lafter += [hll]
         else
-            call auf#util#logVerbose('highlightLinesRanged: line:' . hll[0] . ' should be between range ' . first . '-' . last)
+            call auf#util#logVerbose('highlightLinesRanged: line:' . hll[0]
+                        \ . ' should be between range ' . first . '-' . last)
         endif
     endfor
     let ret = lbefore + auf#util#highlightLines(a:hlines, a:synmatch) + lafter

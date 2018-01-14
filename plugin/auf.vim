@@ -28,61 +28,58 @@ endif
 
 let g:auf_diffcmd .= ' -u '
 
-function! s:gq_vim_internal(ln1, ln2) abort
-    let tmpe = &l:formatexpr
-    setl formatexpr=
-    let dif = a:ln2 - a:ln1
-    execute 'keepjumps! norm! ' . a:ln1 . 'Ggq' . (dif>0 ? (dif.'j') : 'gq')
-    let &l:formatexpr = tmpe
-endfunction
-
-function! AufFormatRange(line1, line2) abort
-    call auf#util#logVerbose('AufFormatRange: ' . a:line1 . '-' . a:line2)
-    let [def, is_set] = auf#format#GetCurrentFormatter()
-    if empty(def)
-        if is_set
-        endif
-        call auf#util#echoErrorMsg('gq: no available formatter: Fallbacking..')
-        call auf#format#Fallback(1, a:line1, a:line2)
-        call s:gq_vim_internal(a:line1, a:line2)
-    else
-        let [overwrite, coward] = [1, 0]
-        let [res, drift, resstr] = auf#format#TryOneFormatter(a:line1, a:line2, def,
-                    \ overwrite, coward, 'AufErrLine')
-        if res > 1
-            call auf#util#echoErrorMsg('gq Fallbacking: ' . resstr)
-            call s:gq_vim_internal(a:line1, a:line2)
-        else
-            call auf#util#echoSuccessMsg('gq fine:' . resstr . ' ~' . drift)
-        endif
-    endif
-    call auf#util#logVerbose('AufFormatRange: DONE')
-endfunction
-
-function! AufJit() abort
+function! s:hlChanges(prefix) abort
+    let tmpcurfile = tempname()
     try
-        let jit = 0
-        if !&modified
-        elseif !g:auf_jitformat
-            call auf#util#echoErrorMsg('Jit> JITing is disabled GLOBALLY')
-        elseif exists('b:auf_jitformat') && !b:auf_jitformat
-            call auf#util#echoErrorMsg('Jit> JITing is disabled locally')
-        elseif v:cmdbang
-            call auf#util#echoErrorMsg('Jit> Did NOT JIT due to w! bang - accepted as is..')
-        else
-            let jit = 1
-        endif
-
-        if !jit
-            call auf#util#clearAllHighlights(b:auf_newadded_lines)
-            let b:auf_newadded_lines = []
-        else
-            let b:auf__highlight__ = 1
-            call auf#format#justInTimeFormat('AufErrLine')
-        endif
+        call writefile(getline(1, '$'), tmpcurfile)
+        call auf#highlights#relight('AufChgLine', g:auf_changedline_pattern,
+                    \ 'AufErrLine', expand('%:.'), tmpcurfile, b:auf_difpath)
     catch /.*/
-        call auf#util#echoErrorMsg('Exception: ' . v:exception)
+        call auf#util#echoErrorMsg(a:prefix . ': Exception: ' . v:exception)
+    finally
+        call delete(tmpcurfile)
     endtry
+    if b:auf__highlight__
+        call auf#util#highlights_On(w:auf_highlight_lines_hlids, 'AufErrLine')
+    endif
+endfunction
+
+function! AufInsertModeOn() abort
+    call auf#util#logVerbose('InsertModeOn: Start')
+    call auf#util#highlights_Off(w:auf_highlight_lines_hlids)
+    call auf#util#highlights_Off(w:auf_newadded_lines_hlids)
+    call auf#util#logVerbose('InsertModeOn: End')
+endfunction
+
+function! AufInsertModeOff() abort
+    call auf#util#logVerbose('AufInsertModeOff: Start')
+    if b:changedtick == b:auf_changedtick_last
+        if b:auf__highlight__
+            call auf#util#highlights_On(w:auf_highlight_lines_hlids, 'AufErrLine')
+            call auf#util#highlights_On(w:auf_newadded_lines_hlids, 'AufChgLine')
+        endif
+        call auf#util#logVerbose('AufInsertModeOff: NoChange End')
+        return
+    endif
+    let b:auf_changedtick_last = b:changedtick
+    call s:hlChanges('AufInsertModeOff')
+    call auf#util#logVerbose('AufInsertModeOff: End')
+endfunction
+
+function! AufCursorHoldInNormalMode() abort
+    call auf#util#logVerbose('CursorHoldInNormalMode: Start')
+    if expand('%') ==# ''
+        call auf#util#logVerbose('CursorHoldInNormalMode: NoBufferYet End')
+        return
+    endif
+    if b:changedtick == b:auf_changedtick_last
+        call auf#util#logVerbose('CursorHoldInNormalMode: NoChange End')
+        return
+    endif
+    call auf#util#logVerbose('CursorHoldInNormalMode: Change: ' . b:auf_changedtick_last . '!=' . b:changedtick)
+    let b:auf_changedtick_last = b:changedtick
+    call s:hlChanges('CursorHoldInNormalMode')
+    call auf#util#logVerbose('CursorHoldInNormalMode: End')
 endfunction
 
 function! AufBufNewFile() abort
@@ -94,37 +91,41 @@ endfunction
 
 function! AufBufWinEnter() abort
     call auf#util#logVerbose('AufBufWinEnter: START')
-    call auf#util#clearAllHighlights(w:auf_highlight_lines_hlids)
-    let w:auf_highlight_lines_hlids = []
+    if !exists('b:auf_new_lnnr_list')
+        let b:auf_new_lnnr_list = []
+    endif
+    if !exists('b:auf_err_lnnr_list')
+        let b:auf_err_lnnr_list = []
+    endif
+    if !exists('b:auf__highlight__')
+        let b:auf__highlight__ = g:auf_highlight_on_bufenter
+    endif
+    if !exists('b:auf_changedtick_last')
+        let b:auf_changedtick_last = b:changedtick
+    endif
+    call auf#util#cleanAllHLIDs(w:, 'auf_highlight_lines_hlids')
+    call auf#util#cleanAllHLIDs(w:, 'auf_newadded_lines_hlids')
+    let w:auf_newadded_lines_hlids = auf#util#highlightLines(
+                                        \ b:auf_new_lnnr_list, 'AufChgLine')
     if ! b:auf__highlight__
         call auf#util#logVerbose('AufBufWinEnter: NoHL END')
         return
     endif
-    for i in b:auf_err_lnnr_list
-        let w:auf_highlight_lines_hlids += [[i,0]]
-    endfor
-    call auf#util#highlights_On(w:auf_highlight_lines_hlids, 'AufErrLine')
+    let w:auf_highlight_lines_hlids = auf#util#highlightLines(
+                                        \ b:auf_err_lnnr_list, 'AufErrLine')
     call auf#util#logVerbose('AufBufWinEnter: END')
 endfunction
 
 function! AufBufReadPost() abort
     call auf#util#logVerbose('AufBufReadPost: START')
-    if !exists('w:auf_highlight_lines_hlids')
-        let w:auf_highlight_lines_hlids = []
-    endif
-    if !exists('b:auf_newadded_lines')
-        let b:auf_newadded_lines = []
+    call auf#util#cleanAllHLIDs(w:, 'auf_highlight_lines_hlids')
+    call auf#util#cleanAllHLIDs(w:, 'auf_newadded_lines_hlids')
+    if !exists('b:auf_difpath')
+        let b:auf_difpath = expand('%:p:h') . g:auf_tempnames_prefix . expand('%:t') . '.aufdiff0'
     endif
     if !exists('b:auf__highlight__')
         let b:auf__highlight__ = g:auf_highlight_on_bufenter
     endif
-    if !exists('b:auf_difpath')
-        let b:auf_difpath = expand('%:p:h') . g:auf_tempnames_prefix . expand('%:t') . '.aufdiff0'
-    endif
-    if !exists('b:auf_err_lnnr_list')
-        let b:auf_err_lnnr_list = []
-    endif
-    let b:auf_changedtick_last = b:changedtick
 
     if &textwidth
         if g:auf_highlight_longlines == 1
@@ -142,19 +143,43 @@ function! AufBufReadPost() abort
     call auf#util#logVerbose('AufBufReadPost: END')
 endfunction
 
-function! AufInfo() abort
-    let [i, formatters] = [0, '']
-    while 1
-        let def = auf#registry#GetFormatterByIndex(&ft, i)
-        if empty(def)
-            break
+function! AufBufDeleted(bufnr) abort
+    let path = getbufvar(a:bufnr, 'auf_difpath', '')
+    if path !=# ''
+        call delete(path)
+    endif
+    " call setbufvar(a:bufnr, 'auf_difpath', '')
+endfunction
+
+function! AufShowDiff() abort
+    if exists('b:auf_difpath')
+        exec 'sp ' . b:auf_difpath
+        setl buftype=nofile ft=diff bufhidden=wipe ro nobuflisted noswapfile nowrap
+    endif
+endfunction
+
+function! AufFormatJIT() abort
+    try
+        let jit = 0
+        if !g:auf_jitformat
+            call auf#util#echoErrorMsg('Jit> JITing is disabled GLOBALLY')
+        elseif exists('b:auf_jitformat') && !b:auf_jitformat
+            call auf#util#echoErrorMsg('Jit> JITing is disabled locally')
+        elseif v:cmdbang
+            call auf#util#echoErrorMsg('Jit> Did NOT JIT due to w! bang - accepted as is..')
+        else
+            let jit = 1
         endif
-        if index(def['filetypes'], &ft) > -1
-            let formatters .= get(def, 'ID', '') . ', '
+
+        if !jit
+            call auf#util#cleanAllHLIDs(w:, 'auf_newadded_lines_hlids')
+        else
+            let b:auf__highlight__ = 1
+            call auf#format#JIT('AufErrLine')
         endif
-        let i += 1
-    endwhile
-    echomsg 'Formatters: [' . formatters[:-3] . ']'
+    catch /.*/
+        call auf#util#echoErrorMsg('Exception: ' . v:exception)
+    endtry
 endfunction
 
 " Save and recall window state to prevent vim from jumping to line 1: Beware
@@ -167,20 +192,19 @@ command! -nargs=? -range=% -complete=filetype -bang -bar Auf
 command! -nargs=0 -bar AufJIT call AufJit()
 
 " Create commands for iterating through formatter list
-command! AufNextFormatter call auf#format#NextFormatter()
-command! AufPrevFormatter call auf#format#PreviousFormatter()
-command! AufCurrFormatter call auf#format#CurrentFormatter()
-command! AufInfo call AufInfo()
+command! AufNextFormatter call auf#formatters#setPrintNext()
+command! AufPrevFormatter call auf#formatters#setPrintPrev()
+command! AufCurrFormatter call auf#formatters#setPrintCurr()
+command! AufInfo call auf#formatters#printAll()
 command! -nargs=0 AufDisable
     \ let b:auf_disable=1 |
-    \ call auf#util#clearAllHighlights(w:auf_highlight_lines_hlids) |
-    \ call auf#util#clearAllHighlights(b:auf_newadded_lines) |
-    \ let b:auf_newadded_lines = []
+    \ call auf#util#cleanAllHLIDs(w:, 'auf_highlight_lines_hlids') |
+    \ call auf#util#cleanAllHLIDs(w:, 'auf_newadded_lines_hlids') |
 command! -nargs=0 AufEnable unlet! b:auf_disable
 
-command! AufShowDiff call auf#format#ShowDiff()
+command! AufShowDiff call AufShowDiff()
 command! AufClearHi
-    \ call auf#util#clearAllHighlights(w:auf_highlight_lines_hlids) |
+    \ call auf#util#cleanAllHLIDs(w:, 'auf_highlight_lines_hlids') |
     \ let b:auf__highlight__ = 0
 
 let s:AufErrLineSynCmd = 'highlight def link AufErrLine ' . g:auf_showdiff_synmatch
@@ -204,15 +228,15 @@ augroup Auf_Auto_Inserts
     autocmd!
     autocmd InsertEnter *
         \ if !exists('b:auf_disable') && s:isAufFiletype() |
-        \   call auf#format#InsertModeOn() |
+        \   call AufInsertModeOn() |
         \ endif
     autocmd InsertLeave *
         \ if !exists('b:auf_disable') && s:isAufFiletype() |
-        \   call auf#format#InsertModeOff('AufChgLine', g:auf_changedline_pattern, 'AufErrLine') |
+        \   call AufInsertModeOff() |
         \ endif
     autocmd CursorHold *
         \ if !exists('b:auf_disable') && s:isAufFiletype() |
-        \   call auf#format#CursorHoldInNormalMode('AufChgLine', g:auf_changedline_pattern, 'AufErrLine') |
+        \   call AufCursorHoldInNormalMode() |
         \ endif
 augroup END
 
@@ -228,11 +252,11 @@ augroup Auf_Auto_BufEvents
         \ endif
     autocmd BufRead *
         \ if s:isAufFiletype() && g:auf_hijack_gq |
-        \   setl formatexpr=AufFormatRange(v:lnum,v:lnum+v:count-1) |
+        \   setl formatexpr=auf#format#gq(v:lnum,v:lnum+v:count-1) |
         \ endif
     autocmd BufWritePre *
-        \ if !exists('b:auf_disable') && s:isAufFiletype() |
-        \   call AufJit() |
+        \ if !exists('b:auf_disable') && s:isAufFiletype() && &modified |
+        \   call AufFormatJIT() |
         \ endif
     autocmd BufWritePost *
         \ if !exists('b:auf_disable') && s:isAufFiletype() |
@@ -242,6 +266,8 @@ augroup Auf_Auto_BufEvents
         \ if !exists('b:auf_disable') && s:isAufFiletype() |
         \   call AufBufWinEnter() |
         \ endif
+    autocmd BufDelete * call AufBufDeleted(expand('<abuf>'))
+    autocmd BufUnload * call AufBufDeleted(bufnr(expand('<afile>')))
 augroup END
 
 call auf#registry#LoadAllFormatters()
