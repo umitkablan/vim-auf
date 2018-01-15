@@ -119,7 +119,7 @@ function! auf#format#TryAllFormatters(bang, synmatch, ...) range abort
                 break
             endif
         endif
-        call auf#formatter#setCache(def, fmtidx, '')
+        call auf#formatters#setCurrent(def, fmtidx, '')
         call auf#util#logVerbose('TryAllFormatters: Trying definition in @' . def['ID'])
         if s:tryOneFormatter(a:firstline, a:lastline, def, overwrite, coward,
                                             \ a:synmatch, b:auf__highlight__)
@@ -229,17 +229,22 @@ function! s:executeFormatter(ln1, ln2, fmtdef, curf, fmtedf) abort
     let [out, err, sherr] = auf#util#execSystem(cmd)
     call auf#util#logVerbose('doFormatSource: shErr:' . sherr . ' err:' . err)
     if sherr != 0
-        return [2, sherr, 0, err]
+        return [sherr, err]
     endif
     if !isoutf
         call writefile(split(out, '\n'), a:fmtedf)
     endif
-    return isranged
+    return [0, isranged]
 endfunction
 
 function! s:doFormatSource(line1, line2, fmtdef, curfile, formattedf, difpath,
                                         \ synmatch, overwrite, coward) abort
-    let isranged = s:executeFormatter(a:line1, a:line2, a:fmtdef, a:curfile, a:formattedf)
+    let [sherr, isranged] = s:executeFormatter(a:line1, a:line2, a:fmtdef,
+                                                    \ a:curfile, a:formattedf)
+    if sherr
+        return [2, sherr, 0, isranged]
+    endif
+
     let isfull = auf#util#isFullSelected(a:line1, a:line2)
     let [issame, err, sherr] = auf#diff#diffFiles(g:auf_diffcmd, a:curfile,
                                                     \ a:formattedf, a:difpath)
