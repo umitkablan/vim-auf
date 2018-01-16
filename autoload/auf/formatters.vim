@@ -3,21 +3,6 @@ if exists('g:loaded_auf_formatters_autoload') || !exists('g:loaded_auf_plugin')
 endif
 let g:loaded_auf_formatters_autoload = 1
 
-function! auf#formatters#printAll() abort
-    let [i, formatters] = [0, '']
-    while 1
-        let def = auf#registry#GetFormatterByIndex(&ft, i)
-        if empty(def)
-            break
-        endif
-        if index(def['filetypes'], &ft) > -1
-            let formatters .= get(def, 'ID', '') . ', '
-        endif
-        let i += 1
-    endwhile
-    call auf#util#echoSuccessMsg('Formatters: [' . formatters[:-3] . ']')
-endfunction
-
 function! auf#formatters#setCurrent(fmtdef, idx, confpath) abort
     let [b:auffmt_definition, b:auffmt_current_idx] = [a:fmtdef, a:idx]
     let cpath = a:confpath
@@ -60,7 +45,8 @@ function! auf#formatters#getCurrent() abort
     elseif type(fmt_list) == type([])
         for i in range(0, len(fmt_list)-1)
             let id = fmt_list[i]
-            call auf#util#logVerbose('GetCurrentFormatter: Checking format definitions for ID:' . id)
+            call auf#util#logVerbose('GetCurrentFormatter: '
+                                \ . 'Checking format definitions for ID:' . id)
             let def = auf#registry#GetFormatterByID(id, &ft)
             if !empty(def)
                 call auf#formatters#setCurrent(def, i, '')
@@ -71,6 +57,21 @@ function! auf#formatters#getCurrent() abort
         call auf#util#echoErrorMsg('Supply a list in variable: g:' . varname)
     endif
     return [def, is_set]
+endfunction
+
+function! auf#formatters#printAll() abort
+    let [i, formatters] = [0, '']
+    while 1
+        let def = auf#registry#GetFormatterByIndex(&ft, i)
+        if empty(def)
+            break
+        endif
+        if index(def['filetypes'], &ft) > -1
+            let formatters .= get(def, 'ID', '') . ', '
+        endif
+        let i += 1
+    endwhile
+    call auf#util#echoSuccessMsg('Formatters: [' . formatters[:-3] . ']')
 endfunction
 
 " Functions for iterating through list of available formatters
@@ -144,7 +145,8 @@ function! auf#formatters#setPrintCurr() abort
         return
     endif
     call auf#util#echoSuccessMsg('Current formatter: #' . b:auffmt_current_idx
-                \ . ': ' . def['ID'])
+                                                        \ . ': ' . def['ID'])
+    call auf#formatters#setCurrent(def, b:auffmt_current_idx, '')
 endfunction
 
 function! s:probeFormatter() abort
@@ -152,14 +154,15 @@ function! s:probeFormatter() abort
     let varname = 'aufformatters_' . &ft
     let [fmt_list, def, i, probefile] = [get(g:, varname, ''), {}, 0, '']
     if type(fmt_list) == type('')
-        call auf#util#logVerbose('s:probeFormatter: Check probe files of all defined formatters')
+        call auf#util#logVerbose('s:probeFormatter: '
+                            \ . 'Check probe files of all defined formatters')
         while 1
             let def = auf#registry#GetFormatterByIndex(&ft, i)
             if empty(def)
                 break
             endif
             let probefile = auf#util#CheckProbeFileUpRecursive(expand('%:p:h'),
-                        \ get(def, 'probefiles', []))
+                                                \ get(def, 'probefiles', []))
             if len(probefile)
                 break
             endif
@@ -168,13 +171,14 @@ function! s:probeFormatter() abort
     else
         for i in range(0, len(fmt_list)-1)
             let id = fmt_list[i]
-            call auf#util#logVerbose('s:probeFormatter: Cheking format definitions for ID:' . id)
+            call auf#util#logVerbose('s:probeFormatter: '
+                                \ . 'Cheking format definitions for ID:' . id)
             let def = auf#registry#GetFormatterByID(id, &ft)
             if empty(def)
                 continue
             endif
             let probefile = auf#util#CheckProbeFileUpRecursive(expand('%:p:h'),
-                        \ get(def, 'probefiles', []))
+                                                \ get(def, 'probefiles', []))
             if len(probefile)
                 break
             endif
@@ -182,7 +186,7 @@ function! s:probeFormatter() abort
         endfor
     endif
     call auf#util#logVerbose('s:probeFormatter: Ended: i:' . i . ' def:'
-                \ . get(def, 'ID', '_VOID_'))
+                                                \ . get(def, 'ID', '_VOID_'))
     return [empty(def) ? -1 : i, def, probefile]
 endfunction
 
