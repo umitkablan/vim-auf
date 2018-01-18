@@ -37,13 +37,13 @@ endfunction
 function! auf#format#JIT(synmatch) abort
     call auf#util#logVerbose('auf#format#JIT: trying..')
     let [l, c] = [line('.'), col('.')]
+    let [shadowpath, difpath] = [tempname(), tempname()]
     try
         " Diff current state with on-the-disk saved state - tracked changes
         " might be out of sync due to uncatchable normal mode edits, so
         " re-diffing whole is better idea
-        let shadowpath = tempname()
         call writefile(getline(1, '$'), shadowpath)
-        call s:jitDiffedLines(a:synmatch, shadowpath) " call s:jitAddedLines(a:synmatch)
+        call s:jitDiffedLines(a:synmatch, shadowpath, difpath) " call s:jitAddedLines(a:synmatch)
         call delete(shadowpath)
     catch /.*/
         call auf#util#echoErrorMsg('Exception: ' . v:exception)
@@ -52,6 +52,8 @@ function! auf#format#JIT(synmatch) abort
         if c-col('.') > 0
             silent execute 'keepjumps normal! ' . (c-col('.')) . 'l'
         endif
+        call delete(shadowpath)
+        call delete(difpath)
     endtry
     call auf#util#logVerbose('auf#format#JIT: DONE')
 endfunction
@@ -295,43 +297,52 @@ endfunction
 function! s:formatSource(line1, line2, fmtdef, overwrite, coward, synmatch) abort
     call auf#util#logVerbose('formatSource: ' . a:line1 . ',' . a:line2 . ' '
             \ . a:fmtdef['ID'] . ' ow:' . a:overwrite . ' SynMatch:' . a:synmatch)
-    let [formattedf, shadowpath] = [tempname(), tempname()]
-    call writefile(getline(1, '$'), shadowpath)
-    call auf#util#logVerbose('formatSource: origTmp:' . shadowpath . ' formTmp:' . formattedf)
+    let [formattedf, shadowpath, difpath] = [tempname(), tempname(), tempname()]
+    try
+        call writefile(getline(1, '$'), shadowpath)
+        call auf#util#logVerbose('formatSource: origTmp:' . shadowpath . ' formTmp:' . formattedf)
 
-    let [resstr, clear] = ['', 0]
-    let [res, sherr, drift, err] = s:doFormatSource(a:line1, a:line2,
-                            \ a:fmtdef, shadowpath, formattedf, b:auf_difpath,
-                            \ a:synmatch, a:overwrite, a:coward)
-    call auf#util#logVerbose('formatSource: res:' . res . ' ShErr:' . sherr)
-    if res == 0 "No diff found
-        let clear = 1
-    elseif res == 2 "Format program error
-        let resstr = 'formatter failed(' . sherr . '): ' . err
-    elseif res == 3 "Diff program error
-        let resstr = 'diff failed(' . sherr . '): ' . err
-    elseif res == 4 "Refuse to format - coward mode on
-        let [resstr, res] = ['cowardly refusing - it touches more lines than edited', 1]
-    else
-        let clear = 1
-    endif
-    if clear && a:overwrite
-        let w:auf_highlight_lines_hlids = auf#util#clearHighlightsInRange(a:synmatch,
+        let [resstr, clear] = ['', 0]
+        let [res, sherr, drift, err] = s:doFormatSource(a:line1, a:line2,
+                                \  a:fmtdef, shadowpath, formattedf, difpath,
+                                \  a:synmatch, a:overwrite, a:coward)
+        call auf#util#logVerbose('formatSource: res:' . res . ' ShErr:' . sherr)
+        if res == 0 "No diff found
+            let clear = 1
+        elseif res == 2 "Format program error
+            let resstr = 'formatter failed(' . sherr . '): ' . err
+        elseif res == 3 "Diff program error
+            let resstr = 'diff failed(' . sherr . '): ' . err
+        elseif res == 4 "Refuse to format - coward mode on
+            let [resstr, res] = ['cowardly refusing - it touches more lines than edited', 1]
+        else
+            let clear = 1
+        endif
+        if clear && a:overwrite
+            let w:auf_highlight_lines_hlids =
+                        \ auf#util#clearHighlightsInRange(a:synmatch,
                                 \ w:auf_highlight_lines_hlids, a:line1, a:line2)
-        let w:auf_newadded_lines_hlids = auf#util#clearHighlightsInRange(a:synmatch,
+            let w:auf_newadded_lines_hlids =
+                        \ auf#util#clearHighlightsInRange(a:synmatch,
                                 \ w:auf_newadded_lines_hlids, a:line1, a:line2)
-    endif
-    if drift != 0
-        let b:auf_err_lnnr_list = auf#util#driftHighlightsAfterLine(
+        endif
+        if drift != 0
+            let b:auf_err_lnnr_list =
+                    \ auf#util#driftHighlightsAfterLine(
                         \ w:auf_highlight_lines_hlids, a:line1, drift, '', '')
-        let b:auf_new_lnnr_list = auf#util#driftHighlightsAfterLine(
+            let b:auf_new_lnnr_list =
+                    \ auf#util#driftHighlightsAfterLine(
                         \ w:auf_newadded_lines_hlids, a:line1, drift, '', '')
-    endif
-
-    call delete(formattedf)
-    call delete(shadowpath)
-    call auf#util#logVerbose('formatSource: res:' . res . ' drift:' . drift
-                                                    \ . ' resstr:' . resstr)
+        endif
+        call auf#util#logVerbose('formatSource: res:' . res . ' drift:' . drift
+                                                        \ . ' resstr:' . resstr)
+    catch /.*/
+        call auf#util#echoErrorMsg('Auf> s:formatSource: ' . v:exception)
+    finally
+        call delete(formattedf)
+        call delete(shadowpath)
+        call delete(difpath)
+    endtry
     return [res, drift, resstr]
 endfunction
 
@@ -407,14 +418,14 @@ function! s:jitAddedLines(synmatch) abort
     endif
 endfunction
 
-function! s:jitDiffedLines(synmatch, shadowpath) abort
+function! s:jitDiffedLines(synmatch, shadowpath, difpath) abort
     let [tot_drift, res, msg] = [0, 1, '']
     if !filereadable(expand('%:p'))
         let [res, drift] = s:formatOrFallback(1, line('$'), a:synmatch)
         let msg .= '1-$:' . '~' . drift . ' /'
     else
         let [issame, err, sherr] = auf#diff#diffFiles(g:auf_diffcmd, expand('%:p'),
-                                                \ a:shadowpath, b:auf_difpath)
+                                                    \ a:shadowpath, a:difpath)
         if issame
         elseif err
             call auf#util#logVerbose('jitDiffedLines: diff error '
@@ -422,8 +433,8 @@ function! s:jitDiffedLines(synmatch, shadowpath) abort
             return 2
         endif
         call auf#util#logVerbose_fileContent('jitDiffedLines: diff done file:'
-                    \ . b:auf_difpath, b:auf_difpath, 'jitDiffedLines: ========')
-        for [linenr, addlines, rmlines] in auf#diff#parseHunks(b:auf_difpath)
+                        \ . a:difpath, a:difpath, 'jitDiffedLines: ========')
+        for [linenr, addlines, rmlines] in auf#diff#parseHunks(a:difpath)
             call auf#util#logVerbose('s:jitDiffedLines: ln:' . linenr . ' +:'
                                     \ . len(addlines) . ' -:' . len(rmlines))
             let [prevcnt, curcnt] = [len(rmlines), len(addlines)]

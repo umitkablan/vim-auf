@@ -29,15 +29,16 @@ endif
 let g:auf_diffcmd .= ' -u '
 
 function! s:hlChanges(prefix) abort
-    let tmpcurfile = tempname()
+    let [tmpcurfile, difpath] = [tempname(), tempname()]
     try
         call writefile(getline(1, '$'), tmpcurfile)
         call auf#highlights#relight('AufChgLine', g:auf_changedline_pattern,
-                    \ 'AufErrLine', expand('%:.'), tmpcurfile, b:auf_difpath)
+                        \ 'AufErrLine', expand('%:.'), tmpcurfile, difpath)
     catch /.*/
         call auf#util#echoErrorMsg(a:prefix . ': Exception: ' . v:exception)
     finally
         call delete(tmpcurfile)
+        call delete(difpath)
     endtry
     if b:auf__highlight__
         call auf#util#highlights_On(w:auf_highlight_lines_hlids, 'AufErrLine')
@@ -120,9 +121,6 @@ function! AufBufReadPost() abort
     call auf#util#logVerbose('AufBufReadPost: START')
     call auf#util#cleanAllHLIDs(w:, 'auf_highlight_lines_hlids')
     call auf#util#cleanAllHLIDs(w:, 'auf_newadded_lines_hlids')
-    if !exists('b:auf_difpath')
-        let b:auf_difpath = expand('%:p:h') . g:auf_tempnames_prefix . expand('%:t') . '.aufdiff0'
-    endif
     if !exists('b:auf__highlight__')
         let b:auf__highlight__ = g:auf_highlight_on_bufenter
     endif
@@ -143,15 +141,8 @@ function! AufBufReadPost() abort
     call auf#util#logVerbose('AufBufReadPost: END')
 endfunction
 
-function! AufBufDeleted(bufnr) abort
-    let path = getbufvar(a:bufnr, 'auf_difpath', '')
-    if path !=# ''
-        call delete(path)
-    endif
-    " call setbufvar(a:bufnr, 'auf_difpath', '')
-endfunction
-
 function! AufShowDiff() abort
+    " TODO: Format & diff and show in buffer
     if exists('b:auf_difpath')
         exec 'sp ' . b:auf_difpath
         setl buftype=nofile ft=diff bufhidden=wipe ro nobuflisted noswapfile nowrap
@@ -266,8 +257,6 @@ augroup Auf_Auto_BufEvents
         \ if !exists('b:auf_disable') && s:isAufFiletype() |
         \   call AufBufWinEnter() |
         \ endif
-    autocmd BufDelete * call AufBufDeleted(expand('<abuf>'))
-    autocmd BufUnload * call AufBufDeleted(bufnr(expand('<afile>')))
 augroup END
 
 call auf#registry#LoadAllFormatters()

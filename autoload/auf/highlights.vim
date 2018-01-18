@@ -29,8 +29,8 @@ function! s:driftHighlights_FileEdited(synmatch_chg, lnregexp_chg, synmatch_err,
         call auf#util#echoErrorMsg('s:driftHighlights_FileEdited: diff error ' . err . '/'. sherr)
         return 2
     endif
-    call auf#util#logVerbose_fileContent('s:driftHighlights_FileEdited: diff done file:'
-                \ . b:auf_difpath, b:auf_difpath, 's:driftHighlights_FileEdited: ========')
+    call auf#util#logVerbose_fileContent('s:driftHighlights_FileEdited: diff done:'
+                \ . a:difpath, a:difpath, 's:driftHighlights_FileEdited: ========')
     let b:auf__highlight__ = 1
     let prevdrifts_tot = 0
     for [linenr, addlines, rmlines] in auf#diff#parseHunks(a:difpath)
@@ -40,7 +40,7 @@ function! s:driftHighlights_FileEdited(synmatch_chg, lnregexp_chg, synmatch_err,
         if prevcnt == 0 && curcnt == 0
             call auf#util#echoErrorMsg('s:driftHighlights_FileEdited: invalid hunk-lines:'
                                     \ . linenr . '-' . prevcnt . ',' . curcnt)
-                continue
+            continue
         endif
         let drift = curcnt - prevcnt
         call auf#util#logVerbose('s:driftHighlights_FileEdited: line:' . linenr . ' cur:'
