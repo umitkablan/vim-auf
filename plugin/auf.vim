@@ -77,7 +77,8 @@ function! AufCursorHoldInNormalMode() abort
         call auf#util#logVerbose('CursorHoldInNormalMode: NoChange End')
         return
     endif
-    call auf#util#logVerbose('CursorHoldInNormalMode: Change: ' . b:auf_changedtick_last . '!=' . b:changedtick)
+    call auf#util#logVerbose('CursorHoldInNormalMode: Change: '
+                            \ . b:auf_changedtick_last . '!=' . b:changedtick)
     let b:auf_changedtick_last = b:changedtick
     call s:hlChanges('CursorHoldInNormalMode')
     call auf#util#logVerbose('CursorHoldInNormalMode: End')
