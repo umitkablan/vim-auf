@@ -21,9 +21,9 @@ function! auf#format#gq(line1, line2) abort
         call s:fallbackFormat(1, a:line1, a:line2)
         call s:gq_vim_internal(a:line1, a:line2)
     else
-        let [overwrite, coward] = [1, 0]
-        let [res, drift, resstr] = s:tryOneFormatter(a:line1, a:line2, def,
-                                        \ overwrite, coward, 'AufErrLine', 0)
+        let [overwrite, coward, synmatch] = [1, 0, 'AufErrLine']
+        let [res, drift, resstr, _] = s:formatSource(a:line1, a:line2, def,
+                                                \ overwrite, coward, synmatch)
         if res > 1
             call auf#util#echoErrorMsg('auf#format#gq: Fallbacking: ' . resstr)
             call s:gq_vim_internal(a:line1, a:line2)
@@ -32,6 +32,21 @@ function! auf#format#gq(line1, line2) abort
         endif
     endif
     call auf#util#logVerbose('auf#format#gq: DONE')
+endfunction
+
+function! auf#format#getDiffOfFormatted(ln1, ln2) abort
+    call auf#util#logVerbose('auf#format#getDiffOfFormatted: ' . a:ln1 . '-' . a:ln2)
+    let [def, is_set] = auf#formatters#getCurrent()
+    if empty(def)
+        if is_set
+        endif
+        return []
+    endif
+    let [overwrite, coward, synmatch] = [0, 0, '']
+    let [res, drift, resstr, diflines] = s:formatSource(a:ln1, a:ln2, def,
+                                                \ overwrite, coward, synmatch)
+    call auf#util#logVerbose('auf#format#getDiffOfFormatted: DONE')
+    return diflines
 endfunction
 
 function! auf#format#JIT(synmatch) abort
@@ -60,7 +75,7 @@ endfunction
 
 function! s:tryOneFormatter(line1, line2, fmtdef, overwrite, coward, synmatch,
                                                         \ print_status) abort
-    let [res, drift, resstr] = s:formatSource(a:line1, a:line2, a:fmtdef,
+    let [res, drift, resstr, _] = s:formatSource(a:line1, a:line2, a:fmtdef,
                                         \ a:overwrite, a:coward, a:synmatch)
     if res > 1
         if a:print_status
@@ -294,9 +309,11 @@ function! s:formatSource(line1, line2, fmtdef, overwrite, coward, synmatch) abor
     call auf#util#logVerbose('formatSource: ' . a:line1 . ',' . a:line2 . ' '
             \ . a:fmtdef['ID'] . ' ow:' . a:overwrite . ' SynMatch:' . a:synmatch)
     let [formattedf, shadowpath, difpath] = [tempname(), tempname(), tempname()]
+    let diflines = []
     try
         call writefile(getline(1, '$'), shadowpath)
-        call auf#util#logVerbose('formatSource: origTmp:' . shadowpath . ' formTmp:' . formattedf)
+        call auf#util#logVerbose('formatSource: origTmp:' . shadowpath
+                                                \ . ' formTmp:' . formattedf)
 
         let [resstr, clear] = ['', 0]
         let [res, sherr, drift, err] = s:doFormatSource(a:line1, a:line2,
@@ -314,6 +331,7 @@ function! s:formatSource(line1, line2, fmtdef, overwrite, coward, synmatch) abor
         else
             let clear = 1
         endif
+        let diflines = readfile(difpath)
         if clear && a:overwrite
             let w:auf_highlight_lines_hlids =
                         \ auf#util#clearHighlightsInRange(a:synmatch,
@@ -339,7 +357,7 @@ function! s:formatSource(line1, line2, fmtdef, overwrite, coward, synmatch) abor
         call delete(shadowpath)
         call delete(difpath)
     endtry
-    return [res, drift, resstr]
+    return [res, drift, resstr, diflines]
 endfunction
 
 function! s:formatOrFallback(ln1, ln2, synmatch) abort
