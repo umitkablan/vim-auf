@@ -288,12 +288,17 @@ function! s:doFormatSource(line1, line2, fmtdef, curfile, formattedf, difpath,
         endif
     endif
 
-    if !a:overwrite && isfull
+    if !a:overwrite
+        if !isfull
+            return [1, 0, 0, err]
+        endif
         call auf#util#cleanAllHLIDs(w:, 'auf_highlight_lines_hlids')
         let b:auf_err_lnnr_list = auf#diff#parseChangedLines(a:difpath)
-        let w:auf_highlight_lines_hlids =
+        if a:synmatch !=# ''
+            let w:auf_highlight_lines_hlids =
                 \ auf#util#highlightLinesRanged(w:auf_highlight_lines_hlids,
                                             \ b:auf_err_lnnr_list, a:synmatch)
+        endif
         return [1, 0, 0, err]
     endif
     " call feedkeys("\<C-G>u", 'n')
@@ -331,7 +336,9 @@ function! s:formatSource(line1, line2, fmtdef, overwrite, coward, synmatch) abor
         else
             let clear = 1
         endif
-        let diflines = readfile(difpath)
+        if res != 0
+            let diflines = readfile(difpath)
+        endif
         if clear && a:overwrite
             let w:auf_highlight_lines_hlids =
                         \ auf#util#clearHighlightsInRange(a:synmatch,
