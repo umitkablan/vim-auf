@@ -142,12 +142,30 @@ function! AufBufReadPost() abort
     call auf#util#logVerbose('AufBufReadPost: END')
 endfunction
 
-function! AufShowDiff() abort
-    " TODO: Format & diff and show in buffer
-    if exists('b:auf_difpath')
-        exec 'sp ' . b:auf_difpath
-        setl buftype=nofile ft=diff bufhidden=wipe ro nobuflisted noswapfile nowrap
+function! s:splitNewBuf(bufname) abort
+    setlocal noautoread
+    execute 'aboveleft split ' . a:bufname
+    setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted
+    setlocal modifiable noreadonly
+    setlocal foldmethod=manual foldcolumn=0
+    setlocal nospell
+endfunction
+
+function! AufShowDiff(hasbang, ln1, ln2) abort
+    let [diflines, bufname] = [[], 'aufdiff_' . fnamemodify(expand('%'), ':t')]
+    if !a:hasbang
+        let diflines = auf#format#getDiffOfFormatted(a:ln1, a:ln2)
+        let bufname .= '_' . a:ln1 . '-' . a:ln2
     endif
+    if len(diflines) == 0
+        let diflines = auf#format#getDiffOfFormatted(1, line('$'))
+        let bufname .= '_FULL'
+    endif
+    call s:splitNewBuf(bufname)
+    for ln in diflines
+        put=ln
+    endfor
+    setlocal buftype=nofile ft=diff ro nobuflisted noswapfile nowrap
 endfunction
 
 function! AufFormatJIT() abort
@@ -194,7 +212,7 @@ command! -nargs=0 AufDisable
     \ call auf#util#cleanAllHLIDs(w:, 'auf_newadded_lines_hlids') |
 command! -nargs=0 AufEnable unlet! b:auf_disable
 
-command! AufShowDiff call AufShowDiff()
+command! -nargs=0 -range -bang AufShowDiff call AufShowDiff(<bang>0, <line1>, <line2>)
 command! AufClearHi
     \ call auf#util#cleanAllHLIDs(w:, 'auf_highlight_lines_hlids') |
     \ let b:auf__highlight__ = 0

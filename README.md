@@ -106,7 +106,7 @@ You can, of course, manually autoindent, retab or remove trailing whitespace wit
 When you have installed the formatter you need, you can format the *entire* buffer with the command
 `:Auf!`. You can provide the command with a filetype such as `:Auf! json`, default is the buffer's `&filetype`. This command could also be used in ranged mode which gives you the flexibility to format any embedded type like Javascript inside HTML.
 
-The normal `:Auf` command will *only* highlight lines with wrong formatting where you can `:AufShowDiff` to see the diff-file of correctly-formatted to current.
+The normal `:Auf` command will *only* highlight lines with wrong formatting where you can `:<line1>,<line2>AufShowDiff[!]` to see the diff-file of correctly-formatted to current. Default is to see the corrected version of current line where `:AufShowDiff` supports `range` and `!` - with bang all file corrected lines will be shown. If selected line format is correct then FULL difference is shown like `!`.
 
 `:AufJIT [filetype]` command will JIT-format your recent *unsaved* changes, which is almost never will be used since it is automatically triggered by the plugin if not configured otherwise.
 

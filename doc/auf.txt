@@ -105,7 +105,8 @@ commands for manual intervention.
 4.8 :AufShowDiff                                                *:AufShowDiff*
 
                   Show diff of current and correctly formatted version in
-                  split window.
+                  split window. Supports range which default to current line.
+                  If selected lines are correct then FULL diff is shown.
 
 
 ==============================================================================
