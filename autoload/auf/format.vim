@@ -242,9 +242,9 @@ function! s:executeFormatter(ln1, ln2, fmtdef, curf, fmtedf) abort
     let [isoutf, cmd, isranged] = auf#registry#BuildCmdFullFromDef(a:fmtdef,
                 \ b:auf__formatprg_base.' '.shellescape(a:curf), a:fmtedf,
                 \ a:ln1, a:ln2)
-    call auf#util#logVerbose('doFormatSource: isOutF:' . isoutf . ' isRanged:' . isranged)
+    call auf#util#logVerbose('executeFormatter: isOutF:' . isoutf . ' isRanged:' . isranged)
     let [out, err, sherr] = auf#util#execSystem(cmd)
-    call auf#util#logVerbose('doFormatSource: shErr:' . sherr . ' err:' . err)
+    call auf#util#logVerbose('executeFormatter: shErr:' . sherr . ' err:' . err)
     if sherr != 0
         return [sherr, err]
     endif
@@ -333,10 +333,9 @@ function! s:formatSource(line1, line2, fmtdef, overwrite, coward, synmatch) abor
             let resstr = 'diff failed(' . sherr . '): ' . err
         elseif res == 4 "Refuse to format - coward mode on
             let [resstr, res] = ['cowardly refusing - it touches more lines than edited', 1]
+            let diflines = readfile(difpath)
         else
             let clear = 1
-        endif
-        if res != 0
             let diflines = readfile(difpath)
         endif
         if clear && a:overwrite
