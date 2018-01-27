@@ -136,7 +136,7 @@ cooperation. Otherwise `Auf` already tries to filter &/ diff and support ranged 
 | [js-beautify](https://github.com/einars/js-beautify)          | Javascript, JSON    | NO      | .jsbeautifyrc      |                                              |
 | [jscs](http://jscs.info/)                 | Javascript          | NO      |                    |                                               |
 | [standard](http://standardjs.com/)             | Javascript          | NO      |                    |                                               |
-| [xo](https://github.com/sindresorhus/xo)                   | Javascript        |           |                    |                                               |
+| [xo](https://github.com/sindresorhus/xo)                   | Javascript          | NO      |                    |                                               |
 | [prettier](https://github.com/prettier/prettier)             | Javascript, JSON,   | RANGED  | .prettierrc        |                                               |
 |                           | Flow, CSS, Less,    |         | prettier.config.js |                                               |
 |                           | SCSS, Markdown,     |         |                    |                                               |
@@ -144,7 +144,7 @@ cooperation. Otherwise `Auf` already tries to filter &/ diff and support ranged 
 | [html-beautify](https://github.com/einars/js-beautify)        | HTML                | NO      |                    |                                               |
 | tidy                      | HTML, XHTML, XML    | NO      |                    |                                               |
 | [css-beautify](https://github.com/einars/js-beautify)         | CSS                 | NO      |                    |                                               |
-| [tsfmt](https://github.com/vvakame/typescript-formatter)                | Typescript          |         |                    |                                               |
+| [tsfmt](https://github.com/vvakame/typescript-formatter)                | Typescript          | NO      |                    |                                               |
 | [sass-convert](http://sass-lang.com/)         | SCSS                | NO      |                    |                                               |
 | [rbeautify](https://github.com/erniebrodeur/ruby-beautify)            | Ruby                | NO      |                    |                                               |
 | [rubocop](https://github.com/bbatsov/rubocop)              | Ruby                | NO      |                    |                                               |
