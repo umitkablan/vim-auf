@@ -6,9 +6,7 @@ let g:loaded_auffmt_yapf_definition = 1
 let s:definition = {
             \ 'ID'        : 'yapf',
             \ 'executable': 'yapf',
-            \ 'filetypes' : ['python'],
-            \ 'ranged'    : 1,
-            \ 'fileout'   : 0
+            \ 'filetypes' : ['python']
             \ }
 
 function! auf#formatters#yapf#define() abort
