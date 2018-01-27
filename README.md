@@ -121,115 +121,41 @@ au BufWritePre cpp :AufJIT
 ```
 For each filetype, vim-auf has a list of applicable formatters. If you have multiple formatters installed that are supported for some filetype, AUF tries all formatters in this list of applicable formatters, until one succeeds. You can set this list manually in your vimrc (see section *How can I change the behaviour of formatters, or add one myself?*, or change the formatter with the highest priority by the commands `:AufNextFormatter` and `:AufPrevFormatter`. To print the currently selected formatter use `:AufCurrFormatter`. These latter commands are mostly useful for debugging purposes.
 
-If you have a composite filetype with dots (like `django.python` or `php.wordpress`),
-vim-auf first tries to detect and use formatters for the exact original filetype, and
-then tries the same for all supertypes occurring from left to right in the original filetype
-separated by dots.
+## Supported Formatters
 
-## Default formatter programs
+'Ranged' section only shows if the ranged formatting is supported by the command line program - best
+cooperation. Otherwise `Auf` already tries to filter &/ diff and support ranged format.
 
-Here is a list of formatter programs that are supported by default, and thus will be detected and used by vim when they are installed properly.
-
-* `clang-format` for __C__, __C++__, __Objective-C__ (supports formatting ranges).
-  Clang-format is a product of LLVM source builds.
-  If you `brew install llvm`, clang-format can be found in /usr/local/Cellar/llvm/bin/.
-  Vim-auf checks whether there exists a `.clang-format` or a `_clang-format` file up in
-  the current directory's ancestry. Based on that it either uses that file or tries to match
-  vim options as much as possible.
-  Details: http://clang.llvm.org/docs/ClangFormat.html.
-
-* `astyle` for __C#__, __C++__, __C__ and __Java__.
-  Download it here: http://astyle.sourceforge.net/.
-  *Important: version `2.0.5` or higher is required, since only those versions correctly support piping and are stable enough.*
-
-* `autopep8` for __Python__ (supports formatting ranges).
-  It's probably in your distro's repository, so you can download it as a regular package.
-  For Ubuntu type `sudo apt-get install python-autopep8` in a terminal.
-  Here is the link to the repository: https://github.com/hhatto/autopep8.
-  And here the link to its page on the python website: http://pypi.python.org/pypi/autopep8/0.5.2.
-
-* `yapf` for __Python__ (supports formatting ranges).
-  It is readily available through PIP. Most users can install with the terminal command `sudo pip install yapf` or `pip --user install yapf`.
-  YAPF has one optional configuration variable to control the formatter style.
-  For example:
-  ```vim
-  let g:auffmt_yapf_style = 'pep8'
-   ```
-  `pep8` is the default value, or you can choose: `google`, `facebook`, `chromium`.
-
-  Here is the link to the repository: https://github.com/google/yapf
-
-* `js-beautify` for __Javascript__ and __JSON__.
-  It can be installed by running `npm install -g js-beautify`.
-  Note that `nodejs` is needed for this to work.
-  The python version version is also supported by default, which does not need `nodejs` to run.
-  Here is the link to the repository: https://github.com/einars/js-beautify.
-
-* `JSCS` for __Javascript__. http://jscs.info/
-
-* `standard` for __Javascript__.
-  It can be installed by running `npm install -g standard` (`nodejs` is required). No more configuration needed.
-  More information about the style guide can be found here: http://standardjs.com/.
-
-* `xo` for __Javascript__.
-  It can be installed by running `npm install -g xo` (`nodejs` is required).
-  Here is the link to the repository: https://github.com/sindresorhus/xo.
-
-* `html-beautify` for __HTML__.
-  It is shipped with `js-beautify`, which can be installed by running `npm install -g js-beautify`.
-  Note that `nodejs` is needed for this to work.
-  Here is the link to the repository: https://github.com/einars/js-beautify.
-
-* `css-beautify` for __CSS__.
-  It is shipped with `js-beautify`, which can be installed by running `npm install -g js-beautify`.
-  Note that `nodejs` is needed for this to work.
-  Here is the link to the repository: https://github.com/einars/js-beautify.
-
-* `typescript-formatter` for __Typescript__.
-  `typescript-formatter` is a thin wrapper around the TypeScript compiler services.
-  It can be installed by running `npm install -g typescript-formatter`.
-  Note that `nodejs` is needed for this to work.
-  Here is the link to the repository: https://github.com/vvakame/typescript-formatter.
-
-* `sass-convert` for __SCSS__.
-  It is shipped with `sass`, a CSS preprocessor written in Ruby, which can be installed by running `gem install sass`.
-  Here is the link to the SASS homepage: http://sass-lang.com/.
-
-* `tidy` for __HTML__, __XHTML__ and __XML__.
-  It's probably in your distro's repository, so you can download it as a regular package.
-  For Ubuntu type `sudo apt-get install tidy` in a terminal.
-
-* `rbeautify` for __Ruby__.
-  It is shipped with `ruby-beautify`, which can be installed by running `gem install ruby-beautify`.
-  Note that compatible `ruby-beautify-0.94.0` or higher version.
-  Here is the link to the repository: https://github.com/erniebrodeur/ruby-beautify.
-  This beautifier developed and tested with ruby `2.0+`, so you can have weird results with earlier ruby versions.
-
-* `rubocop` for __Ruby__.
-  It can be installed by running `gem install rubocop`.
-  Here is the link to the repository: https://github.com/bbatsov/rubocop
-
-* `gofmt` for __Golang__.
-  The default golang formatting program is shipped with the golang distribution. Make sure `gofmt` is in your PATH (if golang is installed properly, it should be).
-  Here is the link to the installation: https://golang.org/doc/install
-
-* `rustfmt` for __Rust__.
-  It can be installed using `cargo`, the Rust package manager. Up-to-date installation instructions are on the project page: https://github.com/nrc/rustfmt/#installation.
-
-* `dartfmt` for __Dart__.
-  Part of the Dart SDK (make sure it is on your PATH). See https://www.dartlang.org/tools/dartfmt/ for more info.
-
-* `perltidy` for __Perl__.
-  It can be installed from CPAN `cpanm Perl::Tidy` . See https://metacpan.org/pod/Perl::Tidy and http://perltidy.sourceforge.net/ for more info.
-
-* `stylish-haskell` for __Haskell__
-  It can be installed using [`cabal`](https://www.haskell.org/cabal/) build tool. Installation instructions are available at https://github.com/jaspervdj/stylish-haskell#installation
-
-* `remark` for __Markdown__.
-  A Javascript based markdown processor that can be installed with `npm install -g remark`. More info is available at https://github.com/wooorm/remark.
-
-* `fprettify` for modern __Fortran__.
-  Download from [official repository](https://github.com/pseewald/fprettify). Install with `./setup.py install` or `./setup.py install --user`.
+| Name                      | Language(s)         | Ranged? | Probe Files        | Note                                          |
+| ------------------------- | ------------------- | ------- | ---------------    | --------------------------------------------- |
+| [clang-format](http://clang.llvm.org/docs/ClangFormat.html)         | C, C++, Objective-C | RANGED  | [._]clang-format   |                                            |
+| [astyle](http://astyle.sourceforge.net/)               | C, C++, Java, C#    | NO      | .astylerc          | Only 2.0.5 or higher is stable enough         |
+| [uncrustify](http://uncrustify.sourceforge.net/)           | C, C++, Java, C#    | NO      | [.]uncrustify.cfg  |                                               |
+| [autopep8](http://pypi.python.org/pypi/autopep8)             | Python              | NO      |                    | Supports range as advertised but doesn't work |
+| [yapf](https://github.com/google/yapf)                 | Python              | RANGED  |                    | let g:auffmt_yapf_style [='pep8'] = 'facebook'|'google'|'chromium' |
+| [js-beautify](https://github.com/einars/js-beautify)          | Javascript, JSON    | NO      | .jsbeautifyrc      |                                              |
+| [jscs](http://jscs.info/)                 | Javascript          | NO      |                    |                                               |
+| [standard](http://standardjs.com/)             | Javascript          | NO      |                    |                                               |
+| [xo](https://github.com/sindresorhus/xo)                   | Javascript        |           |                    |                                               |
+| [prettier](https://github.com/prettier/prettier)             | Javascript, JSON,   | RANGED  | .prettierrc        |                                               |
+|                           | Flow, CSS, Less,    |         | prettier.config.js |                                               |
+|                           | SCSS, Markdown,     |         |                    |                                               |
+|                           | Typescript          |         |                    |                                               |
+| [html-beautify](https://github.com/einars/js-beautify)        | HTML                | NO      |                    |                                               |
+| tidy                      | HTML, XHTML, XML    | NO      |                    |                                               |
+| [css-beautify](https://github.com/einars/js-beautify)         | CSS                 | NO      |                    |                                               |
+| [tsfmt](https://github.com/vvakame/typescript-formatter)                | Typescript          |         |                    |                                               |
+| [sass-convert](http://sass-lang.com/)         | SCSS                | NO      |                    |                                               |
+| [rbeautify](https://github.com/erniebrodeur/ruby-beautify)            | Ruby                | NO      |                    |                                               |
+| [rubocop](https://github.com/bbatsov/rubocop)              | Ruby                | NO      |                    |                                               |
+| [gofmt](https://golang.org/doc/install)                | Go                  | NO      |                    |                                               |
+| [goimports](https://golang.org/doc/install)            | Go                  | NO      |                    |                                               |
+| [rustfmt](https://github.com/nrc/rustfmt/#installation)              | Rust                | NO      |                    |                                               |
+| [dartfmt](https://www.dartlang.org/tools/dartfmt/)              | Dart                | NO      |                    |                                               |
+| [perltidy](https://metacpan.org/pod/Perl::Tidy)             | Perl                | NO      | .perltidyrc        |                                               |
+| [stylish-haskell](https://github.com/jaspervdj/stylish-haskell#installation)      | Haskell             | NO      |                    |                                               |
+| [remark](https://github.com/wooorm/remark)               | Markdown            | NO      |                    |                                               |
+| [fprettify](https://github.com/pseewald/fprettify)            | FORTRAN             | NO      |                    |                                               |
 
 ## Debugging
 
@@ -265,19 +191,18 @@ let s:definition = {
   \ 'ID'        : 'mytypefmt0',        " ID is the basename of the autoload/* file and unique
   \ 'executable': 'mytypefmt',         " Executable name
   \ 'filetypes' : ['mytype', 'mytyp'], " All types this formatter activates for
-  \ 'ranged'    : 0,                   " Tell whether formatter supports line range
-  \ 'fileout'   : 1                    " Is formatter capable of outputting to a file or not (stdout)
+  \ 'probefiles': ['.mytyp', '_mytyp'] " Probe those to auto-set formatter for project. OPTIONAL.
   \ }
 
 function! auf#formatters#mytypefmt0#define() abort
   return s:definition
 endfunction
 
-" Should return the command line string to execute the formatter.
-" The declarations we made above and this function's return should sync; meaning if file
-" output declared to be 0, then outpath below should not be used and returned command
-" line should be outputting to standard output
-function! auf#formatters#mytypefmt0#cmd(ftype, inpath, outpath, line0, line1) abort
+" Should return the command line arguments for executable.
+" Note that no line range yet.
+" 'confpath' will be filled only if 'probefiles' is defined above
+" and is found in directory hierarchy
+function! auf#formatters#mytypefmt0#cmdArgs(ftype, confpath) abort
   let mode = ''
   if a:ftype ==# 'mytype'
     let mode = '-m mytype'
@@ -288,6 +213,17 @@ function! auf#formatters#mytypefmt0#cmd(ftype, inpath, outpath, line0, line1) ab
     return 'invalid!!!'
   endif
   return 'mytypefmt ' . a:inpath . ' ' . mode . ' -o ' . a:outpath
+endfunction
+
+" Return ranged addition of the passed command line.
+" OPTIONAL: If not defined it means this formatter doesn't support RANGE.
+function! auf#formatters#mytypefmt0#cmdAddRange(cmd, line0, line1) abort
+    return a:cmd . ' -lines ' . a:line0 . ' ' . a:line1 " say it supports -lines argument
+endfunction
+
+" Return filepath-added command as extended from 'cmd' base
+function! auf#formatters#mytypefmt0#cmdAddOutfile(cmd, outpath) abort
+    return a:cmd . ' -o ' . a:outpath " say it supports -o argument
 endfunction
 
 " Register our formatter to the auf-registry
