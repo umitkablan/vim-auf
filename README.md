@@ -141,6 +141,7 @@ cooperation. Otherwise `Auf` already tries to filter &/ diff and support ranged 
 |                           | Flow, CSS, Less,    |         | prettier.config.js |                                               |
 |                           | SCSS, Markdown,     |         |                    |                                               |
 |                           | Typescript          |         |                    |                                               |
+| [fixjson](https://github.com/rhysd/fixjson)              | JSON                | NO      |                    |                                              |
 | [html-beautify](https://github.com/einars/js-beautify)        | HTML                | NO      |                    |                                               |
 | tidy                      | HTML, XHTML, XML    | NO      |                    |                                               |
 | [css-beautify](https://github.com/einars/js-beautify)         | CSS                 | NO      |                    |                                               |
