@@ -156,6 +156,9 @@ cooperation. Otherwise `Auf` already tries to filter &/ diff and support ranged 
 | [stylish-haskell](https://github.com/jaspervdj/stylish-haskell#installation)      | Haskell             | NO      |                    |                                               |
 | [remark](https://github.com/wooorm/remark)               | Markdown            | NO      |                    |                                               |
 | [fprettify](https://github.com/pseewald/fprettify)            | FORTRAN             | NO      |                    |                                               |
+| [shfmt](https://github.com/mvdan/sh#shfmt)                | sh                  | NO      |                    |                                               |
+| [sqlparse](https://github.com/andialbrecht/sqlparse)             | SQL                 | NO      |                    |                                               |
+| [fsqlf](https://github.com/dnsmkl/fsqlf)                | SQL                 | NO      | [._]fsqlf.conf     |                                               |
 
 ## Debugging
 
