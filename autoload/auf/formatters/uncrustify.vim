@@ -6,7 +6,7 @@ let g:loaded_auffmt_uncrustify_definition = 1
 let s:definition = {
       \ 'ID'        : 'uncrustify',
       \ 'executable': 'uncrustify',
-      \ 'filetypes' : ['c', 'cpp', 'cs', 'java'],
+      \ 'filetypes' : ['c', 'cpp', 'cs', 'java', 'objc', 'd', 'pawn', 'vala'],
       \ 'probefiles': ['uncrustify.cfg', '.uncrustify.cfg']
       \ }
 
