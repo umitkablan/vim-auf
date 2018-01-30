@@ -119,7 +119,8 @@ function! AufBufWinEnter() abort
 endfunction
 
 function! AufBufReadPost() abort
-    call auf#util#logVerbose('AufBufReadPost: START')
+    call auf#util#logVerbose('AufBufReadPost: START -- bt:' . &l:buftype
+            \ . ' ft:' . &l:ft . ' bl:' . &l:buflisted . ' sw:' . &l:swapfile)
     call auf#util#cleanAllHLIDs(w:, 'auf_highlight_lines_hlids')
     call auf#util#cleanAllHLIDs(w:, 'auf_newadded_lines_hlids')
     if !exists('b:auf__highlight__')
