@@ -22,9 +22,9 @@ Auf also can highlight lines longer than configured textwidth of the buffer - el
  - Avoid formatting with a bang `:w!` - accept as is.
  - Configurable and sufficient highlighting - changed (to be formatted) lines, wrong-format lines.
  - Already defined popular formatters for different filetypes.
- - Pure VimScript.
  - Automatic formatter selection based on formatter dot-files in project directory - use those settings.
- - Vim settings (buffer or global) are respected and defined into formatter parameters.
+ - Vim indent settings are respected and passed to formatter command line arguments.
+ - Pure VimScript.
 
 ## How to install
 
@@ -218,7 +218,7 @@ function! auf#formatters#mytypefmt0#cmdArgs(ftype, confpath) abort
     " Not possible to get to here
     return 'invalid!!!'
   endif
-  return 'mytypefmt ' . a:inpath . ' ' . mode . ' -o ' . a:outpath
+  return 'mytypefmt ' . a:inpath . ' ' . mode
 endfunction
 
 " Return ranged addition of the passed command line.
