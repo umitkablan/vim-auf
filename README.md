@@ -160,6 +160,7 @@ cooperation. Otherwise `Auf` already tries to filter &/ diff and support ranged 
 | [remark](https://github.com/wooorm/remark)               | Markdown            | NO      |                    |                                               |
 | [fprettify](https://github.com/pseewald/fprettify)            | FORTRAN             | NO      |                    |                                               |
 | [shfmt](https://github.com/mvdan/sh#shfmt)                | sh                  | NO      |                    |                                               |
+| [luaformatter](https://github.com/LuaDevelopmentTools/luaformatter)         | lua                 | NO      |                    |                                               |
 | [sqlparse](https://github.com/andialbrecht/sqlparse)             | SQL                 | NO      |                    |                                               |
 | [fsqlf](https://github.com/dnsmkl/fsqlf)                | SQL                 | NO      | [._]fsqlf.conf     |                                               |
 
