@@ -14,9 +14,17 @@ function! auf#formatters#stylish_haskell#define() abort
 endfunction
 
 function! auf#formatters#stylish_haskell#cmdArgs(ftype, confpath) abort
-    if a:ftype || a:confpath
+    if a:ftype
     endif
-    return ''
+    let style = ''
+    if a:confpath
+        let style .= '-c ' . a:confpath
+    endif
+    if (exists('g:auf_verbosemode') && g:auf_verbosemode) ||
+        \ (exists('g:verbose') && g:verbose)
+        let style .= ' -v'
+    endif
+    return style
 endfunction
 
 call auf#registry#RegisterFormatter(s:definition)
