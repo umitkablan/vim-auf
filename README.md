@@ -162,6 +162,7 @@ cooperation. Otherwise `Auf` already tries to filter &/ diff and support ranged 
 | [shfmt](https://github.com/mvdan/sh#shfmt)                | sh                  | NO      |                    |                                               |
 | [luaformatter](https://github.com/LuaDevelopmentTools/luaformatter)         | lua                 | NO      |                    |                                               |
 | [sqlparse](https://github.com/andialbrecht/sqlparse)             | SQL                 | NO      |                    |                                               |
+| [sqlfmt](https://github.com/jackc/sqlfmt)               | SQL                 | NO      |                    |                                               |
 | [fsqlf](https://github.com/dnsmkl/fsqlf)                | SQL                 | NO      | [._]fsqlf.conf     |                                               |
 
 ## Debugging
