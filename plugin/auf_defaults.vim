@@ -38,6 +38,14 @@ if !exists('g:auf_changedline_synmatch')
     let g:auf_changedline_synmatch = 'ErrorMsg'
 endif
 
+if !exists('g:auf_deepindent_max')
+    let g:auf_deepindent_max = 4
+endif
+
+if !exists('g:auf_deepindent_synmatch')
+    let g:auf_deepindent_synmatch = 'Underlined'
+endif
+
 if !exists('g:auf_highlight_pattern')
     " Don't highlight
     let g:auf_highlight_pattern = ''
@@ -56,6 +64,10 @@ if !exists('g:auf_changedline_pattern')
     let g:auf_changedline_pattern = '^\(\%##LINENUM##l\)\s\+'
     " Highlight white-space only when preceded by non-white
     let g:auf_changedline_pattern = '\(\%##LINENUM##l\)\zs\s\ze\S'
+endif
+
+if !exists('g:auf_deepindent_pattern')
+    let g:auf_deepindent_pattern = '^\(\%##LINENUM##l\)\s\+\S'
 endif
 
 if !exists('g:auf_highlight_on_bufenter')

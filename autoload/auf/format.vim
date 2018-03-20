@@ -158,6 +158,19 @@ function! auf#format#TryAllFormatters(bang, synmatch, ...) range abort
     return 0
 endfunction
 
+function! auf#format#ScanForDeepIndentation(ln1, ln2, maxindent)
+    let [spaced, tabbed] = ['^' . repeat(repeat(' ', &l:shiftwidth), a:maxindent),
+                                    \ '^' . repeat('	', a:maxindent)]
+    let [i, ret] = [0, []]
+    for ln in getline(a:ln1, a:ln2)
+        let i += 1
+        if ln =~# spaced || ln =~# tabbed
+            call add(ret, i)
+        endif
+    endfor
+    return ret
+endfunction
+
 function! s:fallbackFormat(iserr, line1, line2) abort
     if exists('b:auf_remove_trailing_spaces') ? b:auf_remove_trailing_spaces
                 \ : g:auf_remove_trailing_spaces

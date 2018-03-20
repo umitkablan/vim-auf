@@ -24,6 +24,7 @@ Auf also can highlight lines longer than configured textwidth of the buffer - el
  - Already defined popular formatters for different filetypes.
  - Automatic formatter selection based on formatter dot-files in project directory - use those settings.
  - Vim indent settings are respected and passed to formatter command line arguments.
+ - Highlight deep indented lines and line max marker for long lines.
  - Pure VimScript.
 
 ## How to install
@@ -92,6 +93,8 @@ Auf is capable of highlighting lines longer than `&textwidth`. With `g:auf_highl
 let g:auf_highlight_longlines = 1 " default
 ```
 If `g:auf_highlight_longlines` value is `2` then you can set which syntax name to use with `g:auf_highlight_longlines_syntax [= 'DiffChange']` configuration.
+
+If `g:auf_deepindent_max [=4]` is higher than `0` then these deep indented lines would be highlighted by line pattern `g:auf_deepindent_pattern [='^\(\%##LINENUM##l\)\s\+\S']` as above; and with syntax definition in  `g:auf_deepindent_synmatch [='Underlined']`.
 
 You can, of course, manually autoindent, retab or remove trailing whitespace with the following respective commands:
 ```vim

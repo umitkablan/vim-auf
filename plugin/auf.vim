@@ -49,6 +49,7 @@ function! AufInsertModeOn() abort
     call auf#util#logVerbose('InsertModeOn: Start')
     call auf#util#highlights_Off(w:auf_highlight_lines_hlids)
     call auf#util#highlights_Off(w:auf_newadded_lines_hlids)
+    call auf#util#highlights_Off(w:auf_deepind_lines_hlids)
     call auf#util#logVerbose('InsertModeOn: End')
 endfunction
 
@@ -58,6 +59,7 @@ function! AufInsertModeOff() abort
         if b:auf__highlight__
             call auf#util#highlights_On(w:auf_highlight_lines_hlids, 'AufErrLine')
             call auf#util#highlights_On(w:auf_newadded_lines_hlids, 'AufChgLine')
+            call auf#util#highlights_On(w:auf_deepind_lines_hlids, 'AufDeepLine')
         endif
         call auf#util#logVerbose('AufInsertModeOff: NoChange End')
         return
@@ -99,6 +101,9 @@ function! AufBufWinEnter() abort
     if !exists('b:auf_err_lnnr_list')
         let b:auf_err_lnnr_list = []
     endif
+    if !exists('b:auf_deepind_lnnr_list')
+        let b:auf_deepind_lnnr_list = []
+    endif
     if !exists('b:auf__highlight__')
         let b:auf__highlight__ = g:auf_highlight_on_bufenter
     endif
@@ -115,6 +120,8 @@ function! AufBufWinEnter() abort
     endif
     let w:auf_highlight_lines_hlids = auf#util#highlightLines(
                                         \ b:auf_err_lnnr_list, 'AufErrLine')
+    let w:auf_deepind_lines_hlids = auf#util#highlightLines(
+                                    \ b:auf_deepind_lnnr_list, 'AufDeepLine')
     call auf#util#logVerbose('AufBufWinEnter: END')
 endfunction
 
@@ -123,6 +130,7 @@ function! AufBufReadPost() abort
             \ . ' ft:' . &l:ft . ' bl:' . &l:buflisted . ' sw:' . &l:swapfile)
     call auf#util#cleanAllHLIDs(w:, 'auf_highlight_lines_hlids')
     call auf#util#cleanAllHLIDs(w:, 'auf_newadded_lines_hlids')
+    call auf#util#cleanAllHLIDs(w:, 'auf_deepind_lines_hlids')
     if !exists('b:auf__highlight__')
         let b:auf__highlight__ = g:auf_highlight_on_bufenter
     endif
@@ -139,7 +147,12 @@ function! AufBufReadPost() abort
     let ww = winsaveview()
     %call auf#format#TryAllFormatters(0, b:auf__highlight__ ? 'AufErrLine': '')
     call winrestview(ww)
-
+    if b:auf__highlight__ && g:auf_deepindent_max > 0
+        let b:auf_deepind_lnnr_list = auf#format#ScanForDeepIndentation(1,
+                                        \ line('$'), g:auf_deepindent_max+1)
+        let w:auf_deepind_lines_hlids = auf#util#highlightLines(
+                                    \ b:auf_deepind_lnnr_list, 'AufDeepLine')
+    endif
     call auf#util#logVerbose('AufBufReadPost: END')
 endfunction
 
@@ -211,22 +224,27 @@ command! -nargs=0 AufDisable
     \ let b:auf_disable=1 |
     \ call auf#util#cleanAllHLIDs(w:, 'auf_highlight_lines_hlids') |
     \ call auf#util#cleanAllHLIDs(w:, 'auf_newadded_lines_hlids') |
+    \ call auf#util#cleanAllHLIDs(w:, 'auf_deepind_lines_hlids')
 command! -nargs=0 AufEnable unlet! b:auf_disable
 
 command! -nargs=0 -range -bang AufShowDiff call AufShowDiff(<bang>0, <line1>, <line2>)
 command! AufClearHi
     \ call auf#util#cleanAllHLIDs(w:, 'auf_highlight_lines_hlids') |
+    \ call auf#util#cleanAllHLIDs(w:, 'auf_deepind_lines_hlids') |
     \ let b:auf__highlight__ = 0
 
 let s:AufErrLineSynCmd = 'highlight def link AufErrLine ' . g:auf_showdiff_synmatch
 let s:AufChgLineSynCmd = 'highlight def link AufChgLine ' . g:auf_changedline_synmatch
+let s:AufDeepLineSynCmd = 'highlight def link AufDeepLine ' . g:auf_deepindent_synmatch
 execute s:AufErrLineSynCmd
 execute s:AufChgLineSynCmd
+execute s:AufDeepLineSynCmd
 
 augroup Auf_Auto_Syntax
     autocmd!
     autocmd Syntax execute s:AufErrLineSynCmd
     autocmd Syntax execute s:AufChgLineSynCmd
+    autocmd Syntax execute s:AufDeepLineSynCmd
 augroup END
 
 function! s:isAufFiletype() abort
